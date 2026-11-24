@@ -6,6 +6,8 @@ class WarningKind(StrEnum):
     UNPARSEABLE_PRICE = "unparseable_price"
     INJECTED_INSTRUCTION = "injected_instruction"
     MISSING_TRANSLATION = "missing_translation"
+    SWAPPED_COORDINATES = "swapped_coordinates"
+    OUTLIER_COORDINATES = "outlier_coordinates"
 
 
 @dataclass(frozen=True)

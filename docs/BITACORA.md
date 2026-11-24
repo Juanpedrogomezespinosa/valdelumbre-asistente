@@ -298,3 +298,16 @@ Con esto quedan cerradas todas las decisiones previas al código (D-001 a D-031)
 - Comprobado sobre el catálogo real: solo dan aviso poi-013 (inyección) y poi-004 (sin traducción). No hay falsos positivos.
 - Verificado: `make check` limpio, 59 tests.
 - Trello: el criterio de H9 «Test con una inyección sintética distinta, para comprobar que la defensa no depende de los patrones» **queda pendiente**. El test de este paso demuestra que los patrones no están hechos a medida de poi-013, pero que la defensa no depende de ellos se probará en `feat/assistant`, con una inyección que esquive los patrones y no altere la respuesta.
+
+### Paso 7.6 · Coordenadas invertidas — 2026-11-24
+- TDD: primero `api/tests/test_coordinates.py` y `api/tests/test_coordinate_normalization.py`; fallaban porque los módulos no existían.
+- Dominio `api/app/domain/coordinates.py`: `Coordinates(lat, lon)`, que rechaza valores fuera del globo.
+- Hallazgo que condiciona el diseño: las coordenadas invertidas de poi-011 (`-3.711, 40.421`) son **válidas por sí solas**, porque ambos valores están dentro de los rangos de latitud y longitud. El error solo se detecta comparando con el resto del catálogo, así que la regla trabaja sobre el catálogo completo, no punto a punto.
+- Regla `normalize_coordinates` en `api/app/data/normalization.py` (D-013):
+  - toma como referencia la **mediana** de latitudes y longitudes, que un único punto erróneo no puede desplazar;
+  - un punto a menos de 1° (unos 100 km) se conserva;
+  - si solo encaja al intercambiar latitud y longitud, se intercambia con el aviso `SWAPPED_COORDINATES`;
+  - si no encaja de ninguna forma (por ejemplo, (0, 0) o fuera del globo), se sirve sin coordenadas con el aviso `OUTLIER_COORDINATES`, y no saldrá en el mapa.
+- Incluye un test sobre el catálogo real: solo poi-011 recibe aviso y queda en (40.421, −3.711).
+- Verificado: `make format` y `make check` limpios, 69 tests.
+- Trello: el criterio de H1 sobre poi-011 se marcará en el paso 7, cuando la regla esté conectada a la carga del catálogo.
