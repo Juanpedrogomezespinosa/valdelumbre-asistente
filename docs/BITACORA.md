@@ -253,3 +253,9 @@ Con esto quedan cerradas todas las decisiones previas al código (D-001 a D-031)
 - Paquetes `app`, `app.domain` y `app.data` (se quitan sus `.gitkeep`).
 - Primer test, `tests/test_source_data.py`: comprueba con SHA-1 que `datos/pois.json` y `datos/evaluacion.json` siguen intactos (D-003). En el plan estaba en el paso 7; se adelanta porque es el primer test con valor real y no depende de nada más.
 - Verificado: `ruff check`, `ruff format --check` y `mypy` limpios; `pytest`, 2 passed.
+
+### Paso 7.2 · Comandos del proyecto con make — 2026-11-24
+- El autor comparó las opciones para agrupar los comandos (Makefile, npm scripts en la raíz, poethepoet, sin orquestador) y eligió el **Makefile en la raíz** → D-037.
+- Se añaden solo los comandos que ya funcionan: `help` (por defecto), `install` (`uv sync --locked`), `test`, `lint`, `format` y `check` (lint + tests). El servidor, la web, la evaluación y Docker se añadirán en el paso en que existan.
+- README actualizado: make en los requisitos, sección de tests con los atajos y el `Makefile` en la estructura del repositorio. `.claude/CLAUDE.md`, actualizado.
+- Verificado: `make` lista los comandos, `make install` instala desde `uv.lock` y `make check` pasa limpio (2 tests).

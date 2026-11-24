@@ -55,6 +55,7 @@ Estados: ✅ aprobada · 🔄 revisada (enlaza a la que la sustituye) · ❌ des
 | [D-034](#d-034--reglas-de-horario-cierre-exclusivo-y-sin-franjas-que-crucen-la-medianoche) | Reglas de horario: cierre exclusivo y sin franjas que crucen la medianoche | ✅ |
 | [D-035](#d-035--una-categoría-desconocida-detiene-la-carga) | Una categoría desconocida detiene la carga | ✅ |
 | [D-036](#d-036--commits-pequeños-con-push-al-terminar-cada-paso-que-funciona) | Commits pequeños con push al terminar cada paso que funciona | ✅ |
+| [D-037](#d-037--makefile-en-la-raíz-como-punto-de-entrada-de-los-comandos) | Makefile en la raíz como punto de entrada de los comandos | ✅ |
 
 ---
 
@@ -381,3 +382,16 @@ Estados: ✅ aprobada · 🔄 revisada (enlaza a la que la sustituye) · ❌ des
 - **Decisión:** el trabajo avanza en pasos pequeños. Cuando uno funciona (por ejemplo, un endpoint, con tests y linters en verde), la IA se detiene hasta que el autor lo revisa, hace commit y push y autoriza el siguiente.
 - **Por qué:** cada commit es una unidad que funciona y se puede revisar. El historial cuenta el desarrollo paso a paso, y el autor revisa el código de la IA en porciones pequeñas.
 - **Consecuencias:** complementa D-025; dentro de cada rama hay varios commits pequeños.
+
+## D-037 · Makefile en la raíz como punto de entrada de los comandos
+**Estado:** ✅ aprobada por el autor · 2026-11-24
+
+- **Contexto:** `uv` gestiona dependencias y ejecuta comandos, pero no tiene un equivalente a los `scripts` de `package.json`. El repositorio mezcla dos ecosistemas (Python y Node) más Docker, así que hace falta un punto de entrada común para instalar, probar y levantar.
+- **Decisión:** un `Makefile` en la raíz con objetivos cortos (`make install`, `make check`, `make test`, `make lint`, `make format`) y un `make help` (objetivo por defecto) que los lista. Cada comando se añade **cuando existe y funciona** (servidor, web, evaluación, Docker), nunca antes.
+- **Por qué:** make viene instalado en macOS y Linux y es neutral entre lenguajes: no obliga a tener Node para tareas de Python ni al revés. Es la convención habitual en repositorios con varios lenguajes. Añadir solo comandos que funcionan evita que quien evalúa pruebe uno que falla.
+- **Alternativas descartadas:**
+  - `package.json` en la raíz con npm scripts: conocido, pero exige Node para lanzar el backend y mezcla ecosistemas.
+  - poethepoet (tareas en `pyproject.toml`): solo cubre el backend.
+  - just: sintaxis más limpia, pero hay que instalarlo.
+  - Sin orquestador: comandos largos de copiar.
+- **Consecuencias:** en Windows, make no viene instalado; el README documenta también los comandos directos y Docker sigue siendo la vía de un solo comando. Dentro de `web/` se usarán los npm scripts que genera Angular.

@@ -39,6 +39,8 @@ Enunciado: `../ENUNCIADO.md` (fuera del repo). Decisiones ya tomadas: `docs/DECI
 - Los tests y la evaluación se ejecutan **sin red**.
 
 ## Comandos
+Atajos en el `Makefile` de la raíz (`make` los lista): `make install`, `make check`, `make test`, `make lint` y `make format`. Cada comando nuevo (servidor, web, evaluación, Docker) se añade al `Makefile` en el paso en que existe y funciona.
+
 - API: `cd api && uv run uvicorn app.main:app --reload`
 - Calidad API: `cd api && uv run ruff check . && uv run ruff format --check . && uv run mypy .`
 - Tests API: `cd api && uv run pytest`
