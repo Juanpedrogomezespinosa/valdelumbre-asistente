@@ -187,7 +187,7 @@ Con esto quedan cerradas todas las decisiones previas al código (D-001 a D-031)
 
 ## Paso 4 · Git en manos del autor y revisión del `.gitignore` — 2026-11-24
 
-- El autor decide encargarse él de **todo Git** (commits, ramas, merges y push). La IA solo lee el estado y sugiere mensajes de commit. Actualizado en `CLAUDE.md` (sección Git). D-025 sigue vigente como convención; cambia solo quién la ejecuta.
+- El autor decide encargarse él de **todo Git** (commits, ramas, merges y push). La IA solo puede leer el estado del repositorio. Actualizado en `CLAUDE.md` (sección Git). D-025 sigue vigente como convención; cambia solo quién la ejecuta.
 - **Para `IA.md`:** la IA había propuesto hacer el commit inicial; el autor prefiere mantener el control del historial.
 - `.gitignore` completado: `.mypy_cache/`, `*.egg-info/`, `build/`, `coverage/`, `npm-debug.log*` y `CLAUDE.local.md`. Se versionan a propósito `.claude/` (D-020), los lockfiles (`uv.lock` y `package-lock.json`, para que las builds sean reproducibles), `datos/` y `.env.example`.
 - `BITACORA.md` y `DECISIONES.md` **se versionan**: forman parte de la entrega, no son borradores.
@@ -237,3 +237,19 @@ Con esto quedan cerradas todas las decisiones previas al código (D-001 a D-031)
 - Decisión D-032: Sin respuesta en el catálogo: «no lo sé», sin sugerencias ni citas.
 - **Para `IA.md`:** dos ejemplos. Un criterio que la IA añadió por su cuenta y el autor corrigió, y un riesgo de seguridad (un enlace de invitación) que la IA detectó antes de publicarlo.
 - **Para el README («qué haría con más tiempo»):** sugerir la Oficina de Turismo citándola, redefiniendo el criterio estricto.
+
+---
+
+## Paso 7 · Plan de `feat/api-data` aprobado — 2026-11-24
+
+- Plan presentado por la IA y **aprobado por el autor**: proyecto Python, dominio (horario, precio, POI) y capa de datos con sus reglas de normalización, en 7 pasos guiados por tests.
+- Decisiones de diseño registradas: D-033 (crudo con pydantic y dominio con dataclasses), D-034 (cierre exclusivo; franjas que cruzan la medianoche, descartadas), D-035 (categoría desconocida → error) y concreciones en D-006, D-007 y D-013.
+- **Forma de trabajar (D-036):** pasos pequeños. Cuando uno funciona, la IA se detiene; el autor lo revisa, hace commit y push y autoriza el siguiente.
+- Trello: H1 → «En curso».
+
+### Paso 7.1 · Proyecto Python — 2026-11-24
+- `api/pyproject.toml` con Python 3.12 (`.python-version`). Dependencias instaladas con `uv add`: `pydantic`; para desarrollo, `pytest`, `ruff` y `mypy`. Se genera `uv.lock`, que se versiona para que las builds sean reproducibles.
+- Configuración: ruff (`E, F, I, B, UP, SIM, N, RUF`, longitud 100), mypy `strict` con el plugin de pydantic y pytest con `pythonpath = ["."]`.
+- Paquetes `app`, `app.domain` y `app.data` (se quitan sus `.gitkeep`).
+- Primer test, `tests/test_source_data.py`: comprueba con SHA-1 que `datos/pois.json` y `datos/evaluacion.json` siguen intactos (D-003). En el plan estaba en el paso 7; se adelanta porque es el primer test con valor real y no depende de nada más.
+- Verificado: `ruff check`, `ruff format --check` y `mypy` limpios; `pytest`, 2 passed.
