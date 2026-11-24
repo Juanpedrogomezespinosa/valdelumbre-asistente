@@ -66,6 +66,7 @@ Para pararlo: `Ctrl + C` y después `docker compose down`.
 | uv | 0.5 o superior | `curl -LsSf https://astral.sh/uv/install.sh \| sh` (macOS/Linux) · [otras plataformas](https://docs.astral.sh/uv/getting-started/installation/) |
 | Node.js | 22 LTS o superior | https://nodejs.org o `nvm install --lts` |
 | npm | el que trae Node | `npm --version` |
+| make | cualquiera | Viene instalado en macOS y Linux (`make --version`). En Windows, usa Docker o los comandos directos de cada sección. |
 
 Puertos que deben estar libres: **8000** (API) y **8080** (web con Docker) o **4200** (web en desarrollo).
 
@@ -121,7 +122,17 @@ Abre http://localhost:4200.
 
 ## 5. Tests y evaluación
 
-⏳
+El `Makefile` de la raíz agrupa los comandos habituales. `make` (sin argumentos) los lista:
+
+```bash
+make install   # dependencias exactas del backend (uv.lock)
+make check     # lint + tests: lo que debe pasar antes de cada commit
+make test      # solo tests
+make lint      # ruff + mypy
+make format    # formatea y corrige lo automático
+```
+
+Comandos equivalentes sin `make` (⏳ los que aún no existen):
 
 ```bash
 # Calidad y tests del backend
@@ -198,7 +209,8 @@ curl -X POST "http://localhost:8000/preguntar" \
 valdelumbre-asistente/
 ├── api/                    Backend (FastAPI)
 │   ├── app/
-│   │   ├── data/           Carga y normalización del catálogo + avisos de calidad
+│   │   ├── data/           Carga del catálogo y avisos de calidad
+│   │   │   └── rules/      Una regla de normalización por módulo (precio, textos, coordenadas, duplicados)
 │   │   ├── domain/         Modelos, horarios (abierto_en), precio
 │   │   ├── assistant/      Interpretación de la pregunta, recuperación, generadores
 │   │   └── routes/         Endpoints: /pois, /pois/{id}, /preguntar
@@ -215,6 +227,7 @@ valdelumbre-asistente/
 │   ├── rules/              Reglas por área (backend, frontend, datos, documentación)
 │   ├── skills/             Procedimientos repetibles
 │   └── settings.json       Permisos (incluye el bloqueo de edición de datos/)
+├── Makefile                Comandos del proyecto (`make` los lista)
 ├── docker-compose.yml
 ├── README.md               Este fichero
 ├── DATOS.md                Problemas en los datos y qué se ha hecho con cada uno

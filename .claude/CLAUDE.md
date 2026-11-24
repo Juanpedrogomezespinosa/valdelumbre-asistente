@@ -20,6 +20,7 @@ Enunciado: `../ENUNCIADO.md` (fuera del repo). Decisiones ya tomadas: `docs/DECI
   - ❌ `# check if the poi is accessible` encima de `if poi.accessible:`
   - ✅ `# ISO weekdays (1 = Monday): inferred from evaluacion.json q3`
 - **Antes de entregar cualquier cambio**, revisa y elimina: comentarios que repiten el código, código muerto, abstracciones especulativas ("por si acaso"), nombres genéricos (`data`, `info`, `helper`, `utils`) y funciones que hacen más de una cosa.
+- **Ficheros pequeños, legibles y fáciles de localizar:** un módulo por responsabilidad (por ejemplo, una regla de normalización por fichero), con un nombre que diga qué contiene. Si un fichero empieza a mezclar responsabilidades, se divide.
 - **Calidad automática:** backend con `ruff` (lint + formato) y `mypy --strict`; frontend con `angular-eslint` + Prettier. Deben pasar en limpio.
 - **TDD en el núcleo:** test primero en la normalización de datos, los horarios, la interpretación de preguntas y los filtros. Sin objetivo numérico de cobertura.
 - **Errores de la API** en el idioma pedido (es/en): los ve el usuario final.
@@ -27,7 +28,8 @@ Enunciado: `../ENUNCIADO.md` (fuera del repo). Decisiones ya tomadas: `docs/DECI
 ## Git (D-025)
 - Una rama por bloque (`feat/api-data`, `feat/assistant`, `feat/web`…), que se fusiona en `main` cuando sus tests y linters pasan.
 - Conventional Commits: prefijo estándar y descripción en español. Ej.: `feat(api): filtro abierto_en con días ISO`.
-- **Git lo gestiona el autor**: commits, ramas, merges y push. La IA no ejecuta comandos de Git que escriban; solo puede leer (`git status`, `git diff`, `git log`) y, al terminar un bloque, sugerir el mensaje de commit.
+- **Pasos pequeños:** cuando un paso funciona (por ejemplo, un endpoint, con tests y linters en verde), la IA **se detiene** hasta que el autor lo revisa, hace commit y push y autoriza el siguiente.
+- **Git lo gestiona el autor**: commits, ramas, merges y push. La IA no ejecuta comandos de Git que escriban; solo puede leer (`git status`, `git diff`, `git log`).
 
 ## Invariantes del producto (no romper)
 - `datos/*.json` **no se modifica nunca**. Toda corrección va en `api/app/data/` como regla + test.
@@ -38,6 +40,8 @@ Enunciado: `../ENUNCIADO.md` (fuera del repo). Decisiones ya tomadas: `docs/DECI
 - Los tests y la evaluación se ejecutan **sin red**.
 
 ## Comandos
+Atajos en el `Makefile` de la raíz (`make` los lista): `make install`, `make check`, `make test`, `make lint` y `make format`. Cada comando nuevo (servidor, web, evaluación, Docker) se añade al `Makefile` en el paso en que existe y funciona.
+
 - API: `cd api && uv run uvicorn app.main:app --reload`
 - Calidad API: `cd api && uv run ruff check . && uv run ruff format --check . && uv run mypy .`
 - Tests API: `cd api && uv run pytest`

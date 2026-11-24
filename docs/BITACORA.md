@@ -187,7 +187,7 @@ Con esto quedan cerradas todas las decisiones previas al código (D-001 a D-031)
 
 ## Paso 4 · Git en manos del autor y revisión del `.gitignore` — 2026-11-24
 
-- El autor decide encargarse él de **todo Git** (commits, ramas, merges y push). La IA solo lee el estado y sugiere mensajes de commit. Actualizado en `CLAUDE.md` (sección Git). D-025 sigue vigente como convención; cambia solo quién la ejecuta.
+- El autor decide encargarse él de **todo Git** (commits, ramas, merges y push). La IA solo puede leer el estado del repositorio. Actualizado en `CLAUDE.md` (sección Git). D-025 sigue vigente como convención; cambia solo quién la ejecuta.
 - **Para `IA.md`:** la IA había propuesto hacer el commit inicial; el autor prefiere mantener el control del historial.
 - `.gitignore` completado: `.mypy_cache/`, `*.egg-info/`, `build/`, `coverage/`, `npm-debug.log*` y `CLAUDE.local.md`. Se versionan a propósito `.claude/` (D-020), los lockfiles (`uv.lock` y `package-lock.json`, para que las builds sean reproducibles), `datos/` y `.env.example`.
 - `BITACORA.md` y `DECISIONES.md` **se versionan**: forman parte de la entrega, no son borradores.
@@ -237,3 +237,120 @@ Con esto quedan cerradas todas las decisiones previas al código (D-001 a D-031)
 - Decisión D-032: Sin respuesta en el catálogo: «no lo sé», sin sugerencias ni citas.
 - **Para `IA.md`:** dos ejemplos. Un criterio que la IA añadió por su cuenta y el autor corrigió, y un riesgo de seguridad (un enlace de invitación) que la IA detectó antes de publicarlo.
 - **Para el README («qué haría con más tiempo»):** sugerir la Oficina de Turismo citándola, redefiniendo el criterio estricto.
+
+---
+
+## Paso 7 · Plan de `feat/api-data` aprobado — 2026-11-24
+
+- Plan presentado por la IA y **aprobado por el autor**: proyecto Python, dominio (horario, precio, POI) y capa de datos con sus reglas de normalización, en 7 pasos guiados por tests.
+- Decisiones de diseño registradas: D-033 (crudo con pydantic y dominio con dataclasses), D-034 (cierre exclusivo; franjas que cruzan la medianoche, descartadas), D-035 (categoría desconocida → error) y concreciones en D-006, D-007 y D-013.
+- **Forma de trabajar (D-036):** pasos pequeños. Cuando uno funciona, la IA se detiene; el autor lo revisa, hace commit y push y autoriza el siguiente.
+- Trello: H1 → «En curso».
+
+### Paso 7.1 · Proyecto Python — 2026-11-24
+- `api/pyproject.toml` con Python 3.12 (`.python-version`). Dependencias instaladas con `uv add`: `pydantic`; para desarrollo, `pytest`, `ruff` y `mypy`. Se genera `uv.lock`, que se versiona para que las builds sean reproducibles.
+- Configuración: ruff (`E, F, I, B, UP, SIM, N, RUF`, longitud 100), mypy `strict` con el plugin de pydantic y pytest con `pythonpath = ["."]`.
+- Paquetes `app`, `app.domain` y `app.data` (se quitan sus `.gitkeep`).
+- Primer test, `tests/test_source_data.py`: comprueba con SHA-1 que `datos/pois.json` y `datos/evaluacion.json` siguen intactos (D-003). En el plan estaba en el paso 7; se adelanta porque es el primer test con valor real y no depende de nada más.
+- Verificado: `ruff check`, `ruff format --check` y `mypy` limpios; `pytest`, 2 passed.
+
+### Paso 7.2 · Comandos del proyecto con make — 2026-11-24
+- El autor comparó las opciones para agrupar los comandos (Makefile, npm scripts en la raíz, poethepoet, sin orquestador) y eligió el **Makefile en la raíz** → D-037.
+- Se añaden solo los comandos que ya funcionan: `help` (por defecto), `install` (`uv sync --locked`), `test`, `lint`, `format` y `check` (lint + tests). El servidor, la web, la evaluación y Docker se añadirán en el paso en que existan.
+- README actualizado: make en los requisitos, sección de tests con los atajos y el `Makefile` en la estructura del repositorio. `.claude/CLAUDE.md`, actualizado.
+- Verificado: `make` lista los comandos, `make install` instala desde `uv.lock` y `make check` pasa limpio (2 tests).
+
+### Paso 7.3 · Horarios en el dominio — 2026-11-24
+- TDD: primero `api/tests/test_schedule.py` (25 casos; fallaban porque el módulo no existía) y después `api/app/domain/schedule.py`.
+- Modelo: `Season` (inicio y fin como mes-día, con temporadas que cruzan el año), `TimeSlot` (días ISO, apertura, cierre y temporada opcional) y `Schedule.is_open(weekday, at, reference_date) -> bool | None`.
+- Casos cubiertos: siempre abierto; horario desconocido → `None` (D-009); 1 = lunes, con un test que reproduce la deducción de q3 (D-010); franjas partidas; apertura inclusiva y cierre exclusivo (D-034); temporadas con límites inclusivos y que cruzan el año (D-011).
+- Invariantes del dominio: días fuera de 1–7, franjas que no cierran después de abrir y fechas imposibles de temporada lanzan `ValueError`. La capa de datos convertirá esos casos en avisos (D-034).
+- La temporada se evalúa con `reference_date`, que recibe quien llama. Así una consulta solo por día de la semana se puede resolver con la fecha actual de Madrid sin que el dominio dependa del reloj.
+- Verificado: `make check` limpio, 27 tests.
+- Trello: marcado el criterio de H3 «Días ISO (1 = lunes)».
+
+### Paso 7.4 · Precio — 2026-11-24
+- TDD: primero `api/tests/test_price.py` (modelo) y `api/tests/test_price_normalization.py` (regla); fallaban porque los módulos no existían.
+- Dominio `api/app/domain/price.py`: `Price(min_eur, max_eur)` con `Decimal` (importes de dinero exactos, sin errores de coma flotante). Constructores `unknown()`, `free()`, `fixed()` y `between()`. Invariantes: los dos límites o ninguno, sin negativos y mínimo ≤ máximo.
+- Regla `normalize_price` en `api/app/data/normalization.py` (D-014):
+  - números → importe fijo (0 → gratis);
+  - `"gratis"`/`"free"` → gratis;
+  - `"4,5"` → 4.5;
+  - rangos con guion o guion largo, con `€` opcional (`"25-35"`) → rango;
+  - `null` → desconocido, sin aviso (es un dato ausente, no un dato erróneo);
+  - cualquier otro valor (texto libre, negativos, rangos invertidos, booleanos) → desconocido **con aviso** `UNPARSEABLE_PRICE`.
+- Avisos en `api/app/data/quality.py` (`DataWarning`, `WarningKind`). Se llama `quality.py` y no `warnings.py` (como decía el plan) para no confundirlo con el módulo estándar `warnings` de Python. `WarningKind` solo tiene los tipos que ya se usan; el resto se añadirá en cada paso.
+- ruff detectó un guion largo (`–`) ambiguo en el código y en el test. Es intencionado (los rangos se escriben con cualquiera de los dos guiones), así que se escribe como `–` para que se vea explícito.
+- Verificado: `make check` limpio, 48 tests.
+- Trello: marcado el criterio de H1 «Precio normalizado».
+
+### Paso 7.5 · Textos: traducciones vacías e instrucciones inyectadas — 2026-11-24
+- TDD: primero `api/tests/test_localized_text.py` y `api/tests/test_text_normalization.py`; fallaban porque los módulos no existían.
+- Dominio `api/app/domain/localized_text.py`: `Language` (es/en) y `LocalizedText.resolve(language)`. Devuelve el texto y si es un fallback al español porque falta el inglés (D-015).
+- Regla `normalize_text` en `api/app/data/normalization.py`:
+  - Recorta los espacios sobrantes.
+  - Una traducción vacía o solo con espacios pasa a `None`, con el aviso `MISSING_TRANSLATION`.
+  - Las **frases** con instrucciones dirigidas al asistente se eliminan y se conserva el resto, con el aviso `INJECTED_INSTRUCTION` (D-006). La detección compara con el texto en minúsculas y sin tildes, con patrones en español e inglés: «ignora/olvida… instrucciones», «para el asistente / for the AI», «system prompt».
+- Tests de la inyección:
+  - la del catálogo (poi-013);
+  - una sintética con otra redacción y en inglés;
+  - dos textos legítimos que no deben confundirse con una inyección («Siga las instrucciones del guía», «Información para el visitante»).
+- Comprobado sobre el catálogo real: solo dan aviso poi-013 (inyección) y poi-004 (sin traducción). No hay falsos positivos.
+- Verificado: `make check` limpio, 59 tests.
+- Trello: el criterio de H9 «Test con una inyección sintética distinta, para comprobar que la defensa no depende de los patrones» **queda pendiente**. El test de este paso demuestra que los patrones no están hechos a medida de poi-013, pero que la defensa no depende de ellos se probará en `feat/assistant`, con una inyección que esquive los patrones y no altere la respuesta.
+
+### Paso 7.6 · Coordenadas invertidas — 2026-11-24
+- TDD: primero `api/tests/test_coordinates.py` y `api/tests/test_coordinate_normalization.py`; fallaban porque los módulos no existían.
+- Dominio `api/app/domain/coordinates.py`: `Coordinates(lat, lon)`, que rechaza valores fuera del globo.
+- Hallazgo que condiciona el diseño: las coordenadas invertidas de poi-011 (`-3.711, 40.421`) son **válidas por sí solas**, porque ambos valores están dentro de los rangos de latitud y longitud. El error solo se detecta comparando con el resto del catálogo, así que la regla trabaja sobre el catálogo completo, no punto a punto.
+- Regla `normalize_coordinates` en `api/app/data/normalization.py` (D-013):
+  - toma como referencia la **mediana** de latitudes y longitudes, que un único punto erróneo no puede desplazar;
+  - un punto a menos de 1° (unos 100 km) se conserva;
+  - si solo encaja al intercambiar latitud y longitud, se intercambia con el aviso `SWAPPED_COORDINATES`;
+  - si no encaja de ninguna forma (por ejemplo, (0, 0) o fuera del globo), se sirve sin coordenadas con el aviso `OUTLIER_COORDINATES`, y no saldrá en el mapa.
+- Incluye un test sobre el catálogo real: solo poi-011 recibe aviso y queda en (40.421, −3.711).
+- Verificado: `make format` y `make check` limpios, 69 tests.
+- Trello: el criterio de H1 sobre poi-011 se marcará en el paso 7, cuando la regla esté conectada a la carga del catálogo.
+
+### Paso 7.7 · Fichas duplicadas — 2026-11-24
+- TDD: primero `api/tests/test_duplicates.py` (y un test de `Schedule.is_known` en `test_schedule.py`); fallaban porque la regla no existía.
+- Dominio `api/app/domain/poi.py`: `Poi` y `Category` (miembros en inglés y valores tal como vienen en el JSON). Se adelanta del paso 7 porque, para elegir qué ficha conservar, hay que comparar fichas completas. `Schedule.is_known` indica si un punto tiene horario.
+- Regla `remove_duplicates` en `api/app/data/normalization.py` (D-007):
+  - Dos fichas son la misma si tienen el mismo nombre (sin mayúsculas ni tildes) y las mismas coordenadas redondeadas a 4 decimales (unos 11 m).
+  - Se conserva la **más completa**: la que tiene más datos informados entre traducciones, accesibilidad, horario, precio y etiquetas. Con un empate, gana la primera.
+  - La descartada genera el aviso `DUPLICATE_POI`, que indica qué ficha se ha conservado.
+  - Los puntos sin coordenadas nunca se fusionan.
+- Tests: el caso real (poi-003 frente a poi-004), el resultado no depende del orden, el desempate, mismo nombre en otro sitio, otro nombre en el mismo sitio y puntos sin coordenadas.
+- Verificado: `make format` y `make check` limpios, 76 tests.
+- Trello: el criterio de H1 sobre poi-004 se marcará en el paso 7, al conectar la regla a la carga.
+
+### Paso 7.8 · Refactor: una regla de normalización por módulo — 2026-11-24
+- `api/app/data/normalization.py` había llegado a 218 líneas con cuatro reglas independientes. El autor aprueba dividirlo y fija como norma los ficheros pequeños, legibles y fáciles de localizar → D-038 (añadida a `.claude/CLAUDE.md` y a la regla de backend).
+- Estructura nueva:
+  - `api/app/data/rules/price.py` (49 líneas), `text.py` (58), `coordinates.py` (56) y `duplicates.py` (61);
+  - `api/app/data/folding.py` (6), con `fold()`: minúsculas sin tildes, compartida por textos y duplicados.
+- El código se movió sin cambiar su comportamiento: los 76 tests siguen pasando y solo cambian sus imports. `make check` limpio.
+- Actualizados el README (estructura), la skill `documentar-defecto-datos` (dónde va cada regla) y `.claude/rules/backend.md`.
+
+### Paso 7.9 · Carga del catálogo — 2026-11-24
+- TDD: primero `api/tests/test_schedule_normalization.py` y `api/tests/test_catalog.py`; fallaban porque los módulos no existían.
+- Ficheros nuevos, uno por responsabilidad (D-038):
+  - `api/app/data/raw.py`: modelos pydantic que reflejan el JSON tal cual (D-033). `categoria` se valida contra el enum: una categoría desconocida detiene la carga (D-035).
+  - `api/app/data/rules/schedule.py`: horario crudo → dominio, incluidas las temporadas `"MM-DD/MM-DD"`. Una franja inválida (cruza la medianoche, días fuera de 1–7 o temporada ilegible) se descarta con el aviso `INVALID_SLOT` (D-034). Un horario sin franjas y sin `always_open` da el aviso `UNKNOWN_SCHEDULE`.
+  - `api/app/data/poi_mapping.py`: punto crudo → `Poi`, aplicando las reglas de un punto (textos, horario y precio).
+  - `api/app/data/catalog.py`: `load_catalog(path)` valida el JSON, comprueba que no haya ids repetidos, aplica las reglas de catálogo (coordenadas y duplicados) y devuelve `Catalog(pois, warnings)` con `get(id)`.
+- Criterio para emitir avisos: solo cuando **se corrige, se descarta o puede malinterpretarse** algo. Un `accesible: null` o un `precio: null` explícitos no generan aviso (son datos ausentes y se servirán como desconocidos); un horario vacío sí, porque parece «cerrado» y no lo es (D-009).
+- Tests sobre el catálogo real:
+  - se sirven 17 puntos y poi-004 no;
+  - poi-011 con las coordenadas corregidas;
+  - poi-013 sin la inyección y con `accesible: false`;
+  - los precios normalizados;
+  - la temporada de poi-014 y el horario desconocido de poi-018;
+  - la accesibilidad desconocida de poi-011;
+  - el conjunto exacto de avisos.
+- Tests sobre un catálogo temporal: una categoría desconocida y los ids repetidos detienen la carga.
+- Avisos del catálogo real: poi-011 coordenadas invertidas; poi-004 sin traducción (nombre y descripción), sin horario y duplicado de poi-003; poi-013 instrucción inyectada; poi-018 sin horario. Coinciden con la auditoría del paso 0.
+- Verificado: `make check` limpio, 91 tests.
+- Trello:
+  - H1: marcados los criterios del duplicado, de poi-011 y de los tests con ruff + mypy. Queda «avisos en el log al arrancar», que llega con el arranque de la API en `feat/api-routes`; H1 sigue en «En curso» hasta entonces.
+  - H9: marcado el criterio de la limpieza de la inyección al cargar.
