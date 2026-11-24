@@ -323,3 +323,11 @@ Con esto quedan cerradas todas las decisiones previas al código (D-001 a D-031)
 - Tests: el caso real (poi-003 frente a poi-004), el resultado no depende del orden, el desempate, mismo nombre en otro sitio, otro nombre en el mismo sitio y puntos sin coordenadas.
 - Verificado: `make format` y `make check` limpios, 76 tests.
 - Trello: el criterio de H1 sobre poi-004 se marcará en el paso 7, al conectar la regla a la carga.
+
+### Paso 7.8 · Refactor: una regla de normalización por módulo — 2026-11-24
+- `api/app/data/normalization.py` había llegado a 218 líneas con cuatro reglas independientes. El autor aprueba dividirlo y fija como norma los ficheros pequeños, legibles y fáciles de localizar → D-038 (añadida a `.claude/CLAUDE.md` y a la regla de backend).
+- Estructura nueva:
+  - `api/app/data/rules/price.py` (49 líneas), `text.py` (58), `coordinates.py` (56) y `duplicates.py` (61);
+  - `api/app/data/folding.py` (6), con `fold()`: minúsculas sin tildes, compartida por textos y duplicados.
+- El código se movió sin cambiar su comportamiento: los 76 tests siguen pasando y solo cambian sus imports. `make check` limpio.
+- Actualizados el README (estructura), la skill `documentar-defecto-datos` (dónde va cada regla) y `.claude/rules/backend.md`.

@@ -2,8 +2,8 @@ from decimal import Decimal
 
 import pytest
 
-from app.data.normalization import RawPrice, normalize_price
 from app.data.quality import WarningKind
+from app.data.rules.price import RawPrice, normalize_price
 from app.domain.price import Price
 
 

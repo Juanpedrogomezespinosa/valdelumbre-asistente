@@ -20,6 +20,7 @@ Enunciado: `../ENUNCIADO.md` (fuera del repo). Decisiones ya tomadas: `docs/DECI
   - ❌ `# check if the poi is accessible` encima de `if poi.accessible:`
   - ✅ `# ISO weekdays (1 = Monday): inferred from evaluacion.json q3`
 - **Antes de entregar cualquier cambio**, revisa y elimina: comentarios que repiten el código, código muerto, abstracciones especulativas ("por si acaso"), nombres genéricos (`data`, `info`, `helper`, `utils`) y funciones que hacen más de una cosa.
+- **Ficheros pequeños, legibles y fáciles de localizar:** un módulo por responsabilidad (por ejemplo, una regla de normalización por fichero), con un nombre que diga qué contiene. Si un fichero empieza a mezclar responsabilidades, se divide.
 - **Calidad automática:** backend con `ruff` (lint + formato) y `mypy --strict`; frontend con `angular-eslint` + Prettier. Deben pasar en limpio.
 - **TDD en el núcleo:** test primero en la normalización de datos, los horarios, la interpretación de preguntas y los filtros. Sin objetivo numérico de cobertura.
 - **Errores de la API** en el idioma pedido (es/en): los ve el usuario final.

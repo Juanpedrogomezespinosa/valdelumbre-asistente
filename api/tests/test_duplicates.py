@@ -1,8 +1,8 @@
 from dataclasses import replace
 from datetime import time
 
-from app.data.normalization import remove_duplicates
 from app.data.quality import WarningKind
+from app.data.rules.duplicates import remove_duplicates
 from app.domain.coordinates import Coordinates
 from app.domain.localized_text import LocalizedText
 from app.domain.poi import Category, Poi

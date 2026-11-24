@@ -1,7 +1,7 @@
 import pytest
 
-from app.data.normalization import normalize_text
 from app.data.quality import DataWarning, WarningKind
+from app.data.rules.text import normalize_text
 from app.domain.localized_text import LocalizedText
 
 TAPESTRY_HOUSE_ES = (

@@ -7,6 +7,7 @@ paths:
 # Reglas · Backend (FastAPI)
 
 - Python 3.12, dependencias con `uv` (`uv add`, nunca `pip install`). Tipado completo; modelos con Pydantic v2.
+- Ficheros pequeños, un módulo por responsabilidad: cada regla de normalización vive en `app/data/rules/<regla>.py` y su test en `tests/`.
 - Capas y dependencias en un solo sentido: `routes → assistant → domain ← data`. `domain` no importa FastAPI.
 - La hora actual **se inyecta** (un reloj) en todo lo que dependa de ella; nada de `datetime.now()` disperso.
 - El generador de respuestas se usa siempre a través de la interfaz `AnswerGenerator`. Ningún test puede requerir red ni clave.

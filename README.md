@@ -209,7 +209,8 @@ curl -X POST "http://localhost:8000/preguntar" \
 valdelumbre-asistente/
 ├── api/                    Backend (FastAPI)
 │   ├── app/
-│   │   ├── data/           Carga y normalización del catálogo + avisos de calidad
+│   │   ├── data/           Carga del catálogo y avisos de calidad
+│   │   │   └── rules/      Una regla de normalización por módulo (precio, textos, coordenadas, duplicados)
 │   │   ├── domain/         Modelos, horarios (abierto_en), precio
 │   │   ├── assistant/      Interpretación de la pregunta, recuperación, generadores
 │   │   └── routes/         Endpoints: /pois, /pois/{id}, /preguntar

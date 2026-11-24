@@ -56,6 +56,7 @@ Estados: ✅ aprobada · 🔄 revisada (enlaza a la que la sustituye) · ❌ des
 | [D-035](#d-035--una-categoría-desconocida-detiene-la-carga) | Una categoría desconocida detiene la carga | ✅ |
 | [D-036](#d-036--commits-pequeños-con-push-al-terminar-cada-paso-que-funciona) | Commits pequeños con push al terminar cada paso que funciona | ✅ |
 | [D-037](#d-037--makefile-en-la-raíz-como-punto-de-entrada-de-los-comandos) | Makefile en la raíz como punto de entrada de los comandos | ✅ |
+| [D-038](#d-038--ficheros-pequeños-un-módulo-por-responsabilidad) | Ficheros pequeños: un módulo por responsabilidad | ✅ |
 
 ---
 
@@ -395,3 +396,12 @@ Estados: ✅ aprobada · 🔄 revisada (enlaza a la que la sustituye) · ❌ des
   - just: sintaxis más limpia, pero hay que instalarlo.
   - Sin orquestador: comandos largos de copiar.
 - **Consecuencias:** en Windows, make no viene instalado; el README documenta también los comandos directos y Docker sigue siendo la vía de un solo comando. Dentro de `web/` se usarán los npm scripts que genera Angular.
+
+## D-038 · Ficheros pequeños: un módulo por responsabilidad
+**Estado:** ✅ aprobada por el autor · 2026-11-24
+
+- **Contexto:** `api/app/data/normalization.py` llegó a 218 líneas con cuatro reglas independientes (precio, textos, coordenadas y duplicados), y las constantes de cada regla quedaban lejos de la función que las usa.
+- **Decisión:** como norma del proyecto, ficheros pequeños, legibles y fáciles de localizar: un módulo por responsabilidad, con un nombre que diga qué contiene. Las reglas de normalización pasan a `api/app/data/rules/` (`price.py`, `text.py`, `coordinates.py` y `duplicates.py`). La utilidad que usan dos de ellas, pasar a minúsculas y quitar tildes, va a `api/app/data/folding.py`.
+- **Por qué:** cada regla se lee entera de un vistazo, con sus constantes al lado, y se encuentra por su nombre. Los cambios en una regla no tocan las demás, y los diffs son más fáciles de revisar.
+- **Alternativas descartadas:** mantener un único fichero (crece con cada regla y mezcla responsabilidades).
+- **Consecuencias:** más ficheros, pero todos de entre 6 y 61 líneas. La refactorización no cambia el comportamiento: los 76 tests siguen pasando sin más cambios que los imports.

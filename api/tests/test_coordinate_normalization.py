@@ -1,8 +1,8 @@
 import json
 from pathlib import Path
 
-from app.data.normalization import normalize_coordinates
 from app.data.quality import WarningKind
+from app.data.rules.coordinates import normalize_coordinates
 from app.domain.coordinates import Coordinates
 
 POIS_PATH = Path(__file__).resolve().parents[2] / "datos" / "pois.json"
