@@ -311,3 +311,15 @@ Con esto quedan cerradas todas las decisiones previas al código (D-001 a D-031)
 - Incluye un test sobre el catálogo real: solo poi-011 recibe aviso y queda en (40.421, −3.711).
 - Verificado: `make format` y `make check` limpios, 69 tests.
 - Trello: el criterio de H1 sobre poi-011 se marcará en el paso 7, cuando la regla esté conectada a la carga del catálogo.
+
+### Paso 7.7 · Fichas duplicadas — 2026-11-24
+- TDD: primero `api/tests/test_duplicates.py` (y un test de `Schedule.is_known` en `test_schedule.py`); fallaban porque la regla no existía.
+- Dominio `api/app/domain/poi.py`: `Poi` y `Category` (miembros en inglés y valores tal como vienen en el JSON). Se adelanta del paso 7 porque, para elegir qué ficha conservar, hay que comparar fichas completas. `Schedule.is_known` indica si un punto tiene horario.
+- Regla `remove_duplicates` en `api/app/data/normalization.py` (D-007):
+  - Dos fichas son la misma si tienen el mismo nombre (sin mayúsculas ni tildes) y las mismas coordenadas redondeadas a 4 decimales (unos 11 m).
+  - Se conserva la **más completa**: la que tiene más datos informados entre traducciones, accesibilidad, horario, precio y etiquetas. Con un empate, gana la primera.
+  - La descartada genera el aviso `DUPLICATE_POI`, que indica qué ficha se ha conservado.
+  - Los puntos sin coordenadas nunca se fusionan.
+- Tests: el caso real (poi-003 frente a poi-004), el resultado no depende del orden, el desempate, mismo nombre en otro sitio, otro nombre en el mismo sitio y puntos sin coordenadas.
+- Verificado: `make format` y `make check` limpios, 76 tests.
+- Trello: el criterio de H1 sobre poi-004 se marcará en el paso 7, al conectar la regla a la carga.

@@ -8,6 +8,7 @@ class WarningKind(StrEnum):
     MISSING_TRANSLATION = "missing_translation"
     SWAPPED_COORDINATES = "swapped_coordinates"
     OUTLIER_COORDINATES = "outlier_coordinates"
+    DUPLICATE_POI = "duplicate_poi"
 
 
 @dataclass(frozen=True)

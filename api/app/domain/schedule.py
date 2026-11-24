@@ -48,6 +48,10 @@ class Schedule:
     always_open: bool
     slots: tuple[TimeSlot, ...]
 
+    @property
+    def is_known(self) -> bool:
+        return self.always_open or bool(self.slots)
+
     def is_open(self, weekday: int, at: time, reference_date: date) -> bool | None:
         """Return None when the opening hours are unknown: unknown is not closed (D-009).
 
@@ -56,6 +60,6 @@ class Schedule:
         """
         if self.always_open:
             return True
-        if not self.slots:
+        if not self.is_known:
             return None
         return any(slot.covers(weekday, at, reference_date) for slot in self.slots)

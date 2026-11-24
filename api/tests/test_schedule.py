@@ -117,3 +117,9 @@ def test_slot_weekdays_must_be_iso(weekday: int) -> None:
 def test_season_must_use_real_calendar_days() -> None:
     with pytest.raises(ValueError):
         Season(start=(2, 30), end=(3, 1))
+
+
+def test_schedule_is_known_when_always_open_or_with_slots() -> None:
+    assert Schedule(always_open=True, slots=()).is_known
+    assert schedule(slot(EVERY_DAY, "10:00", "14:00")).is_known
+    assert not schedule().is_known
