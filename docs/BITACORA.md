@@ -259,3 +259,12 @@ Con esto quedan cerradas todas las decisiones previas al código (D-001 a D-031)
 - Se añaden solo los comandos que ya funcionan: `help` (por defecto), `install` (`uv sync --locked`), `test`, `lint`, `format` y `check` (lint + tests). El servidor, la web, la evaluación y Docker se añadirán en el paso en que existan.
 - README actualizado: make en los requisitos, sección de tests con los atajos y el `Makefile` en la estructura del repositorio. `.claude/CLAUDE.md`, actualizado.
 - Verificado: `make` lista los comandos, `make install` instala desde `uv.lock` y `make check` pasa limpio (2 tests).
+
+### Paso 7.3 · Horarios en el dominio — 2026-11-24
+- TDD: primero `api/tests/test_schedule.py` (25 casos; fallaban porque el módulo no existía) y después `api/app/domain/schedule.py`.
+- Modelo: `Season` (inicio y fin como mes-día, con temporadas que cruzan el año), `TimeSlot` (días ISO, apertura, cierre y temporada opcional) y `Schedule.is_open(weekday, at, reference_date) -> bool | None`.
+- Casos cubiertos: siempre abierto; horario desconocido → `None` (D-009); 1 = lunes, con un test que reproduce la deducción de q3 (D-010); franjas partidas; apertura inclusiva y cierre exclusivo (D-034); temporadas con límites inclusivos y que cruzan el año (D-011).
+- Invariantes del dominio: días fuera de 1–7, franjas que no cierran después de abrir y fechas imposibles de temporada lanzan `ValueError`. La capa de datos convertirá esos casos en avisos (D-034).
+- La temporada se evalúa con `reference_date`, que recibe quien llama. Así una consulta solo por día de la semana se puede resolver con la fecha actual de Madrid sin que el dominio dependa del reloj.
+- Verificado: `make check` limpio, 27 tests.
+- Trello: marcado el criterio de H3 «Días ISO (1 = lunes)».
