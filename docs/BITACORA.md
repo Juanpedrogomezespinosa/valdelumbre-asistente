@@ -371,3 +371,18 @@ Con esto quedan cerradas todas las decisiones previas al código (D-001 a D-031)
 - Starlette 1.10 marca como deprecado usar `httpx` con su `TestClient` y recomienda `httpx2`. Se comprobó en el código de Starlette que la recomendación es auténtica. **Decisión del autor:** mantener `httpx`, que funciona, y no añadir un paquete nuevo con la entrega cerca. El aviso de deprecación en los tests es conocido y no afecta al funcionamiento.
 - Verificado: `make check` limpio, 93 tests.
 - Trello: H1 completa (último criterio: avisos en el log al arrancar) → «Revisión».
+
+### Paso 8.2 · `GET /pois/{id}` — 2026-11-24
+- TDD: primero `api/tests/test_poi_detail_endpoint.py`, `test_price_text.py` y `test_poi_presenter.py`, más `tests/conftest.py` con un cliente de tests cuyo reloj está fijado (lunes 23-11-2026 a las 12:00 en Madrid).
+- Ficheros nuevos, uno por responsabilidad:
+  - `app/clock.py` y `village_time_zone()` en `app/settings.py` (`ZONA_HORARIA`, por defecto `Europe/Madrid`): la hora «ahora» del pueblo, inyectable (D-011).
+  - `app/routes/dependencies.py`: dependencias de FastAPI para el catálogo y el reloj.
+  - `app/routes/schemas.py`: formato JSON de respuesta, con los nombres de campo en español porque son el contrato de la API (D-021).
+  - `app/routes/presenters/poi.py` y `price_text.py`: de `Poi` a la respuesta en el idioma pedido; el precio se escribe como en cada idioma («4,50 €» / «€4.50», «Gratis» / «Free», «Sin datos» / «No data»).
+  - `app/routes/messages.py`: mensajes de error en es/en.
+  - `app/routes/pois.py`: el endpoint.
+- Respuesta: textos en el idioma pedido, cada uno con su idioma real (concreción de D-015); coordenadas o `null`; accesibilidad sí/no/`null`; `abierto_ahora` sí/no/`null`; horario con franjas y temporadas; precio como datos y como texto; etiquetas.
+- 404 con mensaje en el idioma pedido, para un id inexistente y para el duplicado descartado poi-004 (D-007).
+- Comprobado también contra el servidor de desarrollo del autor (`make api`, con recarga automática): `GET /pois/poi-011?idioma=en` responde con las coordenadas corregidas y la accesibilidad desconocida.
+- Verificado: `make check` limpio, 110 tests (el único aviso es la deprecación conocida de `httpx`).
+- Trello: H6, criterios de API marcados y tarjeta en «En curso» (le falta la ficha en la pantalla). H5, criterio del fallback reescrito con la concreción de D-015 y marcado.

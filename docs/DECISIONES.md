@@ -204,6 +204,7 @@ Estados: ✅ aprobada · 🔄 revisada (enlaza a la que la sustituye) · ❌ des
 - **Contexto:** a algunas fichas les falta la traducción al inglés o esta no coincide con el español.
 - **Decisión:** `?idioma=en` devuelve el texto en inglés si existe y, si no, el español junto con un indicador `traducido: false`. La pantalla lo indica con un atributo `lang="es"` en ese texto, para que el lector de pantalla lo pronuncie bien.
 - **Por qué:** un texto en español es mejor que uno vacío, y el atributo `lang` es un requisito de accesibilidad.
+- **Concreción (2026-11-24):** en lugar de un único `traducido: false`, cada texto de la respuesta llega como `{"texto": "...", "idioma": "es"|"en"}`. El nombre puede estar traducido y la descripción no, y así la pantalla pone el atributo `lang` exacto en cada texto.
 
 ## D-016 · Criterio de acierto de la evaluación
 **Estado:** ✅ aprobada · 2026-11-24

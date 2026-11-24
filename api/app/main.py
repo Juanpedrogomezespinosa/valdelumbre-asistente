@@ -5,6 +5,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 
 from app.data.catalog import Catalog, load_catalog
+from app.routes import pois
 from app.settings import catalog_path
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s:     %(name)s - %(message)s")
@@ -30,3 +31,4 @@ def _log_data_warnings(catalog: Catalog) -> None:
 
 
 app = FastAPI(title="Valdelumbre · Asistente turístico", lifespan=lifespan)
+app.include_router(pois.router)
