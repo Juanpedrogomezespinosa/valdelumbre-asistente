@@ -283,3 +283,18 @@ Con esto quedan cerradas todas las decisiones previas al código (D-001 a D-031)
 - ruff detectó un guion largo (`–`) ambiguo en el código y en el test. Es intencionado (los rangos se escriben con cualquiera de los dos guiones), así que se escribe como `–` para que se vea explícito.
 - Verificado: `make check` limpio, 48 tests.
 - Trello: marcado el criterio de H1 «Precio normalizado».
+
+### Paso 7.5 · Textos: traducciones vacías e instrucciones inyectadas — 2026-11-24
+- TDD: primero `api/tests/test_localized_text.py` y `api/tests/test_text_normalization.py`; fallaban porque los módulos no existían.
+- Dominio `api/app/domain/localized_text.py`: `Language` (es/en) y `LocalizedText.resolve(language)`. Devuelve el texto y si es un fallback al español porque falta el inglés (D-015).
+- Regla `normalize_text` en `api/app/data/normalization.py`:
+  - Recorta los espacios sobrantes.
+  - Una traducción vacía o solo con espacios pasa a `None`, con el aviso `MISSING_TRANSLATION`.
+  - Las **frases** con instrucciones dirigidas al asistente se eliminan y se conserva el resto, con el aviso `INJECTED_INSTRUCTION` (D-006). La detección compara con el texto en minúsculas y sin tildes, con patrones en español e inglés: «ignora/olvida… instrucciones», «para el asistente / for the AI», «system prompt».
+- Tests de la inyección:
+  - la del catálogo (poi-013);
+  - una sintética con otra redacción y en inglés;
+  - dos textos legítimos que no deben confundirse con una inyección («Siga las instrucciones del guía», «Información para el visitante»).
+- Comprobado sobre el catálogo real: solo dan aviso poi-013 (inyección) y poi-004 (sin traducción). No hay falsos positivos.
+- Verificado: `make check` limpio, 59 tests.
+- Trello: el criterio de H9 «Test con una inyección sintética distinta, para comprobar que la defensa no depende de los patrones» **queda pendiente**. El test de este paso demuestra que los patrones no están hechos a medida de poi-013, pero que la defensa no depende de ellos se probará en `feat/assistant`, con una inyección que esquive los patrones y no altere la respuesta.

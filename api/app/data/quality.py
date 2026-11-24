@@ -4,6 +4,8 @@ from enum import StrEnum
 
 class WarningKind(StrEnum):
     UNPARSEABLE_PRICE = "unparseable_price"
+    INJECTED_INSTRUCTION = "injected_instruction"
+    MISSING_TRANSLATION = "missing_translation"
 
 
 @dataclass(frozen=True)
