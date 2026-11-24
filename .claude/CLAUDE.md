@@ -27,7 +27,8 @@ Enunciado: `../ENUNCIADO.md` (fuera del repo). Decisiones ya tomadas: `docs/DECI
 ## Git (D-025)
 - Una rama por bloque (`feat/api-data`, `feat/assistant`, `feat/web`…), que se fusiona en `main` cuando sus tests y linters pasan.
 - Conventional Commits: prefijo estándar y descripción en español. Ej.: `feat(api): filtro abierto_en con días ISO`.
-- **Git lo gestiona el autor**: commits, ramas, merges y push. La IA no ejecuta comandos de Git que escriban; solo puede leer (`git status`, `git diff`, `git log`) y, al terminar un bloque, sugerir el mensaje de commit.
+- **Pasos pequeños:** cuando un paso funciona (por ejemplo, un endpoint, con tests y linters en verde), la IA **se detiene** hasta que el autor lo revisa, hace commit y push y autoriza el siguiente.
+- **Git lo gestiona el autor**: commits, ramas, merges y push. La IA no ejecuta comandos de Git que escriban; solo puede leer (`git status`, `git diff`, `git log`).
 
 ## Invariantes del producto (no romper)
 - `datos/*.json` **no se modifica nunca**. Toda corrección va en `api/app/data/` como regla + test.

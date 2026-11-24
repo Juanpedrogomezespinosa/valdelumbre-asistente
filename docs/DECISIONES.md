@@ -51,6 +51,10 @@ Estados: ✅ aprobada · 🔄 revisada (enlaza a la que la sustituye) · ❌ des
 | [D-030](#d-030--aspecto-sobrio-y-cálido-con-modo-oscuro-según-el-sistema) | Aspecto sobrio y cálido, con modo oscuro según el sistema | ✅ |
 | [D-031](#d-031--fichas-resumidas-con-enlace-al-detalle) | Fichas resumidas con enlace al detalle | ✅ |
 | [D-032](#d-032--sin-respuesta-en-el-catálogo-no-lo-sé-sin-sugerencias-ni-citas) | Sin respuesta en el catálogo: «no lo sé», sin sugerencias ni citas | ✅ |
+| [D-033](#d-033--modelos-crudos-con-pydantic-y-dominio-con-dataclasses-inmutables) | Modelos crudos con pydantic y dominio con dataclasses inmutables | ✅ |
+| [D-034](#d-034--reglas-de-horario-cierre-exclusivo-y-sin-franjas-que-crucen-la-medianoche) | Reglas de horario: cierre exclusivo y sin franjas que crucen la medianoche | ✅ |
+| [D-035](#d-035--una-categoría-desconocida-detiene-la-carga) | Una categoría desconocida detiene la carga | ✅ |
+| [D-036](#d-036--commits-pequeños-con-push-al-terminar-cada-paso-que-funciona) | Commits pequeños con push al terminar cada paso que funciona | ✅ |
 
 ---
 
@@ -122,6 +126,7 @@ Estados: ✅ aprobada · 🔄 revisada (enlaza a la que la sustituye) · ❌ des
 - **Por qué:** ninguna capa basta sola. La detección por patrones es frágil ante variantes, pero la capa 2 cubre lo que se le escape.
 - **Alternativas descartadas:** borrar el punto entero (perderíamos un museo legítimo); dejar el texto tal cual (se mostraría al turista).
 - **Consecuencias:** la pregunta q5 ("¿cuál es el único sitio accesible?") se responde corrigiendo la premisa y sin citar poi-013.
+- **Concreción (2026-11-24):** se eliminan las **frases** completas que coinciden con patrones en español e inglés (instrucciones dirigidas al asistente); el resto de la descripción se conserva.
 
 ## D-007 · El duplicado poi-004 se excluye
 **Estado:** ✅ aprobada · 2026-11-24
@@ -131,6 +136,7 @@ Estados: ✅ aprobada · 🔄 revisada (enlaza a la que la sustituye) · ❌ des
 - **Por qué:** poi-003 contiene toda la información y más; fusionarlos no añade nada. Mostrar los dos confundiría al turista y metería un `null` en los filtros.
 - **Alternativas descartadas:** redirigir a poi-003 (más complejo, sin consumidores reales de ese id); conservarlo marcado (ruido en la interfaz).
 - **Consecuencias:** la detección es genérica (mismas coordenadas y mismo nombre normalizado), no un `if id == "poi-004"`, y conserva la ficha más completa.
+- **Concreción (2026-11-24):** el nombre se compara sin mayúsculas ni tildes. «Ficha más completa» es la que tiene más campos informados (traducciones, accesibilidad, horario, precio y etiquetas).
 
 ## D-008 · Accesibilidad en tres estados
 **Estado:** ✅ aprobada · 2026-11-24
@@ -180,6 +186,7 @@ Estados: ✅ aprobada · 🔄 revisada (enlaza a la que la sustituye) · ❌ des
 - **Decisión:** al cargar, si un punto queda fuera del área del resto del catálogo y al intercambiar latitud y longitud queda dentro, se intercambian y se registra un aviso. Si ni así encaja, el punto se conserva pero sin coordenadas (no sale en el mapa).
 - **Por qué:** una regla genérica sirve para futuros datos; un parche por id no.
 - **Consecuencias:** test específico con poi-011 y otro con unas coordenadas absurdas.
+- **Concreción (2026-11-24):** «el área del catálogo» se calcula con la **mediana** de latitudes y longitudes, que no se deja arrastrar por el punto erróneo. Un punto está fuera si se aleja más de 1° (unos 100 km, muy por encima de la escala de un pueblo).
 
 ## D-014 · Precio normalizado
 **Estado:** ✅ aprobada · 2026-11-24
@@ -344,3 +351,33 @@ Estados: ✅ aprobada · 🔄 revisada (enlaza a la que la sustituye) · ❌ des
   - Sugerir la Oficina de Turismo **citándola** (`ids: [poi-010]`): coherente y útil, pero rompe el criterio estricto, que habría que redefinir como «no cita puntos *como respuesta*», algo más difícil de comprobar. Queda para «qué haría con más tiempo».
   - Sugerirla **sin citarla** (propuesta inicial de la IA): el texto nombra un punto que no aparece en los ids.
 - **Consecuencias:** la respuesta a una pregunta fuera de catálogo es menos útil para el turista; se compensa con la Oficina de Turismo visible en el listado.
+
+## D-033 · Modelos crudos con pydantic y dominio con dataclasses inmutables
+**Estado:** ✅ aprobada por el autor · 2026-11-24
+
+- **Contexto:** el JSON trae tipos mezclados (precio como número o texto, `null`, cadenas vacías) y nombres en español, y el código va en inglés (D-021).
+- **Decisión:** `api/app/data/raw.py` refleja el JSON tal cual con pydantic, admitiendo esos tipos sucios. La normalización lo convierte en un dominio (`api/app/domain/`) de **dataclasses inmutables** con tipos limpios. Los avisos de calidad se devuelven junto al catálogo (`Catalog.warnings`): registrarlos en el log es cosa de la aplicación, no de la capa de datos.
+- **Por qué:** la suciedad se valida en un único punto de entrada. El dominio queda puro (sin I/O ni framework), es fácil de tipar con mypy strict y no arrastra los nombres del JSON.
+- **Alternativas descartadas:** un único modelo pydantic con validadores (mezcla parseo, limpieza y dominio); dominio también en pydantic (dependencia innecesaria en el núcleo).
+- **Consecuencias:** hay un mapeo explícito de lo crudo al dominio, que es justo donde viven y se prueban las reglas.
+
+## D-034 · Reglas de horario: cierre exclusivo y sin franjas que crucen la medianoche
+**Estado:** ✅ aprobada por el autor · 2026-11-24
+
+- **Decisión:** la hora de cierre es **exclusiva**: una franja de 10:00 a 14:00 está abierta a las 13:59 y cerrada a las 14:00. Una franja cuyo cierre no es posterior a su apertura (cruzaría la medianoche) se **descarta con un aviso**.
+- **Por qué:** el cierre exclusivo es lo que espera un turista y evita solapes entre franjas consecutivas. No hay ninguna franja que cruce la medianoche en los datos; soportarlas complicaría la lógica de días sin beneficio (YAGNI), y descartarlas con aviso hace visible el caso si aparece.
+- **Consecuencias:** si un día llegan horarios nocturnos, habrá que revisar esta decisión.
+
+## D-035 · Una categoría desconocida detiene la carga
+**Estado:** ✅ aprobada por el autor · 2026-11-24
+
+- **Decisión:** las categorías son un enum cerrado (`monumento`, `museo`, `naturaleza`, `ruta`, `gastronomia`, `servicio`, `espacio_publico`). Si llega una que no existe, la carga falla con un error claro.
+- **Por qué:** el catálogo es pequeño y está curado. Es mejor fallar al arrancar que servir un punto mal clasificado que nunca saldría en los filtros.
+- **Alternativas descartadas:** descartar el punto con un aviso (perdería información en silencio); aceptar cualquier texto (los filtros de categoría dejarían de ser fiables).
+
+## D-036 · Commits pequeños con push al terminar cada paso que funciona
+**Estado:** ✅ aprobada por el autor · 2026-11-24
+
+- **Decisión:** el trabajo avanza en pasos pequeños. Cuando uno funciona (por ejemplo, un endpoint, con tests y linters en verde), la IA se detiene hasta que el autor lo revisa, hace commit y push y autoriza el siguiente.
+- **Por qué:** cada commit es una unidad que funciona y se puede revisar. El historial cuenta el desarrollo paso a paso, y el autor revisa el código de la IA en porciones pequeñas.
+- **Consecuencias:** complementa D-025; dentro de cada rama hay varios commits pequeños.

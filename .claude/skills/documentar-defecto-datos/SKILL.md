@@ -22,4 +22,4 @@ Nunca se edita `datos/pois.json`. El defecto se trata así:
    - **Test:** `api/tests/<fichero>::<test>`
    ```
 
-6. Añade una línea a `docs/BITACORA.md`. Commit sugerido: `fix(datos): <qué se corrige>`.
+6. Añade una línea a `docs/BITACORA.md`. Tipo de commit para este caso: `fix(datos): <qué se corrige>`.
