@@ -268,3 +268,18 @@ Con esto quedan cerradas todas las decisiones previas al código (D-001 a D-031)
 - La temporada se evalúa con `reference_date`, que recibe quien llama. Así una consulta solo por día de la semana se puede resolver con la fecha actual de Madrid sin que el dominio dependa del reloj.
 - Verificado: `make check` limpio, 27 tests.
 - Trello: marcado el criterio de H3 «Días ISO (1 = lunes)».
+
+### Paso 7.4 · Precio — 2026-11-24
+- TDD: primero `api/tests/test_price.py` (modelo) y `api/tests/test_price_normalization.py` (regla); fallaban porque los módulos no existían.
+- Dominio `api/app/domain/price.py`: `Price(min_eur, max_eur)` con `Decimal` (importes de dinero exactos, sin errores de coma flotante). Constructores `unknown()`, `free()`, `fixed()` y `between()`. Invariantes: los dos límites o ninguno, sin negativos y mínimo ≤ máximo.
+- Regla `normalize_price` en `api/app/data/normalization.py` (D-014):
+  - números → importe fijo (0 → gratis);
+  - `"gratis"`/`"free"` → gratis;
+  - `"4,5"` → 4.5;
+  - rangos con guion o guion largo, con `€` opcional (`"25-35"`) → rango;
+  - `null` → desconocido, sin aviso (es un dato ausente, no un dato erróneo);
+  - cualquier otro valor (texto libre, negativos, rangos invertidos, booleanos) → desconocido **con aviso** `UNPARSEABLE_PRICE`.
+- Avisos en `api/app/data/quality.py` (`DataWarning`, `WarningKind`). Se llama `quality.py` y no `warnings.py` (como decía el plan) para no confundirlo con el módulo estándar `warnings` de Python. `WarningKind` solo tiene los tipos que ya se usan; el resto se añadirá en cada paso.
+- ruff detectó un guion largo (`–`) ambiguo en el código y en el test. Es intencionado (los rangos se escriben con cualquiera de los dos guiones), así que se escribe como `–` para que se vea explícito.
+- Verificado: `make check` limpio, 48 tests.
+- Trello: marcado el criterio de H1 «Precio normalizado».
