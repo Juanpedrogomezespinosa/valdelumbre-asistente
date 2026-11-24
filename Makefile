@@ -1,7 +1,8 @@
 .DEFAULT_GOAL := help
 API_DIR := api
+API_PORT ?= 8000
 
-.PHONY: help install test lint format check
+.PHONY: help install api test lint format check
 
 help: ## Muestra los comandos disponibles
 	@grep -E '^[a-zA-Z_-]+:.*?## ' $(MAKEFILE_LIST) \
@@ -9,6 +10,9 @@ help: ## Muestra los comandos disponibles
 
 install: ## Instala las dependencias exactas del backend (uv.lock)
 	cd $(API_DIR) && uv sync --locked
+
+api: ## Levanta la API con recarga automática en http://localhost:$(API_PORT)
+	cd $(API_DIR) && uv run uvicorn app.main:app --reload --port $(API_PORT)
 
 test: ## Ejecuta los tests del backend
 	cd $(API_DIR) && uv run pytest

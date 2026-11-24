@@ -354,3 +354,20 @@ Con esto quedan cerradas todas las decisiones previas al código (D-001 a D-031)
 - Trello:
   - H1: marcados los criterios del duplicado, de poi-011 y de los tests con ruff + mypy. Queda «avisos en el log al arrancar», que llega con el arranque de la API en `feat/api-routes`; H1 sigue en «En curso» hasta entonces.
   - H9: marcado el criterio de la limpieza de la inyección al cargar.
+
+---
+
+## Paso 8 · `feat/api-routes`: arranque de la API — 2026-11-24
+- `feat/api-data` fusionada en `main` por el autor (`--no-ff`); se abre `feat/api-routes`.
+- Plan del bloque aprobado por el autor en versión corta (lo esencial ya estaba en D-007, D-008, D-011, D-012, D-015, D-018 y D-021). Pasos: arranque, `GET /pois/{id}` y `GET /pois` con filtros. Detalles acordados: filtrado en el dominio, reutilizable por `/preguntar`; respuesta con los textos ya en el idioma pedido; reloj inyectado; catálogo cargado una vez en el `lifespan`.
+
+### Paso 8.1 · Arranque
+- Dependencias: `fastapi` y `uvicorn[standard]`; para desarrollo, `httpx` (lo necesita el `TestClient`).
+- TDD: primero `api/tests/test_app_startup.py` y después:
+  - `api/app/settings.py`: ruta del catálogo, configurable con `RUTA_POIS` (necesario para Docker);
+  - `api/app/main.py`: la app FastAPI con un `lifespan` que carga el catálogo **una vez** al arrancar, lo guarda en `app.state` y escribe en el log un resumen y cada aviso de calidad (D-033: la capa de datos devuelve los avisos y la aplicación decide registrarlos).
+- `make api` (puerto configurable con `API_PORT`). README, sección 4, actualizada: el arranque de la API ya no lleva ⏳.
+- Comprobado levantando el servidor de verdad: el log muestra «Catalog loaded: 17 POIs, 7 data warnings» y los 7 avisos, y `/docs` responde 200.
+- Starlette 1.10 marca como deprecado usar `httpx` con su `TestClient` y recomienda `httpx2`. Se comprobó en el código de Starlette que la recomendación es auténtica. **Decisión del autor:** mantener `httpx`, que funciona, y no añadir un paquete nuevo con la entrega cerca. El aviso de deprecación en los tests es conocido y no afecta al funcionamiento.
+- Verificado: `make check` limpio, 93 tests.
+- Trello: H1 completa (último criterio: avisos en el log al arrancar) → «Revisión».

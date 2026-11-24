@@ -100,16 +100,18 @@ Qué levanta `docker-compose.yml`:
 
 ## 4. Arranque sin Docker (desarrollo)
 
-⏳ Necesitas dos terminales.
+Necesitas dos terminales.
 
 **Terminal 1 · API**
 ```bash
-cd api
-uv sync                                      # crea .venv e instala dependencias (incluida Python 3.12 si falta)
-uv run uvicorn app.main:app --reload --port 8000
+make install                                 # crea api/.venv e instala las dependencias exactas (incluida Python 3.12 si falta)
+make api                                     # http://localhost:8000 · documentación en http://localhost:8000/docs
 ```
+Sin `make`: `cd api && uv sync --locked && uv run uvicorn app.main:app --reload --port 8000`.
 
-**Terminal 2 · Web**
+Al arrancar, la API carga el catálogo y escribe en el log los avisos de calidad de datos que ha encontrado y corregido (ver `DATOS.md`).
+
+**Terminal 2 · Web** ⏳
 ```bash
 cd web
 npm ci                                       # instala dependencias exactas del lockfile
