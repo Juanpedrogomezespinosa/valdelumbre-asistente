@@ -1,0 +1,32 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+*.egg-info/
+build/
+
+# Node / Angular
+node_modules/
+dist/
+.angular/
+coverage/
+npm-debug.log*
+
+# Entorno y secretos
+.env
+.env.*
+!.env.example
+
+# Claude Code (configuración local personal)
+.claude/settings.local.json
+CLAUDE.local.md
+
+# Sistema / editores
+.DS_Store
+.idea/
+.vscode/
