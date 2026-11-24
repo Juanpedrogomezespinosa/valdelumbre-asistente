@@ -50,6 +50,7 @@ Estados: ✅ aprobada · 🔄 revisada (enlaza a la que la sustituye) · ❌ des
 | [D-029](#d-029--tests-del-frontend-con-el-runner-del-cli-y-testing-library) | Tests del frontend con el runner del CLI y Testing Library | ✅ |
 | [D-030](#d-030--aspecto-sobrio-y-cálido-con-modo-oscuro-según-el-sistema) | Aspecto sobrio y cálido, con modo oscuro según el sistema | ✅ |
 | [D-031](#d-031--fichas-resumidas-con-enlace-al-detalle) | Fichas resumidas con enlace al detalle | ✅ |
+| [D-032](#d-032--sin-respuesta-en-el-catálogo-no-lo-sé-sin-sugerencias-ni-citas) | Sin respuesta en el catálogo: «no lo sé», sin sugerencias ni citas | ✅ |
 
 ---
 
@@ -332,3 +333,14 @@ Estados: ✅ aprobada · 🔄 revisada (enlaza a la que la sustituye) · ❌ des
 - **Por qué:** las listas cortas son más fáciles de recorrer con lector de pantalla. Los tres estados de accesibilidad y horario (D-008, D-009) se ven sin entrar en la ficha. Un único componente de tarjeta sirve para el listado y para el asistente (regla 2 de D-026).
 - **Alternativas descartadas:** ficha completa en cada tarjeta (ruido); tarjeta desplegable (más estado y más ARIA para poco beneficio).
 - **Consecuencias:** los avisos que solo están en la descripción (por ejemplo «reserva previa obligatoria») solo se ven en el detalle. El asistente sí los incluye en su texto al citar el punto (D-005).
+
+## D-032 · Sin respuesta en el catálogo: «no lo sé», sin sugerencias ni citas
+**Estado:** ✅ aprobada por el autor · 2026-11-24
+
+- **Contexto:** cuando la pregunta no tiene respuesta en el catálogo (q6, tirolina), la IA propuso que el asistente sugiriera la Oficina de Turismo (poi-010) sin citarla en los ids. El autor preguntó por qué y qué alternativas había.
+- **Decisión:** el asistente responde solo que no tiene esa información en el catálogo, con `ids: []`, y no nombra ni sugiere ningún punto.
+- **Por qué:** es la opción más simple y coherente con el enunciado («responde solo con lo que hay en el catálogo» y devuelve «los ids de los puntos en los que se apoya») y con el criterio estricto de D-016. No deja ningún punto nombrado sin cita.
+- **Alternativas descartadas:**
+  - Sugerir la Oficina de Turismo **citándola** (`ids: [poi-010]`): coherente y útil, pero rompe el criterio estricto, que habría que redefinir como «no cita puntos *como respuesta*», algo más difícil de comprobar. Queda para «qué haría con más tiempo».
+  - Sugerirla **sin citarla** (propuesta inicial de la IA): el texto nombra un punto que no aparece en los ids.
+- **Consecuencias:** la respuesta a una pregunta fuera de catálogo es menos útil para el turista; se compensa con la Oficina de Turismo visible en el listado.

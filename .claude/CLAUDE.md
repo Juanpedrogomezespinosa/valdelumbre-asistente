@@ -11,6 +11,7 @@ Enunciado: `../ENUNCIADO.md` (fuera del repo). Decisiones ya tomadas: `docs/DECI
    - decisión nueva → `docs/DECISIONES.md` (skill `registrar-decision`);
    - defecto de datos → `DATOS.md` (skill `documentar-defecto-datos`);
    - lo que la IA propuso y se corrigió o descartó → anotarlo para `IA.md`.
+   - **Trello** (tablero «Valdelumbre», enlace en `docs/BITACORA.md`): al empezar una tarjeta se mueve a «En curso»; al terminarla, a «Revisión» con sus criterios cumplidos marcados. Solo el autor la pasa a «Hecho», tras revisarla y hacer el commit.
 4. **No inventar**, ni en el asistente ni en la documentación.
 
 ## Código limpio (D-021 a D-024)

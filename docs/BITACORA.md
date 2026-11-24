@@ -203,3 +203,37 @@ Con esto quedan cerradas todas las decisiones previas al código (D-001 a D-031)
   - Se actualizaron todas las referencias: enlaces y árbol de carpetas del README, enlaces de `docs/DECISIONES.md` a `../DATOS.md` y `../IA.md`, y rutas en `.claude/CLAUDE.md`, en las skills y en la regla de documentación (que ahora cubre también `docs/**`).
 - **Alternativa descartada:** dejar `CLAUDE.md` en la raíz, donde se suele poner. En `.claude/` funciona igual y respeta la petición.
 - Las menciones a rutas antiguas en los pasos anteriores de esta bitácora **no se cambian**: describen cómo estaba el repositorio en su momento.
+
+---
+
+## Paso 6 · Tablero de Trello con las historias de usuario — 2026-11-24
+
+**Tablero:** https://trello.com/b/V7dKvO5a/valdelumbre
+
+**Preguntas al autor y respuestas:**
+
+| Tema | Respuesta |
+|------|-----------|
+| Columnas | Backlog · Por hacer · En curso · Revisión · Hecho. «Revisión» es el momento en que el autor revisa lo hecho por la IA antes del commit. |
+| Granularidad | Una historia por funcionalidad («Como… quiero… para…»), con los criterios de aceptación en un checklist. Tareas técnicas aparte. |
+| Etiquetas | Por área: verde Backend · azul Frontend · amarillo Datos · morado Asistente · naranja Calidad · rojo Accesibilidad |
+| Trazabilidad | Cada tarjeta cita sus decisiones (D-0xx) y su rama; la IA mueve las tarjetas y marca los criterios; enlace al tablero en esta bitácora |
+
+**Contenido creado (por la IA, con el conector de Trello):**
+- 12 historias (H1–H12; H11 mapa y H12 LLM marcadas como opcionales) y 4 tareas técnicas (T1–T4).
+- H1 en «Por hacer»; T1 (andamiaje) en «Hecho» y completada; el resto en «Backlog».
+- Ramas nuevas respecto al plan inicial: `feat/api-routes` (para separar los endpoints de la capa de datos y tener ramas más pequeñas), `chore/docker` y `docs/entrega`.
+- La IA añadió tres criterios que no estaban en la propuesta revisada por el autor: en H8, sugerir la Oficina de Turismo sin citarla; en H9, un test con una inyección sintética; en T2, código de salida distinto de 0 si falla alguna pregunta.
+
+**Limitaciones encontradas:**
+- El conector de Trello no permite poner nombre a las etiquetas: se asignaron por color y **el autor las renombra a mano** en Trello.
+- En dos criterios, los símbolos `<` y `>` se guardaron como `&lt;` y `&gt;`. La IA lo detectó en la respuesta de la herramienta y los reescribió sin esos símbolos.
+
+**Flujo acordado:** la IA mueve las tarjetas a «En curso» y a «Revisión» y marca los criterios; solo el autor las pasa a «Hecho». Añadido a `.claude/CLAUDE.md`.
+
+**Ajustes tras la revisión del autor:**
+- **Criterios añadidos por la IA:** el autor aprueba el de H9 (inyección sintética) y el de T2 (código de salida). El de H8 (sugerir la Oficina de Turismo sin citarla) lo cuestiona: la IA expone tres opciones (no lo sé a secas / sugerir y citar / sugerir sin citar) y recomienda la primera. **El autor elige «no lo sé» a secas** → D-032. El criterio de H8 se reescribe en Trello.
+- **Visibilidad del tablero:** el autor propuso enlazarlo con su URL de invitación. La IA advirtió que ese enlace da acceso **de edición** a cualquiera que lo tenga y que la bitácora se entrega en el repo. Se opta por hacer el tablero **público en modo lectura** y usar la URL normal, comprobada sin iniciar sesión (HTTP 200).
+- Decisión D-032: Sin respuesta en el catálogo: «no lo sé», sin sugerencias ni citas.
+- **Para `IA.md`:** dos ejemplos. Un criterio que la IA añadió por su cuenta y el autor corrigió, y un riesgo de seguridad (un enlace de invitación) que la IA detectó antes de publicarlo.
+- **Para el README («qué haría con más tiempo»):** sugerir la Oficina de Turismo citándola, redefiniendo el criterio estricto.
