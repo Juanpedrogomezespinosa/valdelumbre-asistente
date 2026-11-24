@@ -9,6 +9,8 @@ class WarningKind(StrEnum):
     SWAPPED_COORDINATES = "swapped_coordinates"
     OUTLIER_COORDINATES = "outlier_coordinates"
     DUPLICATE_POI = "duplicate_poi"
+    INVALID_SLOT = "invalid_slot"
+    UNKNOWN_SCHEDULE = "unknown_schedule"
 
 
 @dataclass(frozen=True)

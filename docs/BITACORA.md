@@ -331,3 +331,26 @@ Con esto quedan cerradas todas las decisiones previas al código (D-001 a D-031)
   - `api/app/data/folding.py` (6), con `fold()`: minúsculas sin tildes, compartida por textos y duplicados.
 - El código se movió sin cambiar su comportamiento: los 76 tests siguen pasando y solo cambian sus imports. `make check` limpio.
 - Actualizados el README (estructura), la skill `documentar-defecto-datos` (dónde va cada regla) y `.claude/rules/backend.md`.
+
+### Paso 7.9 · Carga del catálogo — 2026-11-24
+- TDD: primero `api/tests/test_schedule_normalization.py` y `api/tests/test_catalog.py`; fallaban porque los módulos no existían.
+- Ficheros nuevos, uno por responsabilidad (D-038):
+  - `api/app/data/raw.py`: modelos pydantic que reflejan el JSON tal cual (D-033). `categoria` se valida contra el enum: una categoría desconocida detiene la carga (D-035).
+  - `api/app/data/rules/schedule.py`: horario crudo → dominio, incluidas las temporadas `"MM-DD/MM-DD"`. Una franja inválida (cruza la medianoche, días fuera de 1–7 o temporada ilegible) se descarta con el aviso `INVALID_SLOT` (D-034). Un horario sin franjas y sin `always_open` da el aviso `UNKNOWN_SCHEDULE`.
+  - `api/app/data/poi_mapping.py`: punto crudo → `Poi`, aplicando las reglas de un punto (textos, horario y precio).
+  - `api/app/data/catalog.py`: `load_catalog(path)` valida el JSON, comprueba que no haya ids repetidos, aplica las reglas de catálogo (coordenadas y duplicados) y devuelve `Catalog(pois, warnings)` con `get(id)`.
+- Criterio para emitir avisos: solo cuando **se corrige, se descarta o puede malinterpretarse** algo. Un `accesible: null` o un `precio: null` explícitos no generan aviso (son datos ausentes y se servirán como desconocidos); un horario vacío sí, porque parece «cerrado» y no lo es (D-009).
+- Tests sobre el catálogo real:
+  - se sirven 17 puntos y poi-004 no;
+  - poi-011 con las coordenadas corregidas;
+  - poi-013 sin la inyección y con `accesible: false`;
+  - los precios normalizados;
+  - la temporada de poi-014 y el horario desconocido de poi-018;
+  - la accesibilidad desconocida de poi-011;
+  - el conjunto exacto de avisos.
+- Tests sobre un catálogo temporal: una categoría desconocida y los ids repetidos detienen la carga.
+- Avisos del catálogo real: poi-011 coordenadas invertidas; poi-004 sin traducción (nombre y descripción), sin horario y duplicado de poi-003; poi-013 instrucción inyectada; poi-018 sin horario. Coinciden con la auditoría del paso 0.
+- Verificado: `make check` limpio, 91 tests.
+- Trello:
+  - H1: marcados los criterios del duplicado, de poi-011 y de los tests con ruff + mypy. Queda «avisos en el log al arrancar», que llega con el arranque de la API en `feat/api-routes`; H1 sigue en «En curso» hasta entonces.
+  - H9: marcado el criterio de la limpieza de la inyección al cargar.
