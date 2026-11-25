@@ -898,3 +898,16 @@ Antes de darla por buena se comprobó que **detecta fallos de verdad**: estropea
   - **secretos en git:** ninguno. El repositorio ocupa 1,2 MB;
   - `make check` limpio (327 tests del backend y 91 de la web) y `make eval` en 6/6. El arranque desde un clon limpio ya se probó en el paso 17.
 - **Pendiente del autor:** el repaso a mano en el navegador y el recorrido con VoiceOver (lista en el mensaje al autor).
+
+### Paso 19 · Comprobación completa de teclado y lector de pantalla — 2026-11-25
+- **Petición del autor:** confirmar que toda la web se puede usar solo con teclado y leer con lector de pantalla.
+- **Método:**
+  - **teclado:** recorrido real con Tab, Mayús+Tab, Enter, espacio, flechas y +/− en Chrome, anotando el orden, el foco visible y el nombre de cada parada;
+  - **lector de pantalla:** auditoría con script de lo que lee VoiceOver en 7 pantallas (asistente vacío y con respuesta, listado, mapa, ficha, ficha inexistente y 404), dentro de iframes para que no interfiriera la extensión de Chrome que usa la IA. Se revisaron los títulos y sus saltos de nivel, las regiones, los controles sin nombre, los SVG que se leerían, los avisos vivos y los atributos `lang`.
+- **Resultado:** las 7 pantallas tienen un solo `<h1>`, ningún salto de nivel, las cuatro regiones (`header`, `nav`, `main`, `footer`), ningún control sin nombre y ningún SVG que se lea por error. Los avisos vivos anuncian la respuesta, el número de resultados, la tarjeta elegida en el mapa y «Este punto no existe». El orden de tabulación es lógico y el foco se ve en todas las paradas.
+- **Fallos encontrados y corregidos (test primero):**
+  1. **Al cambiar un filtro o la vista Lista/Mapa, el foco saltaba al `<h1>`.** Quien usa teclado perdía su sitio. `HeadingFocus` movía el foco en cualquier navegación, y estos cambios solo tocan la URL. Ahora solo lo mueve cuando cambia la página, comparando con la navegación anterior del router. Test en `app.spec.ts`. Comprobado en Chrome: el foco se queda en «Abierto ahora» y en «Mapa».
+  2. **Al llegar con Tab a un marcador fuera de la vista, el navegador desplazaba el interior del mapa** (aun con `overflow: hidden`). Movía el fondo, la escala y los botones, y dejaba el marcador cortado. Ahora el desplazamiento se anula en el acto y es la vista la que se centra en el marcador, con un margen mayor (12–88 % y 15–92 %) para que se vean la chincheta y su nombre. Test en `village-map.spec.ts`. Comprobado en Chrome: **17 de 17 marcadores** se ven enteros al recibir el foco, sin que se mueva nada más.
+- **Descartado como fallo:** un `<div>` vacío fuera de `app-root` recibía el foco al final del recorrido. Lo inyecta la extensión de Chrome que usa la IA: no está en el HTML servido, ningún código de la app lo crea, aparece igual en desarrollo y en producción, y **no aparece** al cargar la página en un iframe.
+- **Pendiente del autor:** escucharlo con VoiceOver. Es lo único que la IA no puede hacer.
+- Verificado: `make check` limpio (327 tests del backend y 93 de la web).

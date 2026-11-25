@@ -149,11 +149,21 @@ export class VillageMap {
     this.selectedId.set(this.selectedId() === poi.id ? null : poi.id);
   }
 
-  /** Tabbing to a marker outside the view brings it into view. */
+  /** Tabbing to a marker near or past the edge centres it, so the pin and its name show. */
   protected reveal(marker: Marker): void {
-    if (marker.left < 5 || marker.left > 95 || marker.top < 8 || marker.top > 95) {
+    if (marker.left < 12 || marker.left > 88 || marker.top < 15 || marker.top > 92) {
       this.view.set(centredOn(marker.point, this.view().zoom, CANVAS));
     }
+  }
+
+  /**
+   * Focusing a marker outside the view makes the browser scroll the stage, even with
+   * overflow hidden, which shifts the background and the controls. The view moves instead.
+   */
+  protected undoScroll(): void {
+    const stage = this.stage().nativeElement;
+    stage.scrollTop = 0;
+    stage.scrollLeft = 0;
   }
 
   protected zoomBy(factor: number): void {
