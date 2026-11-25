@@ -20,6 +20,8 @@ def empty_answer(
 
     `named` are the places the question names that the filters left out.
     """
+    if interpretation.unrecorded:
+        return Answer(text=texts.cannot_answer(interpretation.unrecorded, language), poi_ids=())
     if not interpretation.has_filters:
         return Answer(text=texts.not_found(language), poi_ids=())
     wanted = _describe(interpretation, language)

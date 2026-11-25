@@ -1,6 +1,8 @@
 from datetime import datetime
 from zoneinfo import ZoneInfo
 
+import pytest
+
 from app.assistant.interpretation.interpretation import interpret
 from app.assistant.retrieval import retrieve
 from app.domain.localized_text import LocalizedText
@@ -90,3 +92,53 @@ def test_a_word_shared_by_several_names_does_not_name_a_place() -> None:
 
     assert retrieve(catalog, interpret("Is there a zipline adventure park?", NOW)) == []
     assert retrieve(catalog, interpret("¿Dónde está el parque?", NOW)) == catalog[:1]
+
+
+def test_a_named_place_wins_over_the_topic_its_name_suggests() -> None:
+    # "Mirador" names the viewpoint but is also the topic "vistas", which the castle has:
+    # asking about the viewpoint must not bring in the castle.
+    catalog = [
+        make_poi("castle", name=LocalizedText(es="Castillo"), tags=("vistas",)),
+        make_poi("viewpoint", name=LocalizedText(es="Mirador del Alto"), tags=("vistas",)),
+    ]
+
+    found = retrieve(catalog, interpret("¿Dónde está el Mirador del Alto?", NOW))
+
+    assert [poi.id for poi in found] == ["viewpoint"]
+
+
+GENERIC_CATALOG = [
+    make_poi("square", name=LocalizedText(es="Plaza Mayor", en="Main Square")),
+    make_poi(
+        "centre",
+        name=LocalizedText(
+            es="Centro de Interpretación del Valle", en="Valley Interpretation Centre"
+        ),
+        category=Category.MUSEUM,
+    ),
+    make_poi("office", name=LocalizedText(es="Oficina de Turismo", en="Tourist Office")),
+    make_poi("tapestries", name=LocalizedText(es="Casa de los Tapices", en="Tapestry House")),
+    make_poi("museum", name=LocalizedText(es="Museo del Aceite"), category=Category.MUSEUM),
+]
+
+
+@pytest.mark.parametrize(
+    ("question", "expected"),
+    [
+        ("What are the main attractions?", []),
+        ("¿Qué museos hay en el centro del pueblo?", ["centre", "museum"]),
+        ("I'm a tourist, which museums can I visit?", ["centre", "museum"]),
+        ("Rutas por el valle", []),
+        ("¿Dónde está la Plaza Mayor?", ["square"]),
+        ("Main Square", ["square"]),
+        ("¿Qué es el Centro de Interpretación?", ["centre"]),
+        ("¿Abre la oficina de turismo?", ["office"]),
+        ("Tapestry House", ["tapestries"]),
+    ],
+)
+def test_a_common_word_in_a_name_needs_a_distinctive_one_beside_it(
+    question: str, expected: list[str]
+) -> None:
+    found = retrieve(GENERIC_CATALOG, interpret(question, NOW))
+
+    assert sorted(poi.id for poi in found) == sorted(expected)

@@ -67,3 +67,15 @@ def test_without_signals_no_accessibility_or_time_filter_is_applied() -> None:
     assert result.criteria.accessible is None
     assert result.criteria.open_at is None
     assert result.criteria.categories is None
+
+
+def test_asking_the_price_does_not_name_the_cuesta_car_park() -> None:
+    # "cuesta" (costs) is also a word of "Aparcamiento de la Cuesta".
+    result = interpret("¿Cuánto cuesta el castillo?", NOW)
+
+    assert "cuesta" not in result.keywords
+    assert "castillo" in result.keywords
+
+
+def test_cuesta_still_names_the_car_park_when_no_price_is_asked() -> None:
+    assert "cuesta" in interpret("Tell me about Cuesta Car Park", NOW).keywords

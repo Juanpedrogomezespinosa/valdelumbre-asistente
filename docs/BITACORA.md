@@ -808,3 +808,72 @@ Con esto quedan cerradas todas las decisiones previas al código (D-001 a D-031)
   - «¿Qué museos abren el lunes?» → «Ningún lugar del catálogo cumple todo lo que buscas (museo · abierto el lunes).» Se contrastó con `GET /pois?categoria=museo&abierto_en=1T12:00`: los tres museos cierran los lunes;
   - «¿Es accesible el puente romano?» → «no consta», porque su dato es desconocido.
 - 279 tests del backend, ruff y mypy limpios, y la evaluación en 6/6 (q6 sigue diciendo «No tengo información»).
+
+### Paso 16 · Batería de preguntas y caza de fallos — 2026-11-25
+- El autor pidió «comprobar todas las preguntas posibles» y después «buscarle todos los bugs posibles antes de entregarlo». Encontró él mismo un fallo: «hay wifi en el parque?» respondía con el parque, como si la respuesta fuera sí.
+- **Método.** Las preguntas posibles son infinitas, así que se probó de forma sistemática todo el vocabulario que el asistente entiende, con comprobaciones automáticas:
+  1. **Filtros:** 166 preguntas que combinan 7 tipos de lugar (incluidos «al aire libre» y «para cenar»), accesibilidad y 6 momentos (día y hora, solo día, «8 de la tarde», «6 pm»), en español e inglés. Cada respuesta se comparó con `GET /pois` para los mismos filtros. **0 discrepancias.**
+  2. **Nombres:** los 17 lugares con «¿Dónde está…?», «Tell me about…» y «¿Cuánto cuesta…?» (51 preguntas), más nombres cortos como los diría un turista. Al final, **0 problemas**.
+  3. **Temas:** 22 temas en español e inglés, revisados a mano.
+  4. **Preguntas naturales y trampas:** 24 preguntas de turista y 16 entradas raras (inyección, SQL, `<script>`, emojis, francés, «el único», horas imposibles…). Ninguna respuesta cita un id fuera del catálogo.
+  5. **API:** 35 combinaciones de parámetros raros en `/pois` y `/pois/{id}` y 11 cuerpos raros en `/preguntar`. **Ningún 500.** Los valores inválidos dan 422 con un mensaje que explica qué se esperaba.
+  6. **Web, en Chrome:**
+     - pregunta y cambio de idioma: vuelve a preguntar en inglés;
+     - filtros y mapa recuperados desde la URL al recargar;
+     - parámetros inventados ignorados;
+     - el duplicado `poi-004` da «no existe»;
+     - la ruta inexistente da la página de «no encontrada»;
+     - «atrás» conserva el filtro y el foco;
+     - la consola sin errores ni avisos;
+     - sin scroll horizontal a 320 y 375 px en las seis vistas, ni en la respuesta del wifi.
+- **Fallos encontrados y corregidos (TDD), decisiones D-050 y D-051:**
+  - el wifi y lo que el asistente no consulta (mascotas, aseos, pago, reservas…), que ahora se dice con honestidad;
+  - «¿Qué monumentos son gratis?» listaba monumentos de pago sin decirlo: ahora cada línea lleva el precio;
+  - «¿Dónde se come bien?» no se entendía: ampliado el vocabulario de comer;
+  - el «No tengo información» ahora dice qué se puede preguntar;
+  - el Mirador citaba también el castillo: ahora un lugar nombrado manda;
+  - «¿Cuánto cuesta el castillo?» citaba el Aparcamiento de la Cuesta;
+  - main, centro, tourist, casa, mayor… nombraban lugares;
+  - el propio arreglo de «cuesta» rompió «Tell me about Cuesta Car Park». La batería lo detectó y se afinó: «cuesta» solo es precio con «cuánto» o «precio».
+- **Aclarado sin cambios:** el enlace «Saltar al contenido» que vio el autor es una función de accesibilidad (WCAG 2.4.1). Solo aparece al llegar con el teclado.
+- **Limitaciones que quedan**, para el README:
+  - fuera del vocabulario («qué ver en un día», «un día de lluvia») responde «No tengo información», ahora con la pista de qué se puede preguntar;
+  - «Is there a car park?» no encuentra el aparcamiento;
+  - «a las 25:00» se ignora y responde por el día entero;
+  - si `pregunta` es un número, el 422 dice «no puede estar vacía»;
+  - la lista de lo que no se consulta es cerrada.
+- Verificado: `make check` limpio (316 tests del backend y 91 de la web) y la evaluación en 6/6.
+
+### Cómo se han buscado los fallos (resumen para IA.md) — 2026-11-25
+Esta parte del trabajo la dirigió el autor. Este apartado reúne lo que está repartido por los pasos anteriores.
+
+**Lo que hizo el autor:**
+- **Probar a mano y enseñar capturas**, en cada paso que tenía pantalla o `/docs`. De esas revisiones salieron:
+  - el ejemplo de error equivocado en `/docs` (paso 8.4);
+  - el salto lateral al aparecer el scroll (paso 12);
+  - el castillo cortado en móvil (paso 12.1);
+  - el rechazo del primer mapa: «muy cutre», «no puede moverse con el ratón» (paso 13.1);
+  - el fallo del wifi (paso 16).
+- **Probar lo que se le iba a entregar** y preguntar para qué servía: al probar el LLM preguntó «¿qué función hace? porque es lo mismo que antes, no?», y de ahí salió descartarlo (paso 14.2).
+- **Releer el enunciado línea a línea antes de entregar** y convertir cada línea en una pregunta para la IA:
+  - si el asistente contesta a cualquier pregunta o solo a las de la evaluación;
+  - si el mapa se puede usar solo con teclado y con lector de pantalla;
+  - si los tests son de lo crítico o son demasiados;
+  - si el script de evaluación está hecho.
+- **Pedir explícitamente que se buscaran fallos:** «quiero que comprobemos ahora todas las preguntas posibles en el asistente» y «hay que buscarle todos los bugs posibles antes de entregarlo».
+- **Preguntar por lo que le extrañaba**, como el enlace «Saltar al contenido», que resultó ser una función de accesibilidad y no un fallo.
+
+**Lo que hizo la IA con cada petición:**
+- **Responder con datos, no de memoria.** Ante «¿contesta a cualquier pregunta?» probó 9 preguntas que no están en la evaluación antes de contestar, y dijo lo que fallaba.
+- **Convertir «todas las preguntas posibles» en algo comprobable.** Como son infinitas, recorrió de forma sistemática el vocabulario que el asistente entiende, con una comprobación automática: cada respuesta tiene que citar exactamente lo mismo que `GET /pois` con los mismos filtros. A eso sumó nombres, temas, preguntas de turista, trampas, parámetros raros en la API y recorridos en Chrome.
+- **Investigar antes de arreglar.** «Monumentos accesibles → no tengo información» parecía un fallo de búsqueda y era un mensaje engañoso: en el catálogo no hay monumentos accesibles. «Ningún museo abre el lunes» se contrastó con la API antes de darlo por bueno.
+- **Buscar la familia del fallo, no solo el caso.** Tras «cuesta» → Aparcamiento de la Cuesta, revisó todas las palabras que identifican un lugar y encontró seis más (main, centro, tourist, casa, mayor…).
+- **Test primero en cada corrección, y repetir la batería entera después de cada cambio.** Así se detectó que el arreglo de «cuesta» había roto «Tell me about Cuesta Car Park».
+- **Decir lo que no se puede arreglar a tiempo** y dejarlo como limitación para el README.
+
+**La batería queda en el repositorio** (`api/tests/test_assistant_battery.py`, propuesta de la IA aprobada por el autor). Son 11 tests y se ejecutan en `make check` en algo más de un segundo, sin red:
+- **un test recorre las 166 combinaciones de filtros** y compara cada respuesta con `GET /pois`. Es un solo test para no inflar el número, porque el autor había preguntado si había demasiados; si falla, dice exactamente qué preguntas;
+- **otro test hace las 51 preguntas por nombre**;
+- **9 preguntas trampa** comprueban que nunca se cita nada fuera del catálogo.
+
+Antes de darla por buena se comprobó que **detecta fallos de verdad**: estropeando a propósito la búsqueda en memoria (perder el último lugar o colar uno de más), los dos tests principales fallan. Total: 327 tests del backend.
