@@ -68,6 +68,8 @@ Estados: ✅ aprobada · 🔄 revisada (enlaza a la que la sustituye) · ❌ des
 | [D-047](#d-047--mapa-interactivo-con-vista-lista--mapa) | Mapa interactivo, con vista Lista / Mapa | ✅ |
 | [D-048](#d-048--generador-llm-opcional-y-local-ollama-con-vuelta-a-la-plantilla) | Generador LLM opcional y local (Ollama), con vuelta a la plantilla | ❌ |
 | [D-049](#d-049--una-respuesta-vacía-dice-por-qué-está-vacía) | Una respuesta vacía dice por qué está vacía | ✅ |
+| [D-050](#d-050--el-asistente-dice-lo-que-no-consulta-y-da-el-precio) | El asistente dice lo que no consulta y da el precio | ✅ |
+| [D-051](#d-051--un-lugar-nombrado-manda-y-las-palabras-comunes-no-nombran-lugares) | Un lugar nombrado manda, y las palabras comunes no nombran lugares | ✅ |
 
 ---
 
@@ -663,4 +665,38 @@ Registro de la decisión tal como se tomó:
   - Responder «no, no es accesible» para un lugar nombrado: con `accesible = null` sería falso.
   - Citar el lugar nombrado para mostrar su tarjeta: no se recuperó, y el invariante dice que solo se cita lo recuperado.
 - **Consecuencias:** las preguntas fuera del vocabulario cerrado («algo para un día de lluvia») siguen en el caso 3. Interpretarlas mejor queda para «qué haría con más tiempo».
+
+## D-050 · El asistente dice lo que no consulta y da el precio
+**Estado:** ✅ aprobada por el autor · 2026-11-25
+
+- **Contexto:** el autor preguntó «hay wifi en el parque?» y el asistente respondió con el parque, como si la respuesta fuera sí. Con mascotas, aseos, formas de pago o reservas pasaba lo mismo. Y en «¿Qué monumentos son gratis?» listaba los cuatro monumentos, dos de ellos de pago, sin decir el precio.
+- **Decisión:**
+  - **Vocabulario cerrado de lo que el asistente no consulta** (`interpretation/unrecorded.py`): wifi, mascotas, aseos, formas de pago, reservas, visitas guiadas, terrazas, cajeros y menús especiales. Si la pregunta menciona algo de esto, la respuesta empieza así: «No puedo responder sobre wifi: no es un dato que yo consulte. Mira la ficha del lugar o pregunta en la Oficina de Turismo. Esto es lo que sí sé:», y después vienen los lugares. Si no hay ninguno, queda solo esa frase.
+  - **Precio en cada línea**, con «gratis», la cantidad o «precio sin datos». `price_text` pasa a `app/domain` para que lo usen tanto las rutas como el asistente.
+  - **Más palabras para comer:** come, cenar, cena, almorzar, almuerzo, dinner, lunch, dine.
+  - **El «No tengo información» dice qué se puede preguntar:** tipo de lugar, accesibilidad, día y hora, o temas.
+- **Por qué:**
+  - Responder con el lugar sin mencionar lo que se preguntó sugiere un «sí» que nadie ha comprobado. Es una forma sutil de inventar.
+  - Se dice «no es un dato que yo consulte» y no «el catálogo no lo tiene», porque alguna descripción sí lo menciona (la bodega pide «reserva previa obligatoria») y el asistente no lee descripciones (D-043).
+- **Alternativas descartadas:**
+  - Detectar cualquier palabra desconocida: daría falsos avisos con verbos corrientes («¿cómo llego…?» → «no consulto *llego*»).
+  - Filtrar por precio («gratis»): `GET /pois` no tiene ese filtro, y el precio en la línea ya responde con honestidad.
+- **Consecuencias:** la lista es cerrada. Un dato que no esté en ella («¿hay enchufes?») sigue sin avisarse. Queda anotado en el README.
+
+## D-051 · Un lugar nombrado manda, y las palabras comunes no nombran lugares
+**Estado:** ✅ aprobada por el autor · 2026-11-25
+
+- **Contexto:** la batería de preguntas (bitácora, paso 16) encontró tres fallos con los nombres:
+  - «¿Dónde está el Mirador del Alto?» citaba también el castillo, porque «mirador» es además el tema «vistas»;
+  - «¿Cuánto cuesta el castillo?» citaba el Aparcamiento **de la Cuesta**;
+  - **palabras corrientes nombraban lugares:** «the **main** attractions» daba la Plaza Mayor, «museos en el **centro**» el Centro de Interpretación, «I'm a **tourist**» la Oficina de Turismo, «cerca de **casa**» la Casa de los Tapices y «mi hijo **mayor**» la Plaza Mayor.
+- **Decisión:**
+  - **Si la pregunta nombra un lugar, la respuesta se limita a ese lugar** (si cumple los filtros). Los temas no añaden otros.
+  - **Palabras genéricas** (main, mayor, centro, centre, tourist, turismo, casa, house, natural, valle, valley, hill, verde): solo cuentan junto a otra palabra propia del nombre. «Plaza Mayor» se sigue encontrando por «plaza» y «Centro de Interpretación» por «interpretación». La lista salió de revisar **todas** las palabras que identifican un lugar en el catálogo.
+  - **Palabras de precio** (cuánto, precio, price, cost) no nombran lugares. «Cuesta» solo se trata como precio si la pregunta lleva «cuánto» o «precio», porque en inglés («Cuesta Car Park») es la única palabra del nombre del aparcamiento.
+- **Por qué:** una palabra cotidiana no debe arrastrar un lugar que nadie ha nombrado. Es el mismo principio que ya excluía las palabras compartidas por varios nombres («park»).
+- **Alternativas descartadas:** quitar del todo las palabras genéricas, que rompería «Main Square» o «Tapestry House».
+- **Consecuencias:**
+  - «Alto» no es genérica, porque es lo único que identifica el Mirador del Alto («mirador» es un tema).
+  - «Is there a car park?» sigue sin encontrar el aparcamiento («car» tiene solo tres letras y «park» es compartida). Queda como limitación anotada.
 

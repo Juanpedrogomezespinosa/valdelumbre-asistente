@@ -4,7 +4,7 @@ import pytest
 
 from app.domain.localized_text import Language
 from app.domain.price import Price
-from app.routes.presenters.price_text import price_text
+from app.domain.price_text import price_text
 
 
 @pytest.mark.parametrize(

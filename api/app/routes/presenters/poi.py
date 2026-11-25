@@ -2,8 +2,8 @@ from datetime import datetime
 
 from app.domain.localized_text import Language, LocalizedText
 from app.domain.poi import Poi
+from app.domain.price_text import price_text
 from app.domain.schedule import Schedule, Season, TimeSlot
-from app.routes.presenters.price_text import price_text
 from app.routes.schemas import (
     CoordinatesResponse,
     PoiResponse,

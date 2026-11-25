@@ -33,7 +33,7 @@ def test_language_defaults_to_spanish(client: TestClient) -> None:
 
     assert body == {
         "respuesta": "He encontrado 1 lugar en el catálogo:\n"
-        "- Bodega La Encina (gastronomía · accesible)",
+        "- Bodega La Encina (gastronomía · accesible · 15 €)",
         "ids": ["poi-008"],
     }
 
@@ -42,7 +42,9 @@ def test_a_question_outside_the_catalog_cites_nothing(client: TestClient) -> Non
     body = ask(client, {"pregunta": "¿Hay algún sitio de aventura con tirolina?"}).json()
 
     assert body == {
-        "respuesta": "No tengo información sobre eso en el catálogo de Valdelumbre.",
+        "respuesta": "No tengo información sobre eso en el catálogo de Valdelumbre. Puedes "
+        "preguntarme por tipo de lugar (museos, monumentos, rutas, dónde comer), accesibilidad, "
+        "día y hora, o temas como vino, niños o vistas.",
         "ids": [],
     }
 
@@ -112,3 +114,35 @@ def test_invalid_json_explains_the_expected_shape(client: TestClient) -> None:
 
     assert response.status_code == 422
     assert response.json()["detail"].startswith("La petición debe ser un JSON")
+
+
+def test_says_it_cannot_answer_about_what_it_does_not_look_up(client: TestClient) -> None:
+    body = ask(client, {"pregunta": "hay wifi en el parque?"}).json()
+
+    assert body["respuesta"].splitlines() == [
+        "No puedo responder sobre wifi: no es un dato que yo consulte. Mira la ficha del lugar "
+        "o pregunta en la Oficina de Turismo. Esto es lo que sí sé:",
+        "- Parque de la Alameda (naturaleza · accesible · gratis)",
+    ]
+    assert body["ids"] == ["poi-012"]
+
+
+def test_with_nothing_else_to_say_it_only_explains_what_it_cannot_answer(
+    client: TestClient,
+) -> None:
+    body = ask(client, {"pregunta": "Do you allow dogs?", "idioma": "en"}).json()
+
+    assert body == {
+        "respuesta": "I can't answer about pets: it is not something I look up. Check each "
+        "place's page or ask at the Tourist Office.",
+        "ids": [],
+    }
+
+
+def test_asking_what_a_place_costs_answers_with_that_place_and_its_price(
+    client: TestClient,
+) -> None:
+    body = ask(client, {"pregunta": "¿Cuánto cuesta el castillo?"}).json()
+
+    assert body["ids"] == ["poi-001"]
+    assert "4,50 €" in body["respuesta"]

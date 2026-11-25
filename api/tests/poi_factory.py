@@ -15,6 +15,7 @@ def make_poi(
     schedule: Schedule = ALWAYS_OPEN,
     tags: tuple[str, ...] = (),
     description: str = "",
+    price: Price | None = None,
 ) -> Poi:
     return Poi(
         id=poi_id,
@@ -24,6 +25,6 @@ def make_poi(
         coordinates=None,
         accessible=accessible,
         schedule=schedule,
-        price=Price.unknown(),
+        price=price or Price.unknown(),
         tags=tags,
     )

@@ -70,4 +70,4 @@ def test_says_when_a_named_place_does_not_match_in_english() -> None:
 def test_keeps_saying_it_has_no_information_when_nothing_was_understood() -> None:
     answer = empty_answer(interpret("¿Hay tirolina?", NOW), [], Language.ES)
 
-    assert answer.text == "No tengo información sobre eso en el catálogo de Valdelumbre."
+    assert answer.text.startswith("No tengo información sobre eso en el catálogo de Valdelumbre.")
