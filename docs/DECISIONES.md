@@ -424,6 +424,7 @@ Estados: ✅ aprobada · 🔄 revisada (enlaza a la que la sustituye) · ❌ des
   - Validar a mano cada parámetro como texto en la ruta: repite código en cada endpoint y pierde la documentación automática de `/docs`, con los valores enumerados.
 - **Consecuencias:** se pierde el detalle técnico del 422 estándar (ubicación y tipo de cada error), que solo es útil para depurar. Los valores posibles de cada parámetro están en una tabla del manejador, que habrá que ampliar si aparece un parámetro enumerado nuevo. Si no está en la tabla, el mensaje se da sin la lista de valores.
 - **Concreción (2026-11-25):** el formato `{"detail": "…"}` se declara también en la documentación OpenAPI (esquema `ErrorResponse`, para el 422 de todas las rutas de `/pois` y el 404 del detalle). Sin esa declaración, `/docs` seguía anunciando el 422 por defecto de FastAPI, que la API ya no devuelve. Un router nuevo, como el de `/preguntar`, debe declararlo igual.
+- **Concreción (2026-11-25, `/preguntar`):** si `idioma` no viene en la URL, el idioma del mensaje se toma del cuerpo JSON. Un cuerpo mal formado (ausente, JSON inválido o sin `pregunta`) recibe un mensaje que muestra la forma esperada. Una pregunta vacía o demasiado larga recibe un mensaje propio.
 
 ## D-040 · El asistente interpreta las preguntas con un vocabulario cerrado
 **Estado:** ✅ aprobada por el autor · 2026-11-25
@@ -456,6 +457,7 @@ Estados: ✅ aprobada · 🔄 revisada (enlaza a la que la sustituye) · ❌ des
 - **Por qué:** el contrato lo fija el enunciado, y un campo de más es algo que el evaluador no ha pedido y tendría que entender.
 - **Alternativas descartadas:** incluir `puntos` (amplía el contrato sin que el enunciado lo pida).
 - **Consecuencias:** la pantalla hace una petición por cada punto citado, como mucho una por punto del catálogo.
+- **Concreción (2026-11-25):** `idioma` es opcional y por defecto `es`, como en `GET /pois`. A `pregunta` se le quitan los espacios de los extremos y debe tener entre 1 y 500 caracteres: el enunciado no fija un límite, y 500 da de sobra para una pregunta turística y acota la entrada del usuario.
 
 ## D-043 · Recuperación por filtros, temas y nombres; respuesta solo con campos estructurados
 **Estado:** ✅ aprobada por el autor · 2026-11-25

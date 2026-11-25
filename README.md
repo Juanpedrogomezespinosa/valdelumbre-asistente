@@ -158,7 +158,7 @@ Salida esperada de la evaluación: el resultado de cada pregunta (✅/❌ con lo
 
 ## 6. Uso de la API
 
-La referencia completa está en http://localhost:8000/docs. Ejemplos (⏳ `/preguntar` aún no existe):
+La referencia completa está en http://localhost:8000/docs. Ejemplos:
 
 ```bash
 # Todos los puntos

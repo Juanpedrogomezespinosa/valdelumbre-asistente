@@ -463,3 +463,17 @@ Con esto quedan cerradas todas las decisiones previas al código (D-001 a D-031)
   - en un test esperaba «no accesible» de un punto creado sin datos de accesibilidad;
   - había escrito un test de relleno que no comprobaba nada (se eliminó);
   - y, sobre todo, el caso «zipline adventure park» → aparcamiento, que no se le había ocurrido al diseñar la recuperación y que solo apareció al pedir el test en inglés que exigía un criterio de Trello.
+
+### Paso 9.3 · `POST /preguntar` — 2026-11-25
+- TDD: primero `tests/test_ask_endpoint.py` y el caso de `/preguntar` en `test_openapi_errors.py`. Se comprobó que fallaban (15 tests).
+- Contrato estricto del enunciado (D-042): `{"pregunta", "idioma"}` → `{"respuesta", "ids"}`, sin más campos (hay un test que lo comprueba). `idioma` por defecto `es`; la pregunta, sin espacios en los extremos y entre 1 y 500 caracteres (concreción de D-042).
+- Ficheros:
+  - nuevos: `app/routes/ask.py` (el endpoint) y `app/routes/error_responses.py` (las declaraciones de 422 y 404 para OpenAPI, que salen de `pois.py` porque ahora las usan dos routers);
+  - cambiados: `schemas.py` (`AskRequest`, `AskResponse`), `dependencies.py` (el generador se inyecta con `get_answer_generator`, para poder cambiarlo por un LLM o por uno falso en los tests, D-004), `messages.py` y `main.py`.
+- Errores 422 (concreción de D-039): antes de escribir el manejador se comprobó qué errores genera FastAPI en cada caso (cuerpo ausente, JSON inválido, lista en lugar de objeto, falta `pregunta`, pregunta vacía, idioma no válido). El idioma del mensaje se toma de la URL o, si no está, del cuerpo; los errores de forma del cuerpo muestran el JSON esperado.
+- Comprobado contra el servidor del autor (`make api`): q1, q2, «¿qué está abierto ahora?», q6, pregunta vacía en inglés y cuerpo sin `pregunta`. `/docs` documenta `AskRequest`, `AskResponse` y el 422 con `ErrorResponse`.
+- README, sección 6: el ejemplo de `/preguntar` ya no lleva ⏳; se ejecutó tal cual y devuelve `["poi-003", "poi-015"]`.
+- Verificado: `make check` limpio, 259 tests.
+- Trello: en H7, marcados «`POST /preguntar` devuelve `{respuesta, ids}`» y «pregunta vacía o demasiado larga → 422».
+- **Corrección tras la revisión del autor en `/docs`:** el ejemplo del 422 venía fijado en el esquema `ErrorResponse` («El parámetro «categoria» no es válido…») y se mostraba también en `/preguntar`, que no tiene ese parámetro. Al revisarlo apareció el mismo problema en `GET /pois/{poi_id}`, que lo heredaba del router y solo admite `idioma`. Ahora cada ruta declara su propio ejemplo en `app/routes/error_responses.py`, generado con las mismas funciones de `messages.py` que usa la API, para que no se desincronicen. Test nuevo en `test_openapi_errors.py`. Los casos 2 a 9 de la prueba manual se lanzaron con un script contra el servidor del autor: 8/8. Verificado: `make check` limpio, 260 tests.
+- **Para `IA.md`:** segunda vez que la revisión visual de `/docs` encuentra un error que los tests de comportamiento no veían (la primera fue en el paso 8.4). La IA añadió tests sobre `/openapi.json` en ambos casos.
