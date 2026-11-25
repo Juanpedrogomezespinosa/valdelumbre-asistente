@@ -6,7 +6,6 @@ services:
     environment:
       RUTA_POIS: /datos/pois.json
       ZONA_HORARIA: ${ZONA_HORARIA:-Europe/Madrid}
-      # The template answers by default, with no network; docker-compose.llm.yml adds a local LLM (D-048).
     volumes:
       # Read-only: the catalogue is never modified, only normalised in memory.
       - ./datos:/datos:ro

@@ -66,7 +66,7 @@ Estados: ✅ aprobada · 🔄 revisada (enlaza a la que la sustituye) · ❌ des
 | [D-045](#d-045--botón-para-elegir-modo-claro-u-oscuro) | Botón para elegir modo claro u oscuro | ✅ |
 | [D-046](#d-046--ilustración-por-categoría-y-ubicación-relativa-en-lugar-de-fotos-y-enlaces-a-mapas) | Ilustración por categoría y ubicación relativa, en lugar de fotos y enlaces a mapas | ✅ |
 | [D-047](#d-047--mapa-interactivo-con-vista-lista--mapa) | Mapa interactivo, con vista Lista / Mapa | ✅ |
-| [D-048](#d-048--generador-llm-opcional-y-local-ollama-con-vuelta-a-la-plantilla) | Generador LLM opcional y local (Ollama), con vuelta a la plantilla | ✅ |
+| [D-048](#d-048--generador-llm-opcional-y-local-ollama-con-vuelta-a-la-plantilla) | Generador LLM opcional y local (Ollama), con vuelta a la plantilla | ❌ |
 
 ---
 
@@ -596,7 +596,13 @@ Estados: ✅ aprobada · 🔄 revisada (enlaza a la que la sustituye) · ❌ des
   - La rueda sobre el mapa amplía en lugar de desplazar la página. Es lo esperado en un mapa, pero hay que saberlo.
 
 ## D-048 · Generador LLM opcional y local (Ollama), con vuelta a la plantilla
-**Estado:** ✅ aprobada por el autor · 2026-11-25
+**Estado:** ❌ descartada por el autor · 2026-11-25 (se llegó a implementar, a probar con el modelo real y a subir en el commit `bdae57e`)
+
+- **Por qué se descartó:** el autor comprobó que, para no equivocarse en los datos, el LLM había quedado reducido a redactar la primera frase: la lista, los lugares y las tarjetas eran los mismos que con la plantilla. Su conclusión: «si vamos a hacerlo mal, prefiero no meter LLM». El enunciado admite «ninguno», y D-004 ya dejaba la plantilla como generador por defecto. Se quitó todo el código, los tests, `docker-compose.llm.yml` y `make up-llm`.
+- **Lo que se aprendió**, y por eso se conserva el registro de abajo: con un modelo local pequeño, validar solo los ids no basta. En la prueba real afirmó una premisa falsa (q5), omitió lugares e inventó el nombre del pueblo. La forma segura de usarlo, que el LLM solo redacte y el código ponga los datos, le deja muy poco que aportar.
+- **Qué haría con más tiempo:** usar el LLM para **interpretar** preguntas fuera del vocabulario cerrado («algo para un día de lluvia») y traducirlas a los mismos filtros, con un esquema cerrado y validado, sin dejarle escribir la respuesta. Se medirían los resultados con la evaluación antes de activarlo.
+
+Registro de la decisión tal como se tomó:
 
 - **Contexto:**
   - D-004 dejó el LLM como opcional, detrás de `AnswerGenerator`. Con lo obligatorio terminado, el autor decidió añadirlo.

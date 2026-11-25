@@ -776,3 +776,17 @@ Con esto quedan cerradas todas las decisiones previas al código (D-001 a D-031)
 - **Riesgo que queda**, anotado en D-048: no se detecta una afirmación falsa sobre un lugar que sí está en la lista. Por eso la plantilla sigue siendo el valor por defecto.
 - Verificado: 300 tests del backend, ruff y mypy limpios, y la evaluación con la plantilla en 6/6.
 - Queda en Docker el volumen de la prueba, `valdelumbre-llm_ollama-models` (1,9 GB). Lo puede borrar el autor con `docker volume rm valdelumbre-llm_ollama-models`.
+
+### Paso 14.2 · Se descarta el LLM — 2026-11-25
+- El autor probó `make up-llm` y preguntó qué función hacía el LLM, «porque es lo mismo que antes». La IA respondió con franqueza: tras los rediseños, el LLM solo cambiaba la primera frase. La lista, los lugares y las tarjetas eran idénticos. Le propuso tres caminos:
+  - dejarlo y explicarlo;
+  - darle un papel útil (interpretar preguntas fuera del vocabulario cerrado);
+  - quitarlo.
+- **Decisión del autor:** «si vamos a hacerlo mal, prefiero no meter LLM». D-048 queda como ❌ descartada, con el porqué, lo aprendido y lo que se haría con más tiempo.
+- Se quitó todo, editando ficheros (git lo gestiona el autor). Los ocho ficheros que solo cambiaron por el LLM entre `91f5161` y `bdae57e` se restauraron a su versión anterior (comprobado con `git diff --stat`). Se borraron:
+  - `llm_generator.py`, `llm_prompt.py`, `ollama_completion.py` e `introduction_check.py`;
+  - sus cinco ficheros de tests;
+  - `docker-compose.llm.yml` y `make up-llm`;
+  - la subsección y las variables del README.
+- **Para IA.md:** el experimento entero (Claude sin decidir → Ollama → dos rediseños tras la prueba real → descartado) es un buen ejemplo de qué se corrigió o se descartó y por qué. El código queda en el historial (`bdae57e`).
+- Verificado: 270 tests del backend, ruff y mypy limpios, y la evaluación en 6/6.
