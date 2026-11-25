@@ -1,7 +1,17 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 from app.domain.localized_text import Language
 from app.domain.poi import Category
+
+
+class ErrorResponse(BaseModel):
+    model_config = ConfigDict(
+        json_schema_extra={
+            "examples": [{"detail": "El parámetro «categoria» no es válido. Valores posibles: …"}]
+        }
+    )
+
+    detail: str
 
 
 class TextResponse(BaseModel):

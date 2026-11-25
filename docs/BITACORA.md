@@ -409,3 +409,11 @@ Con esto quedan cerradas todas las decisiones previas al código (D-001 a D-031)
   - Para registrar el manejador había puesto un `# type: ignore` (Starlette tipa los manejadores con `Exception` genérica). Comprobó que era necesario y lo sustituyó por el parámetro `exception_handlers` del constructor de FastAPI, que acepta el tipo sin silenciar a mypy.
   - El primer borrador del mensaje de error habría dejado un «Valores posibles: .» vacío para un parámetro fuera de la tabla. Ahora en ese caso se omite la lista.
 - Trello: H2, H3, H4 y H5 pasan a «En curso» y se marcan sus criterios de API (H2: `accesible=true` y tri-estado; H3: `abierto_en`, poi-018 y la temporada de poi-014; H4: filtro y 422 localizado; H5: `?idioma=en`). Siguen en «En curso» porque les faltan la pantalla y, en H2, H3 y H5, las preguntas de la evaluación vía `/preguntar`.
+
+### Paso 8.4 · Corrección: los errores documentados en `/docs` — 2026-11-25
+- **Detectado al revisar `/docs` con el autor:** tras D-039, la documentación OpenAPI seguía mostrando el 422 por defecto de FastAPI (una lista con `loc`, `msg` y `type`), pero la API responde `{"detail": "<mensaje>"}`. Además, el 404 de `/pois/{id}` no estaba documentado. Quien leyera `/docs`, o una pantalla que generase sus tipos a partir de ella, esperaría una estructura que no existe.
+- TDD: primero `tests/test_openapi_errors.py`. Lee `/openapi.json` y comprueba que el 422 de las dos rutas y el 404 del detalle apuntan a `ErrorResponse`, y que ya no se anuncia `HTTPValidationError`. Los cuatro tests fallaban antes del cambio.
+- Cambios: esquema `ErrorResponse` (con un ejemplo) en `app/routes/schemas.py`; en `app/routes/pois.py`, el 422 se declara en el router y el 404 en la ruta del detalle. Si la ruta declara su 422, FastAPI deja de añadir el suyo por defecto.
+- D-039: añadida la concreción.
+- Verificado: `make check` limpio, 149 tests.
+- **Para `IA.md`:** la IA no detectó la incoherencia al implementar D-039; la encontró después, al revisar la captura de `/docs` que el autor compartió durante la prueba manual. Lección: un cambio en el formato de respuesta se comprueba también en el contrato publicado, no solo en los tests de comportamiento.
