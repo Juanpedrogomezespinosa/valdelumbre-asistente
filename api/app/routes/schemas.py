@@ -1,17 +1,28 @@
-from pydantic import BaseModel, ConfigDict
+from typing import Annotated
+
+from pydantic import BaseModel, StringConstraints
 
 from app.domain.localized_text import Language
 from app.domain.poi import Category
 
 
 class ErrorResponse(BaseModel):
-    model_config = ConfigDict(
-        json_schema_extra={
-            "examples": [{"detail": "El parámetro «categoria» no es válido. Valores posibles: …"}]
-        }
-    )
-
     detail: str
+
+
+MAX_QUESTION_LENGTH = 500
+
+
+class AskRequest(BaseModel):
+    pregunta: Annotated[
+        str, StringConstraints(strip_whitespace=True, min_length=1, max_length=MAX_QUESTION_LENGTH)
+    ]
+    idioma: Language = Language.ES
+
+
+class AskResponse(BaseModel):
+    respuesta: str
+    ids: list[str]
 
 
 class TextResponse(BaseModel):

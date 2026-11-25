@@ -1,8 +1,8 @@
 import re
 
-from app.data.folding import fold
 from app.data.quality import DataWarning, WarningKind
 from app.domain.localized_text import LocalizedText
+from app.domain.text_folding import fold
 
 _SENTENCE_BREAK = re.compile(r"(?<=[.!?])\s+")
 # Matched against lowercase, accent-free text. The defence does not rely on these

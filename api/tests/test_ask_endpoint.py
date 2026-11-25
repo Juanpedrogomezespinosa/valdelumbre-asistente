@@ -1,0 +1,95 @@
+from typing import Any
+
+import pytest
+from fastapi.testclient import TestClient
+
+
+def ask(client: TestClient, body: Any) -> Any:
+    return client.post("/preguntar", json=body)
+
+
+def test_returns_exactly_an_answer_and_the_cited_ids(client: TestClient) -> None:
+    response = ask(
+        client,
+        {"pregunta": "Voy en silla de ruedas, ¿qué puedo visitar de museos?", "idioma": "es"},
+    )
+
+    assert response.status_code == 200
+    body = response.json()
+    assert set(body) == {"respuesta", "ids"}
+    assert body["ids"] == ["poi-003", "poi-015"]
+    assert body["respuesta"].startswith("He encontrado 2 lugares")
+
+
+def test_answers_in_the_requested_language(client: TestClient) -> None:
+    body = ask(client, {"pregunta": "Something to do with kids outdoors?", "idioma": "en"}).json()
+
+    assert body["ids"] == ["poi-007", "poi-012"]
+    assert body["respuesta"].startswith("I found 2 places")
+
+
+def test_language_defaults_to_spanish(client: TestClient) -> None:
+    body = ask(client, {"pregunta": "¿Dónde puedo probar vino de la zona?"}).json()
+
+    assert body == {
+        "respuesta": "He encontrado 1 lugar en el catálogo:\n"
+        "- Bodega La Encina (gastronomía · accesible)",
+        "ids": ["poi-008"],
+    }
+
+
+def test_a_question_outside_the_catalog_cites_nothing(client: TestClient) -> None:
+    body = ask(client, {"pregunta": "¿Hay algún sitio de aventura con tirolina?"}).json()
+
+    assert body == {
+        "respuesta": "No tengo información sobre eso en el catálogo de Valdelumbre.",
+        "ids": [],
+    }
+
+
+def test_uses_the_injected_clock(client: TestClient) -> None:
+    # The test clock is a November Monday at noon: the natural pool is out of season.
+    body = ask(client, {"pregunta": "¿Qué está abierto ahora?"}).json()
+
+    assert "poi-001" in body["ids"]
+    assert "poi-014" not in body["ids"]
+
+
+def error(client: TestClient, body: Any) -> str:
+    response = ask(client, body)
+    assert response.status_code == 422
+    message: str = response.json()["detail"]
+    return message
+
+
+@pytest.mark.parametrize("question", ["", "   ", "x" * 501])
+def test_an_empty_or_too_long_question_is_rejected(client: TestClient, question: str) -> None:
+    assert error(client, {"pregunta": question, "idioma": "es"}) == (
+        "La pregunta no puede estar vacía ni superar los 500 caracteres."
+    )
+
+
+def test_the_error_follows_the_language_in_the_body(client: TestClient) -> None:
+    assert error(client, {"pregunta": "", "idioma": "en"}) == (
+        "The question cannot be empty or longer than 500 characters."
+    )
+
+
+def test_an_invalid_language_in_the_body_is_reported_in_spanish(client: TestClient) -> None:
+    assert error(client, {"pregunta": "Hola", "idioma": "fr"}) == (
+        "El parámetro «idioma» no es válido. Valores posibles: es, en."
+    )
+
+
+@pytest.mark.parametrize("body", [None, {"idioma": "es"}, ["pregunta"]])
+def test_a_malformed_body_explains_the_expected_shape(client: TestClient, body: Any) -> None:
+    assert error(client, body).startswith("La petición debe ser un JSON")
+
+
+def test_invalid_json_explains_the_expected_shape(client: TestClient) -> None:
+    response = client.post(
+        "/preguntar", content=b"{pregunta", headers={"Content-Type": "application/json"}
+    )
+
+    assert response.status_code == 422
+    assert response.json()["detail"].startswith("La petición debe ser un JSON")

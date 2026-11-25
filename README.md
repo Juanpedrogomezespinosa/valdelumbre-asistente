@@ -132,6 +132,8 @@ make check     # lint + tests: lo que debe pasar antes de cada commit
 make test      # solo tests
 make lint      # ruff + mypy
 make format    # formatea y corrige lo automático
+make eval      # evalúa el asistente con datos/evaluacion.json, en proceso
+make eval EVAL_URL=http://localhost:8000   # … o contra un servidor en marcha
 ```
 
 Comandos equivalentes sin `make` (⏳ los que aún no existen):
@@ -140,7 +142,7 @@ Comandos equivalentes sin `make` (⏳ los que aún no existen):
 # Calidad y tests del backend
 cd api && uv run ruff check . && uv run mypy . && uv run pytest
 
-# Lint y tests del frontend
+# Lint y tests del frontend ⏳
 cd web && npm run lint && npm test
 
 # Evaluación del asistente con datos/evaluacion.json
@@ -150,15 +152,30 @@ cd api && uv run python ../scripts/evaluate.py
 cd api && uv run python ../scripts/evaluate.py --url http://localhost:8000
 ```
 
-Salida esperada de la evaluación: el resultado de cada pregunta (✅/❌ con los ids que faltan o sobran) y el total, con dos marcadores:
+La evaluación muestra, para cada pregunta, los ids citados y si acierta (✔/✘), con los que faltan o sobran cuando falla. Al final da el total con dos marcadores:
 - **oficial**: incluye todos los `esperado_incluye` y ninguno de los `esperado_excluye`;
 - **estricto**: además, no cita nada cuando la pregunta no tiene respuesta en el catálogo ([D-016](docs/DECISIONES.md#d-016--criterio-de-acierto-de-la-evaluación)).
+
+Resultado actual:
+
+```
+q1  oficial ✔  estricto ✔  citados: poi-003, poi-015
+q2  oficial ✔  estricto ✔  citados: poi-007, poi-012
+q3  oficial ✔  estricto ✔  citados: poi-001, poi-002, poi-005, poi-006, poi-007, poi-010, poi-011, poi-012, poi-016, poi-017
+q4  oficial ✔  estricto ✔  citados: poi-008
+q5  oficial ✔  estricto ✔  citados: poi-002, poi-003, poi-005, poi-008, poi-009, poi-010, poi-012, poi-015, poi-016, poi-017
+q6  oficial ✔  estricto ✔  citados: ninguno
+
+Oficial: 6/6 · Estricto: 6/6
+```
+
+El script termina con código 1 si falla alguna pregunta y con 2 si no puede conectar con el servidor, así que sirve también para integración continua. La evaluación en proceso usa la hora real de Madrid; ninguna pregunta de `evaluacion.json` depende de la temporada (poi-014 no está entre los esperados ni entre los excluidos de q3).
 
 ---
 
 ## 6. Uso de la API
 
-La referencia completa está en http://localhost:8000/docs. Ejemplos (⏳ `/preguntar` aún no existe):
+La referencia completa está en http://localhost:8000/docs. Ejemplos:
 
 ```bash
 # Todos los puntos

@@ -123,3 +123,18 @@ def test_schedule_is_known_when_always_open_or_with_slots() -> None:
     assert Schedule(always_open=True, slots=()).is_known
     assert schedule(slot(EVERY_DAY, "10:00", "14:00")).is_known
     assert not schedule().is_known
+
+
+def test_opening_some_time_that_day_follows_weekdays_and_seasons() -> None:
+    olive_oil_museum = schedule(slot(WEEKDAYS_EXCEPT_MONDAY, "10:00", "18:00"))
+    natural_pool = schedule(slot(EVERY_DAY, "11:00", "20:00", season=SUMMER))
+
+    assert olive_oil_museum.opens_on(TUESDAY, A_NOVEMBER_DAY) is True
+    assert olive_oil_museum.opens_on(MONDAY, A_NOVEMBER_DAY) is False
+    assert natural_pool.opens_on(MONDAY, A_JULY_DAY) is True
+    assert natural_pool.opens_on(MONDAY, A_NOVEMBER_DAY) is False
+
+
+def test_opening_some_time_that_day_keeps_unknown_and_always_open() -> None:
+    assert Schedule(always_open=True, slots=()).opens_on(SATURDAY, A_NOVEMBER_DAY) is True
+    assert schedule().opens_on(SATURDAY, A_NOVEMBER_DAY) is None

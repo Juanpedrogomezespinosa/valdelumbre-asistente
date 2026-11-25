@@ -49,7 +49,18 @@ def test_without_criteria_keeps_every_poi_in_catalog_order() -> None:
 def test_filters_by_category() -> None:
     catalog = [poi("castle", Category.MONUMENT), poi("museum", Category.MUSEUM)]
 
-    assert ids(filter_pois(catalog, PoiCriteria(category=Category.MUSEUM))) == ["museum"]
+    assert ids(filter_pois(catalog, PoiCriteria(categories={Category.MUSEUM}))) == ["museum"]
+
+
+def test_several_categories_match_any_of_them() -> None:
+    catalog = [
+        poi("park", Category.NATURE),
+        poi("museum", Category.MUSEUM),
+        poi("trail", Category.ROUTE),
+    ]
+    outdoors = PoiCriteria(categories={Category.NATURE, Category.ROUTE})
+
+    assert ids(filter_pois(catalog, outdoors)) == ["park", "trail"]
 
 
 @pytest.mark.parametrize(("wanted", "expected"), [(True, ["yes"]), (False, ["no"])])
@@ -76,9 +87,20 @@ def test_criteria_are_combined() -> None:
         poi("not-accessible", Category.MUSEUM, accessible=False),
         poi("closed", Category.MUSEUM, accessible=True, schedule=WEEKEND_MORNINGS),
     ]
-    criteria = PoiCriteria(category=Category.MUSEUM, accessible=True, open_at=MONDAY_AT_NOON)
+    criteria = PoiCriteria(categories={Category.MUSEUM}, accessible=True, open_at=MONDAY_AT_NOON)
 
     assert ids(filter_pois(catalog, criteria)) == ["match"]
+
+
+def test_open_on_a_whole_day_keeps_pois_that_open_at_some_time_that_day() -> None:
+    catalog = [
+        poi("always", schedule=ALWAYS_OPEN),
+        poi("weekends", schedule=WEEKEND_MORNINGS),
+        poi("unknown", schedule=UNKNOWN_HOURS),
+    ]
+    saturday = OpeningQuery(weekday=6, at=None, reference_date=date(2026, 11, 28))
+
+    assert ids(filter_pois(catalog, PoiCriteria(open_at=saturday))) == ["always", "weekends"]
 
 
 @pytest.mark.parametrize("weekday", [0, 8])

@@ -417,3 +417,80 @@ Con esto quedan cerradas todas las decisiones previas al código (D-001 a D-031)
 - D-039: añadida la concreción.
 - Verificado: `make check` limpio, 149 tests.
 - **Para `IA.md`:** la IA no detectó la incoherencia al implementar D-039; la encontró después, al revisar la captura de `/docs` que el autor compartió durante la prueba manual. Lección: un cambio en el formato de respuesta se comprueba también en el contrato publicado, no solo en los tests de comportamiento.
+
+---
+
+## Paso 9 · `feat/assistant` — 2026-11-25
+- `feat/api-routes` fusionada en `main` por el autor (`--no-ff`, `e6facb4`), tras probar la API a mano en `/docs` y con una batería de 14 comprobaciones contra su servidor (14/14). Se abre `feat/assistant`.
+- Plan propuesto por la IA. El autor lo aprobó con una pauta general: decidir lo técnico siempre que se siga el enunciado al pie de la letra, anotarlo todo y redactar juntos al final el README y las decisiones. Pasos: 9.1 interpretación de preguntas; 9.2 recuperación, generador y servicio; 9.3 `POST /preguntar`; 9.4 script de evaluación.
+- Trello: H7, H8 y H9 → «En curso».
+
+### Paso 9.1 · Interpretación de preguntas — 2026-11-25
+- Preparación:
+  - `refactor`: `app/data/folding.py` pasa a `app/domain/text_folding.py`, porque el asistente la necesita y no debe depender de la capa de datos (`routes → assistant → domain ← data`). Sin cambios de comportamiento.
+  - Dominio (D-041), con los tests primero: `PoiCriteria.categories` (conjunto), `OpeningQuery.at` opcional y `Schedule.opens_on()` para «abre en algún momento de ese día». `GET /pois` no cambia.
+- TDD de la interpretación (D-040): primero los tests, uno por señal (`test_interpret_accessibility.py`, `_categories.py`, `_topics.py`, `_opening_time.py`) y uno de composición con las seis preguntas de la evaluación (`test_interpretation.py`). Después, `app/assistant/interpretation/`:
+  - `phrases.py`: búsqueda de frases completas;
+  - `accessibility.py`, `categories.py`, `topics.py`, `opening_time.py` y `only_one.py`, uno por señal;
+  - `interpretation.py`: `interpret(pregunta, ahora)` → criterios, temas, palabras clave e indicador de «único».
+- Comprobación con el catálogo real: q1, q3 y q5 ya dan con el filtro los ids esperados; q2 deja cinco candidatos al aire libre, que el tema `familias` reducirá a 007 y 012 en el paso 9.2; q4 se resuelve con el tema `vino`; q6 no tiene ninguna señal (→ «no lo sé»).
+- Decisiones D-040, D-041 y D-042.
+- Verificado: `make check` limpio, 214 tests.
+- **Para `IA.md`:** la IA propuso añadir `puntos` a la respuesta de `/preguntar`. Ante la pauta del autor de seguir el enunciado al pie de la letra, lo descartó ella misma (D-042).
+
+### Paso 9.2 · Recuperación, generador y servicio — 2026-11-25
+- TDD: primero `tests/test_retrieval.py`, `test_template_generator.py` y `test_answer_question.py` (este último con el catálogo real y el reloj fijado). Se comprobó que fallaban (faltaban los módulos). Helper común para construir puntos en los tests: `tests/poi_factory.py`.
+- Ficheros nuevos en `app/assistant/`, uno por responsabilidad:
+  - `answer.py`: `Answer` y el protocolo `AnswerGenerator` (D-004);
+  - `retrieval.py`: filtro + puntuación por temas y nombres + umbral;
+  - `template_texts.py`: textos y etiquetas en es/en (categorías, accesibilidad, meses);
+  - `template_generator.py`: `TemplateAnswerGenerator`;
+  - `answer_question.py`: interpretar → recuperar → generar, y descartar al final cualquier id no recuperado.
+- Las seis preguntas de la evaluación pasadas por el servicio con el catálogo real: 6/6, también q6 con el criterio estricto (ninguna cita).
+- Dos problemas detectados por los propios tests y corregidos antes de entregar:
+  - Preguntar por un lugar que no pasa los filtros («¿es accesible el castillo?») devolvía *otros* lugares accesibles. Ahora los nombres se buscan en todo el catálogo.
+  - «Is there any zipline adventure park?» citaba el Parque de la Alameda y el **aparcamiento** («Cuesta Car Park»). Ahora una palabra solo nombra un lugar si aparece en un único nombre del catálogo.
+- `tests/__init__.py`: necesario para que mypy no vea el helper de tests con dos nombres de módulo.
+- Decisión D-043.
+- Verificado: `make check` limpio, 244 tests.
+- Trello: marcados los criterios ya cubiertos por tests:
+  - H7: mismos filtros que `GET /pois`; solo cita ids recuperados;
+  - H8: umbral → «no lo sé» con ids vacíos; no nombra ningún punto; test fuera de catálogo en es/en;
+  - H9: hechos solo de campos estructurados; q5 corrige la premisa sin citar poi-013; test con una inyección sintética.
+
+  Quedan para los pasos 9.3 y 9.4 los que dependen de `POST /preguntar` y del script de evaluación.
+- **Para `IA.md`:** tres errores de la IA que encontraron sus propios tests antes de entregar:
+  - en un test esperaba «no accesible» de un punto creado sin datos de accesibilidad;
+  - había escrito un test de relleno que no comprobaba nada (se eliminó);
+  - y, sobre todo, el caso «zipline adventure park» → aparcamiento, que no se le había ocurrido al diseñar la recuperación y que solo apareció al pedir el test en inglés que exigía un criterio de Trello.
+
+### Paso 9.3 · `POST /preguntar` — 2026-11-25
+- TDD: primero `tests/test_ask_endpoint.py` y el caso de `/preguntar` en `test_openapi_errors.py`. Se comprobó que fallaban (15 tests).
+- Contrato estricto del enunciado (D-042): `{"pregunta", "idioma"}` → `{"respuesta", "ids"}`, sin más campos (hay un test que lo comprueba). `idioma` por defecto `es`; la pregunta, sin espacios en los extremos y entre 1 y 500 caracteres (concreción de D-042).
+- Ficheros:
+  - nuevos: `app/routes/ask.py` (el endpoint) y `app/routes/error_responses.py` (las declaraciones de 422 y 404 para OpenAPI, que salen de `pois.py` porque ahora las usan dos routers);
+  - cambiados: `schemas.py` (`AskRequest`, `AskResponse`), `dependencies.py` (el generador se inyecta con `get_answer_generator`, para poder cambiarlo por un LLM o por uno falso en los tests, D-004), `messages.py` y `main.py`.
+- Errores 422 (concreción de D-039): antes de escribir el manejador se comprobó qué errores genera FastAPI en cada caso (cuerpo ausente, JSON inválido, lista en lugar de objeto, falta `pregunta`, pregunta vacía, idioma no válido). El idioma del mensaje se toma de la URL o, si no está, del cuerpo; los errores de forma del cuerpo muestran el JSON esperado.
+- Comprobado contra el servidor del autor (`make api`): q1, q2, «¿qué está abierto ahora?», q6, pregunta vacía en inglés y cuerpo sin `pregunta`. `/docs` documenta `AskRequest`, `AskResponse` y el 422 con `ErrorResponse`.
+- README, sección 6: el ejemplo de `/preguntar` ya no lleva ⏳; se ejecutó tal cual y devuelve `["poi-003", "poi-015"]`.
+- Verificado: `make check` limpio, 259 tests.
+- Trello: en H7, marcados «`POST /preguntar` devuelve `{respuesta, ids}`» y «pregunta vacía o demasiado larga → 422».
+- **Corrección tras la revisión del autor en `/docs`:** el ejemplo del 422 venía fijado en el esquema `ErrorResponse` («El parámetro «categoria» no es válido…») y se mostraba también en `/preguntar`, que no tiene ese parámetro. Al revisarlo apareció el mismo problema en `GET /pois/{poi_id}`, que lo heredaba del router y solo admite `idioma`. Ahora cada ruta declara su propio ejemplo en `app/routes/error_responses.py`, generado con las mismas funciones de `messages.py` que usa la API, para que no se desincronicen. Test nuevo en `test_openapi_errors.py`. Los casos 2 a 9 de la prueba manual se lanzaron con un script contra el servidor del autor: 8/8. Verificado: `make check` limpio, 260 tests.
+- **Para `IA.md`:** segunda vez que la revisión visual de `/docs` encuentra un error que los tests de comportamiento no veían (la primera fue en el paso 8.4). La IA añadió tests sobre `/openapi.json` en ambos casos.
+
+### Paso 9.4 · Script de evaluación — 2026-11-25
+- TDD: primero `api/tests/test_evaluate_script.py`, que carga `scripts/evaluate.py` por su ruta (el script no forma parte del paquete `app`). Cubre los dos criterios de D-016, los ids que faltan o sobran, el código de salida (0, 1 y 2) y la evaluación completa en proceso (6/6 y 6/6), que así queda como test de regresión dentro de `make test`. El caso de servidor caído se prueba simulando el error de conexión, sin red.
+- `scripts/evaluate.py`: modo en proceso por defecto (el `TestClient` de la propia app) y `--url` para un servidor; `--evaluacion` para otro fichero de preguntas. Concreción de D-016 sobre los códigos de salida y el reloj.
+- Al probarlo a mano aparecieron dos problemas, corregidos:
+  - El informe quedaba enterrado bajo los logs de la API y el aviso de `httpx`. Ahora se silencian solo durante la evaluación en proceso. El aviso de Starlette hereda de `UserWarning` (comprobado), así que se filtra por su mensaje exacto y no por categoría, para no ocultar otros avisos.
+  - Con el servidor apagado salía una traza de Python. Ahora sale un mensaje claro y el código 2.
+- `Makefile`: `make eval` (en proceso) y `make eval EVAL_URL=…`; `lint` y `format` cubren también `scripts/`.
+- Comprobado: `make eval` → Oficial 6/6 · Estricto 6/6; `make eval EVAL_URL=http://localhost:8000` contra el servidor del autor → 6/6 · 6/6; `--url` con un puerto sin servidor → mensaje y código 2.
+- README, sección 5: `make eval`, la salida real (✔/✘, no ✅/❌ como decía antes) y los códigos de salida.
+- Verificado: `make check` limpio, 270 tests.
+- Trello:
+  - T2 completa → «Revisión».
+  - Con la evaluación a 6/6 se marcan los criterios «qN acierta» de H2 (q1), H3 (q3), H5 (q2) y H7 (q1–q4), y el de q6 estricto de H8.
+  - H8 completa → «Revisión».
+  - H9 → «Revisión» con 4/5. El quinto criterio solo aplica si se usa un LLM (no es el caso, D-004); está explicado en un comentario de la tarjeta.
+  - H2, H3, H5 y H7 siguen «En curso»: les falta la pantalla.

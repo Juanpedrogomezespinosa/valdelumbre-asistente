@@ -6,7 +6,7 @@ from fastapi import FastAPI
 from fastapi.exceptions import RequestValidationError
 
 from app.data.catalog import Catalog, load_catalog
-from app.routes import pois
+from app.routes import ask, pois
 from app.routes.validation_errors import localized_validation_error
 from app.settings import catalog_path
 
@@ -38,3 +38,4 @@ app = FastAPI(
     exception_handlers={RequestValidationError: localized_validation_error},
 )
 app.include_router(pois.router)
+app.include_router(ask.router)

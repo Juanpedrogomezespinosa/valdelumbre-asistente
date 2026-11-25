@@ -58,6 +58,10 @@ Estados: ✅ aprobada · 🔄 revisada (enlaza a la que la sustituye) · ❌ des
 | [D-037](#d-037--makefile-en-la-raíz-como-punto-de-entrada-de-los-comandos) | Makefile en la raíz como punto de entrada de los comandos | ✅ |
 | [D-038](#d-038--ficheros-pequeños-un-módulo-por-responsabilidad) | Ficheros pequeños: un módulo por responsabilidad | ✅ |
 | [D-039](#d-039--los-errores-422-se-escriben-en-el-idioma-pedido) | Los errores 422 se escriben en el idioma pedido | ✅ |
+| [D-040](#d-040--el-asistente-interpreta-las-preguntas-con-un-vocabulario-cerrado) | El asistente interpreta las preguntas con un vocabulario cerrado | ✅ |
+| [D-041](#d-041--el-filtro-admite-varias-categorías-y-días-completos) | El filtro admite varias categorías y días completos | ✅ |
+| [D-042](#d-042--preguntar-devuelve-solo-respuesta-e-ids) | `/preguntar` devuelve solo `respuesta` e `ids` | ✅ |
+| [D-043](#d-043--recuperación-por-filtros-temas-y-nombres-respuesta-solo-con-campos-estructurados) | Recuperación por filtros, temas y nombres; respuesta solo con campos estructurados | ✅ |
 
 ---
 
@@ -215,6 +219,7 @@ Estados: ✅ aprobada · 🔄 revisada (enlaza a la que la sustituye) · ❌ des
 - **Decisión:** una pregunta acierta si `incluye ⊆ citados` y `excluye ∩ citados = ∅`. El script añade un **criterio estricto** propio: si ambas listas están vacías y la pregunta no tiene respuesta en el catálogo, no se debe citar nada. Se informa de los dos marcadores por separado.
 - **Por qué:** el criterio oficial se respeta tal cual; el estricto mide justo lo que q6 pretende evaluar, que es no inventar.
 - **Consecuencias:** el script se puede ejecutar contra el servidor por HTTP (`--url`) o en proceso, sin levantar nada.
+- **Concreción (2026-11-25):** el código de salida es 1 si alguna pregunta falla el criterio estricto (que incluye el oficial) y 2 si no se puede conectar con el servidor de `--url`. En proceso se usa la hora real de Madrid, como un turista, y se silencian los logs de la API para que el informe se lea de un vistazo (los avisos de datos ya se ven al arrancar el servidor).
 
 ## D-017 · Stack tecnológico
 **Estado:** ✅ aprobada · 2026-11-24
@@ -420,3 +425,56 @@ Estados: ✅ aprobada · 🔄 revisada (enlaza a la que la sustituye) · ❌ des
   - Validar a mano cada parámetro como texto en la ruta: repite código en cada endpoint y pierde la documentación automática de `/docs`, con los valores enumerados.
 - **Consecuencias:** se pierde el detalle técnico del 422 estándar (ubicación y tipo de cada error), que solo es útil para depurar. Los valores posibles de cada parámetro están en una tabla del manejador, que habrá que ampliar si aparece un parámetro enumerado nuevo. Si no está en la tabla, el mensaje se da sin la lista de valores.
 - **Concreción (2026-11-25):** el formato `{"detail": "…"}` se declara también en la documentación OpenAPI (esquema `ErrorResponse`, para el 422 de todas las rutas de `/pois` y el 404 del detalle). Sin esa declaración, `/docs` seguía anunciando el 422 por defecto de FastAPI, que la API ya no devuelve. Un router nuevo, como el de `/preguntar`, debe declararlo igual.
+- **Concreción (2026-11-25, `/preguntar`):** si `idioma` no viene en la URL, el idioma del mensaje se toma del cuerpo JSON. Un cuerpo mal formado (ausente, JSON inválido o sin `pregunta`) recibe un mensaje que muestra la forma esperada. Una pregunta vacía o demasiado larga recibe un mensaje propio.
+
+## D-040 · El asistente interpreta las preguntas con un vocabulario cerrado
+**Estado:** ✅ aprobada por el autor · 2026-11-25
+
+- **Contexto:** sin LLM (D-004), hay que convertir la pregunta en filtros estructurados (D-005) de forma determinista, en español y en inglés.
+- **Decisión:** `api/app/assistant/interpretation/`, un módulo por tipo de señal. Todos trabajan sobre el texto sin tildes ni mayúsculas y reconocen frases completas:
+  - **Accesibilidad** («silla de ruedas», «wheelchair»…) → `accesible = true`. Nunca se lee de etiquetas ni de descripciones.
+  - **Categoría**, solo para palabras que nombran un tipo de lugar («museos», «restaurant»…). «Al aire libre» / «outdoors» equivale a naturaleza, ruta y espacio público. Son filtros estrictos.
+  - **Temas**, que corresponden a las etiquetas del catálogo («niños»/«kids» → `familias`, «vino»/«winery» → `vino`…). Ordenan los resultados, no los excluyen.
+  - **Momento**: día de la semana, hora (`12:00`, `9.30`, `17h`, `5pm`, «a las 5 de la tarde», «mediodía»), «ahora» y «hoy». Sin día se usa hoy; sin hora, «en algún momento de ese día» (D-041). La temporada se evalúa con la fecha de hoy (D-011).
+  - **«Único» / «the only»**: indica que la pregunta da por hecho una sola respuesta, para que la respuesta corrija esa premisa (q5, D-006).
+  - **Palabras clave**: lo que queda tras quitar el vocabulario interpretado, las palabras cortas y el nombre del pueblo. Se usan para reconocer nombres de lugares («castillo»).
+- **Por qué:** es determinista, se puede probar caso a caso (61 tests) y no se puede manipular desde el catálogo. Una palabra desconocida no activa nada, y así q6 («tirolina») acaba en «no lo sé» en lugar de en una respuesta inventada.
+- **Alternativas descartadas:** búsqueda difusa o por similitud (devolvería siempre algo, aunque no tenga relación, y rompería q6); LLM para interpretar (D-004).
+- **Consecuencias:** solo se entiende lo que está en el vocabulario. **Límite conocido:** si la pregunta combina un filtro reconocido con un requisito desconocido («museos con tirolina»), se responde con los museos, porque no hay forma fiable de saber que la palabra desconocida es un requisito. Queda para «qué haría con más tiempo».
+
+## D-041 · El filtro admite varias categorías y días completos
+**Estado:** ✅ aprobada por el autor · 2026-11-25
+
+- **Contexto:** «al aire libre» equivale a varias categorías. Sin esto, en q2 se colaría poi-015, un museo con la etiqueta `naturaleza`. Además, «¿qué abre el domingo?» trae día pero no hora.
+- **Decisión:** `PoiCriteria.categories` es un conjunto (cualquiera de ellas vale) y `OpeningQuery.at` puede ser `None`, que significa «abre en algún momento de ese día» (`Schedule.opens_on`). Un horario desconocido sigue sin contar nunca como abierto (D-009).
+- **Por qué:** `/preguntar` y `GET /pois` siguen usando la misma función de filtrado (D-005). El contrato de `GET /pois` no cambia: pasa un conjunto de una sola categoría y su `abierto_en` siempre trae hora (D-012).
+- **Consecuencias:** se cambió la firma de `PoiCriteria` en el dominio y sus tests; la API no cambia.
+
+## D-042 · `/preguntar` devuelve solo `respuesta` e `ids`
+**Estado:** ✅ aprobada por el autor · 2026-11-25
+
+- **Contexto:** la IA propuso añadir un campo `puntos` con las fichas de los ids citados, para que la pantalla no tuviera que pedirlas una a una. El autor pidió seguir el enunciado al pie de la letra.
+- **Decisión:** `POST /preguntar` devuelve exactamente lo que pide el enunciado: la respuesta en texto (`respuesta`) y los ids en los que se apoya (`ids`). La pantalla pide las fichas con `GET /pois/{id}`.
+- **Por qué:** el contrato lo fija el enunciado, y un campo de más es algo que el evaluador no ha pedido y tendría que entender.
+- **Alternativas descartadas:** incluir `puntos` (amplía el contrato sin que el enunciado lo pida).
+- **Consecuencias:** la pantalla hace una petición por cada punto citado, como mucho una por punto del catálogo.
+- **Concreción (2026-11-25):** `idioma` es opcional y por defecto `es`, como en `GET /pois`. A `pregunta` se le quitan los espacios de los extremos y debe tener entre 1 y 500 caracteres: el enunciado no fija un límite, y 500 da de sobra para una pregunta turística y acota la entrada del usuario.
+
+## D-043 · Recuperación por filtros, temas y nombres; respuesta solo con campos estructurados
+**Estado:** ✅ aprobada por el autor · 2026-11-25
+
+- **Contexto:** tras interpretar la pregunta (D-040) hay que decidir qué puntos se citan y cómo se redacta la respuesta sin LLM (D-004), sin inventar (D-032) y sin dejarse manipular por el catálogo (D-006).
+- **Decisión:**
+  - **Recuperación** (`app/assistant/retrieval.py`):
+    1. Se filtra con `filter_pois` (D-005).
+    2. Si la pregunta tiene un **tema** o **nombra un lugar**, cada candidato suma 1 punto por cada tema que coincide con sus etiquetas o su categoría, y 1 por cada palabra de su nombre (en español o en inglés). Se quedan los que suman al menos 1, de mayor a menor puntuación. Ese es el umbral.
+    3. Si solo hay filtros, se quedan todos los candidatos.
+    4. Si no hay nada reconocible, no se recupera nada → «no lo sé» (D-032).
+  - **Nombres**: una palabra solo nombra un lugar si aparece en el nombre de **un único** punto del catálogo («park» está en «Alameda Park» y en «Cuesta Car Park», así que no identifica ninguno). Los nombres se buscan en todo el catálogo: si la pregunta nombra un lugar que no pasa los filtros («¿es accesible el castillo?»), no se responde con otros lugares en su lugar.
+  - **Respuesta** (`TemplateAnswerGenerator`, detrás del protocolo `AnswerGenerator`): una introducción y una línea por lugar con nombre, categoría, accesibilidad en palabras y temporada si la tiene (D-011). Si la pregunta da por hecho un único resultado y hay varios, la introducción lo corrige (q5, D-006). **Las descripciones nunca entran en la respuesta.**
+  - **Comprobación final** (`answer_question`): se descarta cualquier id que el generador cite sin haberlo recuperado.
+- **Por qué:** cada hecho de la respuesta sale de un campo estructurado, así que una descripción manipulada no puede cambiar lo que se dice ni lo que se cita. Hay un test con una inyección que esquiva los patrones de limpieza. La regla de los nombres sale de los datos, no de una lista escrita a mano.
+- **Alternativas descartadas:**
+  - Incluir la descripción en la respuesta: es texto no confiable.
+  - Dar por válida cualquier palabra de un nombre: con «zipline adventure park» se citaban el parque y el aparcamiento.
+- **Consecuencias:** las respuestas son correctas pero esquemáticas. Si se pregunta por un lugar que no cumple el filtro («¿es accesible el castillo?»), la respuesta es «no tengo información» en lugar de «no, no es accesible». Es honesto, pero mejorable (queda para «qué haría con más tiempo»).

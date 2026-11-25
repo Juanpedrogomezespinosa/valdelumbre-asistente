@@ -1,5 +1,4 @@
 from datetime import datetime
-from typing import Any
 
 from fastapi import APIRouter, HTTPException
 
@@ -8,23 +7,16 @@ from app.domain.opening_query import OpeningQuery
 from app.domain.poi import Category
 from app.domain.poi_filter import PoiCriteria, filter_pois
 from app.routes.dependencies import CatalogDep, ClockDep
+from app.routes.error_responses import INVALID_LANGUAGE, INVALID_POI_FILTER, POI_NOT_FOUND
 from app.routes.messages import invalid_open_at, poi_not_found
 from app.routes.open_at_param import parse_open_at
 from app.routes.presenters.poi import present_poi
-from app.routes.schemas import ErrorResponse, PoiResponse
+from app.routes.schemas import PoiResponse
 
-# Declaring 422 replaces FastAPI's default schema, which D-039's handler no longer returns.
-INVALID_PARAMETER: dict[int | str, dict[str, Any]] = {
-    422: {"model": ErrorResponse, "description": "Parámetro no válido, en el idioma pedido"}
-}
-NOT_FOUND: dict[int | str, dict[str, Any]] = {
-    404: {"model": ErrorResponse, "description": "No existe ningún punto con ese id"}
-}
-
-router = APIRouter(prefix="/pois", tags=["Puntos de interés"], responses=INVALID_PARAMETER)
+router = APIRouter(prefix="/pois", tags=["Puntos de interés"])
 
 
-@router.get("", summary="Puntos de interés con filtros")
+@router.get("", summary="Puntos de interés con filtros", responses=INVALID_POI_FILTER)
 def list_pois(
     catalog: CatalogDep,
     clock: ClockDep,
@@ -35,14 +27,18 @@ def list_pois(
 ) -> list[PoiResponse]:
     now = clock()
     criteria = PoiCriteria(
-        category=categoria,
+        categories=None if categoria is None else {categoria},
         accessible=accesible,
         open_at=None if abierto_en is None else _opening_query(abierto_en, now, idioma),
     )
     return [present_poi(poi, idioma, now) for poi in filter_pois(catalog.pois, criteria)]
 
 
-@router.get("/{poi_id}", summary="Un punto de interés", responses=NOT_FOUND)
+@router.get(
+    "/{poi_id}",
+    summary="Un punto de interés",
+    responses={**INVALID_LANGUAGE, **POI_NOT_FOUND},
+)
 def get_poi(
     poi_id: str, catalog: CatalogDep, clock: ClockDep, idioma: Language = Language.ES
 ) -> PoiResponse:
