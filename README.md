@@ -214,7 +214,7 @@ Todas las variables son opcionales. Con Docker se ponen en un fichero `.env` en 
 
 | Variable | Por defecto | Para qué |
 |----------|-------------|----------|
-| `ZONA_HORARIA` | `Europe/Madrid` | Zona del pueblo para "abierto ahora" y temporadas ([D-011](docs/DECISIONES.md#d-011--temporadas-se-evalúan-con-la-fecha-actual-de-madrid)) |
+| `ZONA_HORARIA` | `Europe/Madrid` | Zona del pueblo para "abierto ahora" y temporadas ([D-011](docs/DECISIONES.md#d-011--las-temporadas-se-evalúan-con-la-fecha-actual-de-madrid)) |
 | `RUTA_POIS` | `datos/pois.json` | Ruta del catálogo. En Docker es fija: `datos/` se monta en el contenedor en solo lectura |
 
 ---

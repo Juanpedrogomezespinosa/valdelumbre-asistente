@@ -29,9 +29,9 @@ Estados: ✅ aprobada · 🔄 revisada (enlaza a la que la sustituye) · ❌ des
 | [D-008](#d-008--accesibilidad-en-tres-estados) | Accesibilidad en tres estados | ✅ |
 | [D-009](#d-009--horario-desconocido--cerrado) | Horario desconocido ≠ cerrado | ✅ |
 | [D-010](#d-010--días-de-la-semana-iso-1--lunes) | Días de la semana ISO (1 = lunes) | ✅ |
-| [D-011](#d-011--temporadas-se-evalúan-con-la-fecha-actual-de-madrid) | Las temporadas se evalúan con la fecha actual de Madrid | ✅ |
+| [D-011](#d-011--las-temporadas-se-evalúan-con-la-fecha-actual-de-madrid) | Las temporadas se evalúan con la fecha actual de Madrid | ✅ |
 | [D-012](#d-012--formato-del-filtro-abierto_en) | Formato del filtro `abierto_en` | ✅ |
-| [D-013](#d-013--coordenadas-invertidas-se-corrigen-con-una-regla-genérica) | Las coordenadas invertidas se corrigen con una regla genérica | ✅ |
+| [D-013](#d-013--las-coordenadas-invertidas-se-corrigen-con-una-regla-genérica) | Las coordenadas invertidas se corrigen con una regla genérica | ✅ |
 | [D-014](#d-014--precio-normalizado) | Precio normalizado | ✅ |
 | [D-015](#d-015--idioma-con-fallback-a-español) | Idioma con fallback a español | ✅ |
 | [D-016](#d-016--criterio-de-acierto-de-la-evaluación) | Criterio de acierto de la evaluación | ✅ |

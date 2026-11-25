@@ -877,3 +877,24 @@ Esta parte del trabajo la dirigió el autor. Este apartado reúne lo que está r
 - **9 preguntas trampa** comprueban que nunca se cita nada fuera del catálogo.
 
 Antes de darla por buena se comprobó que **detecta fallos de verdad**: estropeando a propósito la búsqueda en memoria (perder el último lugar o colar uno de más), los dos tests principales fallan. Total: 327 tests del backend.
+
+### Paso 17 · Entrega: arranque desde un clon limpio — 2026-11-25
+- Clon de `main` (`a436804`) desde GitHub en una carpeta temporal y `docker compose build --no-cache` en los puertos 18000 y 18080, porque los de desarrollo estaban ocupados. Es la prueba que hará el evaluador, ahora con las dependencias nuevas de la web (las fuentes).
+- Resultado:
+  - los dos servicios quedan *healthy* y la API devuelve 17 puntos;
+  - nginx sirve `/pois/poi-003` al recargar, y `/api/preguntar` responde (también la pregunta del wifi);
+  - `make eval EVAL_URL=http://localhost:18000` da 6/6 oficial y 6/6 estricto;
+  - las fuentes se sirven desde la app (`font/woff2`), sin ninguna URL externa en el CSS, y el favicon da 200.
+- Se apagaron los contenedores y se borró el clon temporal.
+
+### Paso 18 · Repaso de verificación antes de documentar — 2026-11-25
+- **Petición del autor:** terminar el proyecto y darle «un repaso más para verificar» antes de documentar y empaquetar. Sobre las coordenadas, el autor decidió que se quedan **tal como vienen en los datos** (Madrid): no se mueven a Málaga ni a ningún otro sitio.
+- **Repaso automático de la IA:**
+  - **código muerto:** ninguno, ni en la API ni en la web. Las funciones «sin uso» son los manejadores de rutas que llama FastAPI, y las exportaciones solo locales son tipos de firmas públicas;
+  - **textos de la interfaz sin usar:** ninguno;
+  - **restos del LLM:** ninguno, salvo dos comentarios que explican por qué existe la interfaz `AnswerGenerator`, y que siguen siendo válidos;
+  - **comentarios:** revisados uno a uno (25 en Python y 16 en TS/HTML). Todos explican un *porqué*;
+  - **enlaces internos de la documentación:** había 2 anclas rotas (D-011 y D-013, cuyos títulos empiezan por «Las»). Corregidas en el índice y en el README;
+  - **secretos en git:** ninguno. El repositorio ocupa 1,2 MB;
+  - `make check` limpio (327 tests del backend y 91 de la web) y `make eval` en 6/6. El arranque desde un clon limpio ya se probó en el paso 17.
+- **Pendiente del autor:** el repaso a mano en el navegador y el recorrido con VoiceOver (lista en el mensaje al autor).
