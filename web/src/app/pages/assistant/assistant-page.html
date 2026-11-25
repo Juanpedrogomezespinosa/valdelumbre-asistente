@@ -1,42 +1,83 @@
 @let texts = i18n.texts();
-<app-page-heading>{{ texts.pages.assistant }}</app-page-heading>
+<section class="overflow-hidden rounded-3xl bg-sunk">
+  <app-village-landscape />
+  <div class="px-5 pt-2 pb-8 sm:px-10 sm:pb-10">
+    <app-page-heading>{{ texts.pages.assistant }}</app-page-heading>
+    <p class="mb-6 max-w-2xl text-lg text-muted">{{ texts.assistant.intro }}</p>
 
-<form class="mb-6 rounded-lg border border-control-border bg-surface p-4" (submit)="submit($event)">
-  <label for="question" class="mb-1 block font-semibold">{{ texts.assistant.questionLabel }}</label>
-  <p id="question-hint" class="mb-3 text-sm text-muted">{{ texts.assistant.hint }}</p>
-  <div class="flex flex-wrap gap-3">
-    <input
-      id="question"
-      name="question"
-      type="text"
-      autocomplete="off"
-      [attr.aria-describedby]="
-        invalidQuestion() ? 'question-hint assistant-status' : 'question-hint'
-      "
-      [attr.aria-invalid]="invalidQuestion() || null"
-      class="min-w-0 flex-1 rounded border border-control-border bg-surface px-3 py-2"
-      [attr.maxlength]="maxLength"
-      [value]="question()"
-      (input)="type($event)"
-    />
-    <button type="submit" class="rounded bg-primary px-5 py-2 font-semibold text-on-primary">
-      {{ texts.assistant.submit }}
-    </button>
+    <form (submit)="submit($event)">
+      <label for="question" class="mb-2 block font-semibold">{{
+        texts.assistant.questionLabel
+      }}</label>
+      <div class="flex flex-col gap-3 sm:flex-row">
+        <input
+          id="question"
+          name="question"
+          type="text"
+          autocomplete="off"
+          class="min-w-0 flex-1 rounded-xl border border-control-border bg-surface px-4 py-3 text-lg"
+          [attr.aria-describedby]="
+            invalidQuestion() ? 'question-hint assistant-status' : 'question-hint'
+          "
+          [attr.aria-invalid]="invalidQuestion() || null"
+          [attr.maxlength]="maxLength"
+          [value]="question()"
+          (input)="type($event)"
+        />
+        <button
+          type="submit"
+          class="rounded-xl bg-primary px-7 py-3 text-lg font-semibold text-on-primary hover:brightness-110"
+        >
+          {{ texts.assistant.submit }}
+        </button>
+      </div>
+      <p id="question-hint" class="mt-2 text-sm text-muted">{{ texts.assistant.hint }}</p>
+    </form>
+
+    <div
+      role="group"
+      aria-labelledby="suggestions-label"
+      class="mt-5 flex flex-wrap items-center gap-2"
+    >
+      <span id="suggestions-label" class="mr-1 text-sm font-semibold text-muted">{{
+        texts.assistant.suggestionsLabel
+      }}</span>
+      @for (suggestion of texts.assistant.suggestions; track suggestion.label) {
+        <button
+          type="button"
+          class="rounded-full border border-control-border bg-surface px-4 py-1.5 text-sm hover:border-primary hover:text-primary"
+          (click)="ask(suggestion.question)"
+        >
+          {{ suggestion.label }}
+        </button>
+      }
+    </div>
   </div>
-</form>
+</section>
 
-<div id="assistant-status" role="status" class="mb-8">
+<div id="assistant-status" role="status" class="mt-8">
   @if (statusMessage(); as message) {
-    <p [class.text-error]="invalidQuestion()">{{ message }}</p>
+    <p class="flex items-center gap-3" [class.text-error]="invalidQuestion()">
+      @if (answer.isLoading()) {
+        <span aria-hidden="true" class="size-2.5 animate-pulse rounded-full bg-primary"></span>
+      }
+      {{ message }}
+    </p>
   } @else if (answerParts(); as parts) {
-    <div class="rounded-lg border border-control-border bg-surface p-4">
+    <div class="rounded-2xl border-l-4 border-primary bg-surface p-6 shadow-sm sm:p-8">
       @for (paragraph of parts.paragraphs; track $index) {
-        <p class="mb-2">{{ paragraph }}</p>
+        <p class="mb-3 font-display text-xl">{{ paragraph }}</p>
       }
       @if (parts.items.length > 0) {
-        <ul class="list-disc pl-5">
+        <ul class="space-y-1.5">
           @for (item of parts.items; track $index) {
-            <li>{{ item }}</li>
+            <li class="flex gap-3">
+              <span
+                aria-hidden="true"
+                class="mt-2.5 size-1.5 shrink-0 rounded-full bg-accent"
+              ></span>
+              <span>{{ item }}</span>
+            </li>
           }
         </ul>
       }
@@ -45,9 +86,11 @@
 </div>
 
 @if (!statusMessage() && cited.hasValue() && cited.value().length > 0) {
-  <section aria-labelledby="cited-heading">
-    <h2 id="cited-heading" class="mb-4 text-xl font-semibold">{{ texts.assistant.cited }}</h2>
-    <ul class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+  <section aria-labelledby="cited-heading" class="mt-12">
+    <h2 id="cited-heading" class="mb-6 text-2xl font-semibold sm:text-3xl">
+      {{ texts.assistant.cited }}
+    </h2>
+    <ul class="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
       @for (poi of cited.value(); track poi.id) {
         <li><app-poi-card [poi]="poi" [headingLevel]="3" /></li>
       }

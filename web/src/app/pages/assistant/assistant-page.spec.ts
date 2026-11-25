@@ -41,6 +41,21 @@ describe('Assistant page', () => {
     expect(screen.getByRole('button', { name: 'Preguntar' })).toBeVisible();
   });
 
+  it('asks a suggested question with one click and leaves it in the box', async () => {
+    const { http } = await openAssistant();
+
+    const suggestions = screen.getByRole('group', { name: 'Prueba con' });
+    await userEvent.click(within(suggestions).getByRole('button', { name: 'Vino de la zona' }));
+
+    expect(http.expectOne('/api/preguntar').request.body).toEqual({
+      pregunta: '¿Dónde puedo probar vino de la zona?',
+      idioma: 'es',
+    });
+    expect(screen.getByLabelText('Tu pregunta')).toHaveValue(
+      '¿Dónde puedo probar vino de la zona?',
+    );
+  });
+
   it('sends the question in the interface language and announces the answer', async () => {
     const { harness, http } = await openAssistant();
     await ask('¿Qué museos son accesibles?');

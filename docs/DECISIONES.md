@@ -62,6 +62,12 @@ Estados: ✅ aprobada · 🔄 revisada (enlaza a la que la sustituye) · ❌ des
 | [D-041](#d-041--el-filtro-admite-varias-categorías-y-días-completos) | El filtro admite varias categorías y días completos | ✅ |
 | [D-042](#d-042--preguntar-devuelve-solo-respuesta-e-ids) | `/preguntar` devuelve solo `respuesta` e `ids` | ✅ |
 | [D-043](#d-043--recuperación-por-filtros-temas-y-nombres-respuesta-solo-con-campos-estructurados) | Recuperación por filtros, temas y nombres; respuesta solo con campos estructurados | ✅ |
+| [D-044](#d-044--diseño-de-guía-editorial-con-tipografía-propia-alojada-en-la-app) | Diseño de «guía editorial» con tipografía propia alojada en la app | ✅ |
+| [D-045](#d-045--botón-para-elegir-modo-claro-u-oscuro) | Botón para elegir modo claro u oscuro | ✅ |
+| [D-046](#d-046--ilustración-por-categoría-y-ubicación-relativa-en-lugar-de-fotos-y-enlaces-a-mapas) | Ilustración por categoría y ubicación relativa, en lugar de fotos y enlaces a mapas | ✅ |
+| [D-047](#d-047--mapa-interactivo-con-vista-lista--mapa) | Mapa interactivo, con vista Lista / Mapa | ✅ |
+| [D-048](#d-048--generador-llm-opcional-y-local-ollama-con-vuelta-a-la-plantilla) | Generador LLM opcional y local (Ollama), con vuelta a la plantilla | ❌ |
+| [D-049](#d-049--una-respuesta-vacía-dice-por-qué-está-vacía) | Una respuesta vacía dice por qué está vacía | ✅ |
 
 ---
 
@@ -248,6 +254,13 @@ Estados: ✅ aprobada · 🔄 revisada (enlaza a la que la sustituye) · ❌ des
 - **Decisión:** un SVG con proyección lineal sobre el área que ocupan los puntos. Cada punto es un elemento enfocable con nombre accesible que lleva a su ficha. El mapa complementa al listado, no lo sustituye.
 - **Por qué:** a la escala de un pueblo la distorsión de una proyección lineal es despreciable, y un SVG semántico es navegable con teclado.
 - **Concreción (autor, 2026-11-24):** se hace **al final**, solo si da tiempo tras lo obligatorio. Va en `/pois`, junto al listado, y muestra los mismos puntos filtrados. Se marca como complementario: el listado es la vía principal. Los puntos sin coordenadas válidas no aparecen en el mapa, pero sí en el listado.
+- **Concreción (autor, 2026-11-25, al construirlo):**
+  - Se proyecta con una aproximación plana (equirrectangular) y la misma escala en los dos ejes, con el norte arriba, una escala gráfica y una cuadrícula decorativa.
+  - Cada punto es un enlace con el nombre del lugar, y el nombre se ve al pasar el ratón o al llegar con el tabulador.
+  - El mapa muestra los resultados del filtro. Un texto dice cuántos puntos no tienen ubicación.
+  - Casi todo está a menos de 600 m de la Plaza Mayor, y lo demás a 2–3 km, así que hay un botón «Ver el centro del pueblo» (`aria-pressed`). Al pulsarlo, la vista se acerca y se dice cuántos puntos quedan fuera.
+  - En la ficha, el mismo mapa marca el punto con `aria-current="location"` y empieza acercado si el punto está en el centro.
+- **🔄 Revisión parcial (autor, 2026-11-25) → [D-047](#d-047--mapa-interactivo-con-vista-lista--mapa):** el autor rechazó esta primera versión por pobre y porque no se podía mover. La sustituye un mapa que se desplaza y se amplía. El resto de D-019 (SVG propio, sin librería, complementario a la lista) sigue vigente.
 
 ## D-020 · Configuración de Claude Code dentro del repositorio
 **Estado:** ✅ aprobada · 2026-11-24
@@ -342,6 +355,8 @@ Estados: ✅ aprobada · 🔄 revisada (enlaza a la que la sustituye) · ❌ des
 - **Por qué:** la prioridad es la legibilidad. La tipografía del sistema no descarga nada y el lector la conoce. Con los tokens de D-026, el modo oscuro es redefinir variables, no duplicar estilos.
 - **Alternativas descartadas:** estética neutra tipo dashboard (sin identidad); interruptor manual (un control más que hacer accesible, para poco beneficio).
 - **Consecuencias:** el contraste AA se comprueba en **los dos** temas.
+- **🔄 Revisión parcial (autor, 2026-11-25) → [D-044](#d-044--diseño-de-guía-editorial-con-tipografía-propia-alojada-en-la-app):** la tipografía del sistema se sustituye por dos fuentes libres servidas desde la propia app. El resto de D-030 (fondo claro, colores terrosos, modo oscuro según el sistema, contraste AA en los dos temas) sigue vigente.
+- **🔄 Revisión parcial (autor, 2026-11-25) → [D-045](#d-045--botón-para-elegir-modo-claro-u-oscuro):** se añade un botón para elegir el tema; el sistema sigue siendo el valor por defecto.
 
 ## D-031 · Fichas resumidas con enlace al detalle
 **Estado:** ✅ aprobada por el autor · 2026-11-24
@@ -479,3 +494,173 @@ Estados: ✅ aprobada · 🔄 revisada (enlaza a la que la sustituye) · ❌ des
   - Incluir la descripción en la respuesta: es texto no confiable.
   - Dar por válida cualquier palabra de un nombre: con «zipline adventure park» se citaban el parque y el aparcamiento.
 - **Consecuencias:** las respuestas son correctas pero esquemáticas. Si se pregunta por un lugar que no cumple el filtro («¿es accesible el castillo?»), la respuesta es «no tengo información» en lugar de «no, no es accesible». Es honesto, pero mejorable (queda para «qué haría con más tiempo»).
+
+## D-044 · Diseño de «guía editorial» con tipografía propia alojada en la app
+**Estado:** ✅ aprobada por el autor · 2026-11-25
+
+- **Contexto:** con lo obligatorio terminado, el autor revisó la pantalla y la vio correcta pero genérica: cajas con borde, enlaces subrayados y tipografía del sistema. Quería un diseño con identidad. Además, en `/pois` la página se desplazaba unos píxeles a la derecha cuando aparecía la barra de scroll.
+- **Decisión:**
+  - Dirección visual de «guía de viaje editorial», elegida por el autor entre tres propuestas (guía editorial, app de viaje moderna, minimal):
+    - títulos con serif;
+    - papel cálido, terracota como color principal y oliva como acento;
+    - portada con un paisaje del pueblo en SVG decorativo;
+    - sugerencias de pregunta con un clic;
+    - tarjetas con la categoría como antetítulo y los datos como etiquetas.
+  - Tipografías **Fraunces** (títulos) y **Source Sans 3** (texto), las dos con licencia OFL, instaladas con npm (`@fontsource-variable`) y servidas **desde la propia app**.
+  - `scrollbar-gutter: stable` en la raíz: el hueco de la barra se reserva siempre.
+- **Por qué:**
+  - La identidad visual ayuda a que la prueba se recuerde, y no cuesta accesibilidad si se mantienen las reglas de D-026.
+  - Al servir las fuentes la propia app, no se envía nada a terceros (Google Fonts), funcionan sin red y Docker no necesita nada más.
+  - Si la fuente no carga, se usa la del sistema (`font-family` con alternativas).
+- **Alternativas descartadas:**
+  - Google Fonts por CDN: envía la IP del visitante a un tercero y depende de la red.
+  - Mantener solo la tipografía del sistema: era la opción más ligera, pero el autor priorizó la identidad.
+  - «App de viaje moderna» y «minimal premium»: menos personalidad o menos color, según el autor.
+- **Consecuencias:**
+  - La primera visita descarga unos pocos KB de fuentes.
+  - La paleta nueva añade tres tokens: `sunk` (bloques hundidos), `line` (solo decorativo, nunca lleva información) y `accent` (oliva).
+  - El contraste AA se volvió a comprobar en los dos temas, con todos los pares de texto sobre `page`, `surface` y `sunk`: 0 fallos (ratios en la bitácora).
+
+## D-045 · Botón para elegir modo claro u oscuro
+**Estado:** ✅ aprobada por el autor · 2026-11-25
+
+- **Contexto:** D-030 descartó el interruptor de tema por ser «un control más que hacer accesible, para poco beneficio». Al revisar el rediseño, el autor lo pidió expresamente.
+- **Decisión:**
+  - Un botón en la cabecera con nombre fijo («Modo oscuro» / «Dark mode») y `aria-pressed`. El lector anuncia «Modo oscuro, botón de alternancia, activado o desactivado». El icono (sol o luna) es decorativo.
+  - Por defecto se sigue al sistema (`prefers-color-scheme`), y también sus cambios en directo. Cuando el visitante pulsa el botón, su elección se guarda en `localStorage` y se escribe como `data-theme` en `<html>`.
+  - Cada token de color es `light-dark(claro, oscuro)` y lo decide `color-scheme`: `light dark` por defecto, y `light` o `dark` si hay elección. Los valores de cada tema se definen una sola vez.
+  - Un script mínimo en `index.html` aplica el tema guardado antes del primer pintado, para que no se vea un parpadeo del tema equivocado.
+- **Por qué:**
+  - Hay personas que leen mejor en claro aunque su sistema esté en oscuro, o al revés, por ejemplo al leer al sol.
+  - Un botón con `aria-pressed` es el patrón de alternancia más sencillo y mejor soportado por los lectores de pantalla.
+  - `light-dark()` evita duplicar la paleta en tres bloques (sistema, elección clara y elección oscura).
+- **Alternativas descartadas:**
+  - Un selector de tres estados (sistema, claro, oscuro): es más completo, pero añade complejidad. Para volver a seguir al sistema basta con borrar la preferencia.
+  - Cambiar el nombre del botón según el estado («Activar modo oscuro» / «Activar modo claro») junto con `aria-pressed`: el lector anunciaría dos cosas contradictorias.
+- **Consecuencias:**
+  - `light-dark()` necesita navegadores de 2024 o posteriores (Chrome 123, Safari 17.5, Firefox 120).
+  - El favicon (un castillo en SVG) sigue al tema del sistema, no al botón: el navegador lo pinta fuera de la página.
+
+## D-046 · Ilustración por categoría y ubicación relativa, en lugar de fotos y enlaces a mapas
+**Estado:** ✅ aprobada por el autor · 2026-11-25
+
+- **Contexto:** el autor propuso una galería de imágenes en la ficha de cada punto y una indicación de cómo llegar. Al revisar los datos se vieron dos problemas:
+  - el catálogo no tiene imágenes;
+  - las coordenadas caen en el **centro de Madrid** (el castillo, en 40,4172 -3,7051, es la Puerta del Sol), porque el pueblo es inventado.
+- **Decisión** (el autor eligió entre opciones con sus riesgos explicados):
+  - **Imágenes:** una ilustración SVG propia por categoría (monumento, museo, naturaleza, ruta, gastronomía, servicio y espacio público), decorativa (`aria-hidden`) y del mismo estilo que el paisaje de la portada.
+  - **Ubicación:** una sección «Ubicación» en la ficha, con todo calculado desde las coordenadas:
+    - una frase respecto a la Plaza Mayor («A 120 m al oeste de Plaza Mayor»), o «Junto a…» por debajo de 50 m;
+    - «Cerca de aquí, en línea recta»: los tres lugares más próximos, con su distancia y un enlace;
+    - el mapa del pueblo con el punto marcado.
+  - Si el punto no tiene coordenadas, se dice en texto.
+- **Por qué:**
+  - Una foto de stock pasaría por el lugar real: sería inventar (regla del proyecto).
+  - Un enlace a Google Maps u OpenStreetMap llevaría al turista a Madrid.
+  - Las coordenadas sí son fiables **entre sí**, así que distancias, rumbos y vecinos se pueden dar sin inventar nada.
+  - La frase y la lista dan la ubicación en texto, sin depender del mapa ni del color.
+- **Alternativas descartadas:**
+  - Fotos de stock: contenido inventado.
+  - Enlace «Ver en el mapa» con las coordenadas, aunque fuera con aviso: lleva a un sitio que no es el pueblo.
+  - Sin imágenes: válido, pero el autor prefirió la ilustración.
+- **Consecuencias:**
+  - La Plaza Mayor (`poi-005`) es el punto de referencia, fijado en el código (`LANDMARK_ID`). Si no está en el catálogo, no se escribe la frase, pero sí la lista de cercanos.
+  - Las distancias son en línea recta, y se dice así.
+  - La ficha pide también el catálogo completo (`GET /pois`) para el mapa y los cercanos.
+
+## D-047 · Mapa interactivo, con vista Lista / Mapa
+**Estado:** ✅ aprobada por el autor · 2026-11-25
+
+- **Contexto:** el autor vio la primera versión del mapa (D-019) y la rechazó: «queda muy cutre» y «no es accesible, no puede moverse con el ratón». Era una columna estrecha con puntos iguales, y el centro del pueblo quedaba apiñado sin poder ampliarlo.
+- **Decisión:**
+  - **Interacción:**
+    - se desplaza arrastrando con el ratón o con el dedo;
+    - se amplía con la rueda (en proporción a cuánto gira, para que un trackpad no se dispare) o pellizcando con dos dedos;
+    - tiene botones «Acercar», «Alejar» y «Ver todo el pueblo»;
+    - con el foco en el mapa, las flechas lo mueven, + y − lo acercan o alejan, y 0 lo restablece.
+    - Las instrucciones están escritas debajo y enlazadas con `aria-describedby`.
+  - **Estructura:** un fondo SVG decorativo que se mueve cambiando su `viewBox`, y encima **botones HTML** como marcadores. Cada botón es una chincheta con el icono de su categoría y un nombre accesible con nombre y categoría («Museo del Aceite, Museo»). Al llegar con el tabulador a un marcador que está fuera de la vista, el mapa se centra en él.
+  - **Selección:** al pulsar un marcador (`aria-pressed`), su tarjeta (`app-poi-card`) aparece al lado, en una región `aria-live`.
+  - **En `/pois`:** pestañas «Lista / Mapa» (botones con `aria-pressed`). La vista se guarda en la URL (`?vista=mapa`) y se mantiene al cambiar los filtros.
+  - **En la ficha:** el punto propio va en verde con `aria-current="location"`, y el mapa empieza acercado si el punto está en el casco antiguo.
+  - **Fondo:** solo decorativo, sin calles ni río, que no están en los datos. Lleva el casco antiguo (600 m alrededor de la Plaza Mayor) como mancha suave, anillos y cuadrícula, una rosa de los vientos y una escala que se actualiza con el zoom.
+- **Por qué:**
+  - **Botones HTML y no elementos SVG:** dan foco, nombre, `aria-pressed` y área de pulsación nativos, y mantienen su tamaño al ampliar.
+  - **El estado del mapa** (centro y zoom) vive en un módulo puro con tests (`map-viewport.ts`), separado de los eventos del ratón.
+  - **Pestañas en lugar de dos columnas:** el mapa necesita anchura, y la lista sigue siendo la vista por defecto.
+- **Alternativas descartadas:**
+  - Leaflet u otra librería: con teselas reales mostraría Madrid (D-046), y sin ellas apenas aporta frente a un SVG propio.
+  - Marcadores como enlaces SVG: el foco y el tamaño al ampliar son peores.
+  - Mapa encima de la lista: obliga a bajar mucho para llegar a las tarjetas.
+- **Consecuencias:**
+  - El mapa mantiene la proporción 16:10 para no deformar las distancias, así que en un móvil de 320 px queda pequeño (unos 265×166 px). Se puede ampliar con dos dedos o con los botones.
+  - La rueda sobre el mapa amplía en lugar de desplazar la página. Es lo esperado en un mapa, pero hay que saberlo.
+
+## D-048 · Generador LLM opcional y local (Ollama), con vuelta a la plantilla
+**Estado:** ❌ descartada por el autor · 2026-11-25 (se llegó a implementar, a probar con el modelo real y a subir en el commit `bdae57e`)
+
+- **Por qué se descartó:** el autor comprobó que, para no equivocarse en los datos, el LLM había quedado reducido a redactar la primera frase: la lista, los lugares y las tarjetas eran los mismos que con la plantilla. Su conclusión: «si vamos a hacerlo mal, prefiero no meter LLM». El enunciado admite «ninguno», y D-004 ya dejaba la plantilla como generador por defecto. Se quitó todo el código, los tests, `docker-compose.llm.yml` y `make up-llm`.
+- **Lo que se aprendió**, y por eso se conserva el registro de abajo: con un modelo local pequeño, validar solo los ids no basta. En la prueba real afirmó una premisa falsa (q5), omitió lugares e inventó el nombre del pueblo. La forma segura de usarlo, que el LLM solo redacte y el código ponga los datos, le deja muy poco que aportar.
+- **Qué haría con más tiempo:** usar el LLM para **interpretar** preguntas fuera del vocabulario cerrado («algo para un día de lluvia») y traducirlas a los mismos filtros, con un esquema cerrado y validado, sin dejarle escribir la respuesta. Se medirían los resultados con la evaluación antes de activarlo.
+
+Registro de la decisión tal como se tomó:
+
+- **Contexto:**
+  - D-004 dejó el LLM como opcional, detrás de `AnswerGenerator`. Con lo obligatorio terminado, el autor decidió añadirlo.
+  - La IA lo implementó primero con Claude (API de pago) **sin que el autor lo hubiera elegido**: él solo había preguntado si era gratis. El autor lo corrigió: quiere algo **gratuito, sin tarjeta de crédito**, y que **el evaluador pueda levantarlo y entenderlo fácilmente**.
+  - El enunciado admite «un LLM con tu propia clave, uno local o ninguno».
+- **Decisión:**
+  - **Proveedor:** **Ollama en local**, con un modelo pequeño y abierto (por defecto `qwen2.5:3b`, unos 2 GB). Va en un fichero de Compose adicional, `docker-compose.llm.yml` (`make up-llm`):
+    - un servicio `ollama`;
+    - un paso `ollama-model` que descarga el modelo la primera vez;
+    - la API arranca con `GENERADOR=llm` cuando el modelo ya está.
+
+    `docker compose up` sigue igual: con la plantilla, rápido y sin red.
+  - **El LLM escribe solo la introducción** (una o dos frases). La lista de lugares y los ids citados los pone el código, igual que la plantilla: el modelo no puede omitir, cambiar de nombre ni añadir un lugar. Recibe la pregunta, el número de lugares y **los mismos hechos estructurados que la plantilla** (nombre, categoría, accesibilidad, temporadas y etiquetas). Nunca recibe las descripciones (D-043).
+  - **Si la pregunta da por hecho un único lugar y hay varios** (evaluación, q5), no se llama al modelo: la plantilla corrige la premisa de forma determinista.
+  - **La introducción se comprueba** y, si no se puede confiar en ella, responde la plantilla:
+    - salida con esquema JSON (`{introduccion}`), que Ollama impone al generar;
+    - no vacía, de 400 caracteres como máximo, sin saltos de línea ni ids;
+    - **todo nombre propio** (una palabra en mayúscula que no empieza frase) tiene que aparecer en la pregunta, en los nombres de los lugares recuperados o ser «Valdelumbre» (`introduction_check.py`);
+    - además se vuelve a la plantilla si Ollama no responde o tarda más de 90 s.
+  - **Sin lugares recuperados:** no se llama al modelo.
+  - **Diseño:**
+    - el generador recibe una función `Completion` (system, mensaje → JSON), así que los tests le pasan una falsa, sin red;
+    - el adaptador `ollama_completion` usa solo la biblioteca estándar (`urllib`), sin dependencias nuevas, y su envío HTTP también se puede sustituir en los tests;
+    - temperatura 0: reescribir, no adornar.
+- **Por qué:**
+  - **Ni cuentas, ni claves, ni tarjeta, para nadie.** Con una API gratuita (Groq, Gemini), el evaluador tendría que darse de alta y crear su propia clave, porque la del autor nunca puede ir en el repositorio.
+  - Todo queda en la máquina de quien lo ejecuta, y funciona sin red una vez descargado.
+  - El enunciado puntúa «lo que rodea» al modelo. El LLM no decide qué lugares se citan, solo cómo se dicen, y cualquier salida dudosa se descarta. Con la plantilla de respaldo, la respuesta con LLM nunca es peor que sin él.
+- **Alternativas descartadas:**
+  - **Claude (Anthropic):** se llegó a implementar y a probar sin red, pero es de pago. Se quitó por decisión del autor, junto con su SDK.
+  - **Groq:** tiene capa gratuita, pero necesita cuenta y clave, y las fuentes no coinciden sobre la tarjeta y los límites.
+  - **Gemini:** tiene capa gratuita, pero no se pudo confirmar si pide tarjeta, y sus límites solo se ven en AI Studio.
+  - **Dejar varios proveedores a la vez:** el cambio de proveedor ya lo demuestra la interfaz `Completion`, y un camino de pago que nadie usará solo añade ruido.
+- **Consecuencias:**
+  - `make up-llm` descarga unos 2 GB la primera vez.
+  - Docker en un Mac no usa la GPU, así que cada respuesta tarda unos segundos (medido en la bitácora).
+  - **Probado con el modelo real (`qwen2.5:3b`, Docker en un Mac, sin GPU):**
+    - en la primera versión el modelo escribía la respuesta entera: afirmó «El único sitio accesible del pueblo es el Mirador del Alto» (la trampa de q5), citó 2 de 12 lugares, cambió nombres («Plazas Mayor») y coló ids;
+    - con la introducción sola, seguía inventando el nombre del pueblo («Valmundo», «Valmuel»), lo que llevó a la comprobación de nombres propios;
+    - la versión final da 6/6 en la evaluación, con respuestas de 2 a 7 s.
+  - **Riesgo que queda:** la comprobación no detecta una afirmación falsa sobre un lugar que sí está en la lista (por ejemplo, decir que está cerrado). Por eso el LLM es opcional y la plantilla sigue siendo el valor por defecto. Un modelo mayor (`LLM_MODELO=qwen2.5:7b`) reduciría el riesgo, a cambio de más descarga y más tiempo.
+  - Con el LLM, la respuesta deja de ser determinista. La evaluación por defecto (`make eval`) sigue usando la plantilla; para evaluar el LLM se pasa `EVAL_URL` con la API levantada con `make up-llm`.
+  - El log de arranque dice qué generador está activo.
+
+## D-049 · Una respuesta vacía dice por qué está vacía
+**Estado:** ✅ aprobada por el autor · 2026-11-25
+
+- **Contexto:** al repasar el enunciado, el autor preguntó si el asistente respondía a cualquier pregunta o solo a las de la evaluación. La IA probó preguntas nuevas y vio que «Quiero ver monumentos que sean accesibles» respondía «No tengo información sobre eso». La búsqueda era correcta, porque en el catálogo no hay ningún monumento accesible, pero el mensaje confundía «ningún lugar cumple lo que pides» con «no entiendo la pregunta». Lo mismo ocurría con «¿Es accesible el castillo?», la limitación ya anotada en D-043.
+- **Decisión:** cuando no se recupera nada, `empty_answer` distingue tres casos, y en ninguno se cita un id:
+  1. **Se entendieron filtros y ningún lugar los cumple:** «Ningún lugar del catálogo cumple todo lo que buscas (monumento · accesible).», con lo entendido entre paréntesis (categorías, accesible, día y hora).
+  2. **La pregunta nombra un lugar que no cumple los filtros:** «En el catálogo no consta que Castillo de Valdelumbre cumpla lo que buscas (accesible).» Se dice «no consta» y no «no es», porque el dato puede ser desconocido (el Puente Romano tiene la accesibilidad a `null`).
+  3. **No se entendió nada:** el «No tengo información sobre eso…» de siempre (q6 no cambia).
+- **Por qué:**
+  - Repetir lo entendido muestra al visitante cómo se interpretó su pregunta, y así puede reformularla.
+  - Distinguir «no hay» de «no sé» es una forma de no inventar: los dos son ciertos, pero dicen cosas distintas.
+- **Alternativas descartadas:**
+  - Responder «no, no es accesible» para un lugar nombrado: con `accesible = null` sería falso.
+  - Citar el lugar nombrado para mostrar su tarjeta: no se recuperó, y el invariante dice que solo se cita lo recuperado.
+- **Consecuencias:** las preguntas fuera del vocabulario cerrado («algo para un día de lluvia») siguen en el caso 3. Interpretarlas mejor queda para «qué haría con más tiempo».
+

@@ -12,26 +12,45 @@ import { accessibilityText, openNowText } from './poi-labels';
   template: `
     @let texts = i18n.texts();
     @let place = poi();
-    <article class="h-full rounded-lg border border-control-border bg-surface p-4">
+    <article
+      class="relative flex h-full flex-col rounded-2xl border border-line bg-surface p-5 shadow-sm transition-[translate,box-shadow] hover:-translate-y-0.5 hover:shadow-md"
+    >
       <ng-template #name>
-        <a [routerLink]="['/pois', place.id]" [attr.lang]="nameLanguage()">{{
-          place.nombre.texto
-        }}</a>
+        <!-- The link covers the whole card, so the card is one click target and one tab stop. -->
+        <a
+          class="text-text no-underline after:absolute after:inset-0 after:rounded-2xl hover:text-primary"
+          [routerLink]="['/pois', place.id]"
+          [attr.lang]="nameLanguage()"
+          >{{ place.nombre.texto }}</a
+        >
       </ng-template>
       @if (headingLevel() === 3) {
-        <h3 class="mb-3 text-lg font-semibold"><ng-container [ngTemplateOutlet]="name" /></h3>
+        <h3 class="text-xl font-semibold"><ng-container [ngTemplateOutlet]="name" /></h3>
       } @else {
-        <h2 class="mb-3 text-lg font-semibold"><ng-container [ngTemplateOutlet]="name" /></h2>
+        <h2 class="text-xl font-semibold"><ng-container [ngTemplateOutlet]="name" /></h2>
       }
-      <dl class="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 text-sm">
-        <dt class="text-muted">{{ texts.poi.category }}</dt>
-        <dd>{{ texts.categories[place.categoria] }}</dd>
-        <dt class="text-muted">{{ texts.poi.accessibility }}</dt>
-        <dd>{{ accessibility() }}</dd>
-        <dt class="text-muted">{{ texts.poi.openNow }}</dt>
-        <dd>{{ openNow() }}</dd>
-        <dt class="text-muted">{{ texts.poi.price }}</dt>
-        <dd>{{ place.precio.texto }}</dd>
+      <dl class="order-first mb-1.5">
+        <dt class="sr-only">{{ texts.poi.category }}</dt>
+        <dd class="text-xs font-semibold tracking-[0.12em] text-accent uppercase">
+          {{ texts.categories[place.categoria] }}
+        </dd>
+      </dl>
+      <dl class="mt-auto flex flex-wrap gap-2 pt-4 text-sm">
+        <div class="inline-flex items-center rounded-full bg-sunk px-3 py-1">
+          <dt class="sr-only">{{ texts.poi.openNow }}</dt>
+          <dd class="inline-flex items-center gap-2">
+            <span aria-hidden="true" class="size-2 rounded-full" [class]="openDot()"></span>
+            {{ openNow() }}
+          </dd>
+        </div>
+        <div class="inline-flex items-center rounded-full bg-sunk px-3 py-1">
+          <dt class="sr-only">{{ texts.poi.accessibility }}</dt>
+          <dd>{{ accessibility() }}</dd>
+        </div>
+        <div class="inline-flex items-center rounded-full bg-sunk px-3 py-1">
+          <dt class="sr-only">{{ texts.poi.price }}</dt>
+          <dd>{{ place.precio.texto }}</dd>
+        </div>
       </dl>
     </article>
   `,
@@ -50,6 +69,14 @@ export class PoiCard {
   protected readonly accessibility = computed(() =>
     accessibilityText(this.poi().accesible, this.i18n.texts()),
   );
+  /** Decorative only: the state is always written next to it. */
+  protected readonly openDot = computed(() => {
+    const open = this.poi().abierto_ahora;
+    if (open === null) {
+      return 'border border-muted';
+    }
+    return open ? 'bg-accent' : 'bg-muted';
+  });
   protected readonly openNow = computed(() =>
     openNowText(this.poi().abierto_ahora, this.i18n.texts()),
   );

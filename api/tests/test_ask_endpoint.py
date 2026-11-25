@@ -47,6 +47,25 @@ def test_a_question_outside_the_catalog_cites_nothing(client: TestClient) -> Non
     }
 
 
+def test_an_understood_question_without_matches_says_so(client: TestClient) -> None:
+    # The catalogue has no accessible monument: an empty answer, but not "no information".
+    body = ask(client, {"pregunta": "Quiero ver monumentos que sean accesibles"}).json()
+
+    assert body == {
+        "respuesta": "Ningún lugar del catálogo cumple todo lo que buscas (monumento · accesible).",
+        "ids": [],
+    }
+
+
+def test_a_named_place_that_does_not_match_is_named_in_the_answer(client: TestClient) -> None:
+    body = ask(client, {"pregunta": "¿Es accesible el castillo?"}).json()
+
+    assert body["respuesta"] == (
+        "En el catálogo no consta que Castillo de Valdelumbre cumpla lo que buscas (accesible)."
+    )
+    assert body["ids"] == []
+
+
 def test_uses_the_injected_clock(client: TestClient) -> None:
     # The test clock is a November Monday at noon: the natural pool is out of season.
     body = ask(client, {"pregunta": "¿Qué está abierto ahora?"}).json()

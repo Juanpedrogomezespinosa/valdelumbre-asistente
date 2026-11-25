@@ -210,12 +210,10 @@ Los filtros se combinan y la respuesta es una lista de puntos en el orden del ca
 
 ## 7. Configuración
 
-Todas las variables son opcionales. Con Docker se ponen en un fichero `.env` en la raíz (plantilla: `cp .env.example .env`); sin Docker, como variables de entorno al arrancar la API. Las marcadas con ⏳ llegarán con el generador LLM opcional.
+Todas las variables son opcionales. Con Docker se ponen en un fichero `.env` en la raíz (plantilla: `cp .env.example .env`); sin Docker, como variables de entorno al arrancar la API.
 
 | Variable | Por defecto | Para qué |
 |----------|-------------|----------|
-| ⏳ `GENERADOR` | `plantilla` | `plantilla` (sin red) o `llm` |
-| ⏳ `LLM_API_KEY` | — | Solo si `GENERADOR=llm` |
 | `ZONA_HORARIA` | `Europe/Madrid` | Zona del pueblo para "abierto ahora" y temporadas ([D-011](docs/DECISIONES.md#d-011--temporadas-se-evalúan-con-la-fecha-actual-de-madrid)) |
 | `RUTA_POIS` | `datos/pois.json` | Ruta del catálogo. En Docker es fija: `datos/` se monta en el contenedor en solo lectura |
 

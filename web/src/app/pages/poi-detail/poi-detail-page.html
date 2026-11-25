@@ -1,8 +1,13 @@
 @let texts = i18n.texts();
-<p class="mb-4">
+<p class="mb-6 text-sm">
   <a routerLink="/pois"><span aria-hidden="true">← </span>{{ texts.poiDetail.back }}</a>
 </p>
 
+@if (poi.hasValue()) {
+  <p class="mb-2 text-xs font-semibold tracking-[0.12em] text-accent uppercase">
+    {{ texts.categories[poi.value().categoria] }}
+  </p>
+}
 <app-page-heading>
   @if (poi.hasValue()) {
     <span [attr.lang]="foreignLanguage(poi.value().nombre)">{{ poi.value().nombre.texto }}</span>
@@ -11,19 +16,27 @@
   }
 </app-page-heading>
 
-<p role="status" class="mb-4">{{ status() }}</p>
+<p role="status" class="mb-6 text-muted">{{ status() }}</p>
 
 @if (poi.hasValue()) {
   @let place = poi.value();
-  <div class="grid gap-6 md:grid-cols-2">
-    <section class="rounded-lg border border-control-border bg-surface p-4 md:col-span-2">
-      <h2 class="mb-2 text-xl font-semibold">{{ texts.poiDetail.description }}</h2>
-      <p [attr.lang]="foreignLanguage(place.descripcion)">{{ place.descripcion.texto }}</p>
+  <div class="mb-5 overflow-hidden rounded-3xl bg-sunk">
+    <app-category-illustration [category]="place.categoria" />
+  </div>
+  <div class="grid gap-5 md:grid-cols-2">
+    <section class="rounded-2xl border border-line bg-surface p-6 shadow-sm md:col-span-2 sm:p-8">
+      <h2 class="mb-3 text-2xl font-semibold">{{ texts.poiDetail.description }}</h2>
+      <p
+        class="max-w-3xl font-display text-xl leading-relaxed"
+        [attr.lang]="foreignLanguage(place.descripcion)"
+      >
+        {{ place.descripcion.texto }}
+      </p>
     </section>
 
-    <section class="rounded-lg border border-control-border bg-surface p-4">
-      <h2 class="mb-2 text-xl font-semibold">{{ texts.poiDetail.details }}</h2>
-      <dl class="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1">
+    <section class="rounded-2xl bg-sunk p-6">
+      <h2 class="mb-3 text-2xl font-semibold">{{ texts.poiDetail.details }}</h2>
+      <dl class="grid grid-cols-[auto_1fr] gap-x-6 gap-y-2">
         <dt class="text-muted">{{ texts.poi.category }}</dt>
         <dd>{{ texts.categories[place.categoria] }}</dd>
         <dt class="text-muted">{{ texts.poi.accessibility }}</dt>
@@ -35,18 +48,56 @@
       </dl>
     </section>
 
-    <section class="rounded-lg border border-control-border bg-surface p-4">
-      <h2 class="mb-2 text-xl font-semibold">{{ texts.poiDetail.schedule }}</h2>
+    <section class="rounded-2xl bg-sunk p-6">
+      <h2 class="mb-3 text-2xl font-semibold">{{ texts.poiDetail.schedule }}</h2>
       @if (place.horario.siempre_abierto) {
         <p>{{ texts.poiDetail.alwaysOpen }}</p>
       } @else if (!place.horario.conocido) {
         <p>{{ texts.poiDetail.unknownSchedule }}</p>
       } @else {
-        <ul class="list-disc pl-5">
+        <ul class="list-disc space-y-1 pl-5 marker:text-accent">
           @for (slot of place.horario.franjas; track $index) {
             <li>{{ slotDescription(slot) }}</li>
           }
         </ul>
+      }
+    </section>
+
+    <section
+      aria-labelledby="location-heading"
+      class="rounded-2xl border border-line bg-surface p-6 shadow-sm md:col-span-2 sm:p-8"
+    >
+      <div class="mb-6 grid gap-6 md:grid-cols-2">
+        <div>
+          <h2 id="location-heading" class="mb-3 text-2xl font-semibold">
+            {{ texts.location.heading }}
+          </h2>
+          @if (location(); as sentence) {
+            <p class="font-display text-xl">{{ sentence }}</p>
+          }
+        </div>
+        @if (nearbyPlaces().length > 0) {
+          <div>
+            <h3 id="nearby-heading" class="mb-2 text-lg font-semibold">
+              {{ texts.location.nearby }}
+            </h3>
+            <ul aria-labelledby="nearby-heading" class="divide-y divide-line">
+              @for (place of nearbyPlaces(); track place.poi.id) {
+                <li class="flex items-baseline justify-between gap-4 py-2">
+                  <a
+                    [routerLink]="['/pois', place.poi.id]"
+                    [attr.lang]="foreignLanguage(place.poi.nombre)"
+                    >{{ place.poi.nombre.texto }}</a
+                  >
+                  <span class="shrink-0 text-sm text-muted">{{ place.distance }}</span>
+                </li>
+              }
+            </ul>
+          </div>
+        }
+      </div>
+      @if (catalogue.hasValue()) {
+        <app-village-map [pois]="catalogue.value()" [highlighted]="place.id" />
       }
     </section>
   </div>

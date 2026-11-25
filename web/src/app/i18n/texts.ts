@@ -2,9 +2,11 @@ import { Language } from './language';
 
 const es = {
   siteName: 'Valdelumbre',
+  tagline: 'Guía de bolsillo del pueblo',
   skipToContent: 'Saltar al contenido',
   nav: { label: 'Principal', assistant: 'Asistente', pois: 'Puntos de interés' },
   languageLabel: 'Idioma',
+  darkMode: 'Modo oscuro',
   pages: {
     assistant: 'Pregunta al asistente',
     pois: 'Puntos de interés',
@@ -33,6 +35,9 @@ const es = {
     hoursUnknown: 'Horario no disponible',
   },
   poiList: {
+    viewLabel: 'Vista',
+    listView: 'Lista',
+    mapView: 'Mapa',
     filters: 'Filtros',
     anyCategory: 'Todas',
     anyAccessibility: 'Cualquiera',
@@ -80,12 +85,49 @@ const es = {
   },
   assistant: {
     questionLabel: 'Tu pregunta',
+    intro:
+      'Pregunta lo que quieras saber del pueblo: qué ver, qué está abierto o qué es accesible. Respondo solo con lo que hay en el catálogo y te enseño en qué lugares me apoyo.',
     hint: 'Por ejemplo: «Voy en silla de ruedas, ¿qué museos puedo visitar?» o «¿Qué está abierto el domingo a las 12:00?»',
+    suggestionsLabel: 'Prueba con',
+    suggestions: [
+      {
+        label: 'En silla de ruedas',
+        question: 'Voy en silla de ruedas, ¿qué museos puedo visitar?',
+      },
+      { label: 'Con niños al aire libre', question: '¿Qué puedo hacer con niños al aire libre?' },
+      { label: 'El domingo a las 12:00', question: '¿Qué está abierto el domingo a las 12:00?' },
+      { label: 'Vino de la zona', question: '¿Dónde puedo probar vino de la zona?' },
+    ],
     submit: 'Preguntar',
     thinking: 'Buscando en el catálogo…',
     unreachable: 'No se ha podido contactar con el asistente. Inténtalo de nuevo en unos minutos.',
     cited: 'Puntos en los que se apoya la respuesta',
   },
+  location: {
+    heading: 'Ubicación',
+    nearby: 'Cerca de aquí, en línea recta',
+    mapLabel: 'Mapa del pueblo',
+    zoomIn: 'Acercar',
+    zoomOut: 'Alejar',
+    reset: 'Ver todo el pueblo',
+    instructions:
+      'Arrastra para moverte y usa la rueda o los botones para acercar. Con el teclado: flechas para moverte, + y − para acercar o alejar, y 0 para ver todo el pueblo.',
+    pick: 'Elige un punto del mapa para ver su ficha.',
+    north: 'N',
+    directions: ['norte', 'noreste', 'este', 'sureste', 'sur', 'suroeste', 'oeste', 'noroeste'],
+    decimalSeparator: ',',
+    away: (distance: string, direction: string, landmark: string) =>
+      `A ${distance} al ${direction} de ${landmark}`,
+    nextTo: (landmark: string) => `Junto a ${landmark}`,
+    unknown: 'El catálogo no tiene la ubicación de este punto.',
+    scale: (metres: number) => `Escala: ${metres} m`,
+    notOnMap: (count: number) =>
+      count === 1
+        ? '1 punto no aparece en el mapa porque no tiene ubicación.'
+        : `${count} puntos no aparecen en el mapa porque no tienen ubicación.`,
+  },
+  footer:
+    'Respuestas generadas solo con el catálogo turístico de Valdelumbre, un pueblo inventado.',
   notFound: {
     message: 'La dirección no corresponde a ninguna página.',
     backHome: 'Volver al asistente',
@@ -96,9 +138,11 @@ export type Texts = typeof es;
 
 const en: Texts = {
   siteName: 'Valdelumbre',
+  tagline: 'Pocket guide to the village',
   skipToContent: 'Skip to content',
   nav: { label: 'Main', assistant: 'Assistant', pois: 'Points of interest' },
   languageLabel: 'Language',
+  darkMode: 'Dark mode',
   pages: {
     assistant: 'Ask the assistant',
     pois: 'Points of interest',
@@ -127,6 +171,9 @@ const en: Texts = {
     hoursUnknown: 'Opening hours not available',
   },
   poiList: {
+    viewLabel: 'View',
+    listView: 'List',
+    mapView: 'Map',
     filters: 'Filters',
     anyCategory: 'All',
     anyAccessibility: 'Any',
@@ -174,12 +221,54 @@ const en: Texts = {
   },
   assistant: {
     questionLabel: 'Your question',
+    intro:
+      'Ask anything about the village: what to see, what is open or what is accessible. I only answer with what is in the catalogue and show you the places I rely on.',
     hint: 'For example: “I use a wheelchair, which museums can I visit?” or “What is open on Sunday at 12:00?”',
+    suggestionsLabel: 'Try',
+    suggestions: [
+      { label: 'Wheelchair access', question: 'I use a wheelchair, which museums can I visit?' },
+      { label: 'Kids outdoors', question: 'Something to do with kids outdoors?' },
+      { label: 'Sunday at 12:00', question: 'What is open on Sunday at 12:00?' },
+      { label: 'Local wine', question: 'Where can I taste local wine?' },
+    ],
     submit: 'Ask',
     thinking: 'Searching the catalogue…',
     unreachable: 'The assistant could not be reached. Please try again in a few minutes.',
     cited: 'Points the answer is based on',
   },
+  location: {
+    heading: 'Location',
+    nearby: 'Nearby, as the crow flies',
+    mapLabel: 'Map of the village',
+    zoomIn: 'Zoom in',
+    zoomOut: 'Zoom out',
+    reset: 'Show the whole village',
+    instructions:
+      'Drag to move and use the wheel or the buttons to zoom. With the keyboard: arrows to move, + and − to zoom in or out, and 0 to show the whole village.',
+    pick: 'Choose a place on the map to see its card.',
+    north: 'N',
+    directions: [
+      'north',
+      'northeast',
+      'east',
+      'southeast',
+      'south',
+      'southwest',
+      'west',
+      'northwest',
+    ],
+    decimalSeparator: '.',
+    away: (distance: string, direction: string, landmark: string) =>
+      `${distance} ${direction} of ${landmark}`,
+    nextTo: (landmark: string) => `Next to ${landmark}`,
+    unknown: 'The catalogue has no location for this place.',
+    scale: (metres: number) => `Scale: ${metres} m`,
+    notOnMap: (count: number) =>
+      count === 1
+        ? '1 place is not on the map because it has no location.'
+        : `${count} places are not on the map because they have no location.`,
+  },
+  footer: 'Answers come only from the tourist catalogue of Valdelumbre, an invented village.',
   notFound: {
     message: 'This address does not match any page.',
     backHome: 'Back to the assistant',

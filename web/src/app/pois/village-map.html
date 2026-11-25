@@ -1,0 +1,184 @@
+@let texts = i18n.texts();
+@if (located().length > 0) {
+  <div class="grid gap-5 lg:grid-cols-[minmax(0,1fr)_19rem]">
+    <div>
+      <div
+        #stage
+        role="group"
+        tabindex="0"
+        aria-describedby="map-instructions"
+        class="relative aspect-[16/10] cursor-grab touch-none overflow-hidden rounded-2xl border border-line bg-sunk select-none active:cursor-grabbing"
+        [attr.aria-label]="texts.location.mapLabel"
+        (keydown)="onKey($event)"
+        (wheel)="onWheel($event)"
+        (pointerdown)="onPointerDown($event)"
+        (pointermove)="onPointerMove($event)"
+        (pointerup)="onPointerUp($event)"
+        (pointercancel)="onPointerUp($event)"
+      >
+        <svg
+          aria-hidden="true"
+          focusable="false"
+          preserveAspectRatio="none"
+          class="absolute inset-0 size-full"
+          [attr.viewBox]="viewBox()"
+        >
+          @for (x of gridX; track x) {
+            <line
+              [attr.x1]="x"
+              y1="0"
+              [attr.x2]="x"
+              [attr.y2]="canvas.height"
+              class="stroke-line"
+              stroke-dasharray="1 5"
+              vector-effect="non-scaling-stroke"
+            />
+          }
+          @for (y of gridY; track y) {
+            <line
+              x1="0"
+              [attr.y1]="y"
+              [attr.x2]="canvas.width"
+              [attr.y2]="y"
+              class="stroke-line"
+              stroke-dasharray="1 5"
+              vector-effect="non-scaling-stroke"
+            />
+          }
+          @if (oldTown(); as town) {
+            <circle
+              [attr.cx]="town.x"
+              [attr.cy]="town.y"
+              [attr.r]="town.radius"
+              class="fill-accent/10"
+            />
+            @for (ring of contours; track ring) {
+              <ellipse
+                [attr.cx]="town.x"
+                [attr.cy]="town.y"
+                [attr.rx]="town.radius * ring * 1.3"
+                [attr.ry]="town.radius * ring"
+                fill="none"
+                class="stroke-line"
+                vector-effect="non-scaling-stroke"
+              />
+            }
+          }
+        </svg>
+
+        @for (marker of markers(); track marker.poi.id) {
+          <button
+            type="button"
+            class="group absolute z-10 -translate-x-1/2 -translate-y-full rounded-full p-0.5 hover:z-30 focus-visible:z-30"
+            [class.z-20]="marker.selected || marker.current"
+            [style.left.%]="marker.left"
+            [style.top.%]="marker.top"
+            [attr.aria-label]="marker.label"
+            [attr.aria-pressed]="marker.selected"
+            [attr.aria-current]="marker.current ? 'location' : null"
+            (click)="select(marker.poi)"
+            (focus)="reveal(marker)"
+          >
+            <svg
+              aria-hidden="true"
+              focusable="false"
+              viewBox="0 0 32 40"
+              class="h-10 w-8 drop-shadow-md transition-transform group-hover:scale-110"
+              [class.scale-125]="marker.selected || marker.current"
+            >
+              <path
+                d="M16 1C8 1 2.5 6.8 2.5 14.2 2.5 24 16 39 16 39s13.5-15 13.5-24.8C29.5 6.8 24 1 16 1z"
+                stroke-width="2"
+                class="stroke-surface"
+                [class.fill-primary]="!marker.current"
+                [class.fill-accent]="marker.current"
+              />
+              <path
+                [attr.d]="marker.glyph"
+                transform="translate(8 6) scale(0.667)"
+                class="fill-on-primary"
+              />
+            </svg>
+            <span
+              class="pointer-events-none absolute bottom-full left-1/2 mb-1 -translate-x-1/2 rounded-md bg-surface px-2 py-0.5 text-xs font-semibold whitespace-nowrap text-text opacity-0 shadow-md group-hover:opacity-100 group-focus-visible:opacity-100"
+              [class.opacity-100]="marker.selected || marker.current"
+              >{{ marker.poi.nombre.texto }}</span
+            >
+          </button>
+        }
+
+        <div aria-hidden="true" class="pointer-events-none absolute top-3 right-3 z-0 text-muted">
+          <svg viewBox="0 0 40 48" class="h-12 w-10">
+            <circle cx="20" cy="26" r="15" fill="none" class="stroke-line" stroke-width="1.5" />
+            <path d="M20 9 L25 27 L20 24 L15 27 Z" class="fill-primary" />
+            <path d="M20 43 L25 25 L20 28 L15 25 Z" class="fill-muted/50" />
+            <text x="20" y="7" text-anchor="middle" class="fill-current text-[9px] font-semibold">
+              {{ texts.location.north }}
+            </text>
+          </svg>
+        </div>
+
+        <div aria-hidden="true" class="pointer-events-none absolute bottom-3 left-3 z-30 w-full">
+          <span data-testid="map-scale" class="mb-1 block text-xs font-semibold text-muted">{{
+            texts.location.scale(scaleBar().metres)
+          }}</span>
+          <span class="block h-1.5 rounded-full bg-muted" [style.width.%]="scaleBar().width"></span>
+        </div>
+
+        <div
+          class="absolute right-3 bottom-3 z-30 flex flex-col divide-y divide-line overflow-hidden rounded-xl border border-control-border bg-surface shadow-md"
+        >
+          <button
+            type="button"
+            class="grid size-10 place-items-center hover:text-primary"
+            [attr.aria-label]="texts.location.zoomIn"
+            (click)="zoomBy(zoomStep)"
+          >
+            <svg aria-hidden="true" viewBox="0 0 24 24" class="size-5 fill-current">
+              <path d="M11 5h2v6h6v2h-6v6h-2v-6H5v-2h6z" />
+            </svg>
+          </button>
+          <button
+            type="button"
+            class="grid size-10 place-items-center hover:text-primary"
+            [attr.aria-label]="texts.location.zoomOut"
+            (click)="zoomBy(1 / zoomStep)"
+          >
+            <svg aria-hidden="true" viewBox="0 0 24 24" class="size-5 fill-current">
+              <path d="M5 11h14v2H5z" />
+            </svg>
+          </button>
+          <button
+            type="button"
+            class="grid size-10 place-items-center hover:text-primary"
+            [attr.aria-label]="texts.location.reset"
+            (click)="reset()"
+          >
+            <svg aria-hidden="true" viewBox="0 0 24 24" class="size-5 fill-current">
+              <path
+                d="M4 4h6v2H7.4l3.3 3.3-1.4 1.4L6 7.4V10H4zm10 0h6v6h-2V7.4l-3.3 3.3-1.4-1.4L16.6 6H14zM4 14h2v2.6l3.3-3.3 1.4 1.4L7.4 18H10v2H4zm14 0h2v6h-6v-2h2.6l-3.3-3.3 1.4-1.4 3.3 3.3z"
+              />
+            </svg>
+          </button>
+        </div>
+      </div>
+
+      <p id="map-instructions" class="mt-2 text-sm text-muted">{{ texts.location.instructions }}</p>
+      @if (missing() > 0) {
+        <p class="mt-1 text-sm text-muted">{{ texts.location.notOnMap(missing()) }}</p>
+      }
+    </div>
+
+    <div aria-live="polite" class="self-start">
+      @if (selected(); as poi) {
+        <app-poi-card [poi]="poi" [headingLevel]="3" />
+      } @else {
+        <p class="rounded-2xl border border-dashed border-control-border p-5 text-muted">
+          {{ texts.location.pick }}
+        </p>
+      }
+    </div>
+  </div>
+} @else if (missing() > 0) {
+  <p class="text-sm text-muted">{{ i18n.texts().location.notOnMap(missing()) }}</p>
+}

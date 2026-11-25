@@ -617,3 +617,194 @@ Con esto quedan cerradas todas las decisiones previas al código (D-001 a D-031)
   - `make eval EVAL_URL=http://localhost:18000` da Oficial 6/6 · Estricto 6/6.
 - README: quitadas las marcas ⏳ de Docker y del frontend, y descritos los ficheros nuevos. Las variables del LLM siguen marcadas con ⏳.
 - Prueba desde un clon limpio (tras el commit `b86c9ca`): `git clone` de la rama desde GitHub en una carpeta temporal y `docker compose build --no-cache`. Los dos servicios quedan *healthy*, la API devuelve 17 puntos, nginx sirve `/pois/poi-003` y `/preguntar` responde. En el navegador, «¿Qué está abierto un lunes a las 12:00?» muestra la respuesta y las tarjetas.
+
+### Paso 12 · Rediseño «guía editorial» — 2026-11-25
+- Con lo obligatorio terminado, el autor revisó la pantalla con capturas y pidió un diseño menos genérico, que diera ganas de contratar a quien lo hizo. También señaló un fallo: en `/pois`, al aparecer la barra de scroll, toda la página se desplazaba a la derecha.
+- La IA propuso tres direcciones con maquetas en texto: guía editorial, app de viaje moderna y minimal premium. **El autor eligió la guía editorial** y aprobó cambiar la regla «tipografía del sistema» por fuentes propias servidas desde la app. Decisión D-044, que revisa en parte D-030, y regla del frontend actualizada.
+- Cambios:
+  - **Scroll:** `scrollbar-gutter: stable` en la raíz. Comprobado en un iframe de 1400×1100: el logo queda en x=137 tanto en `/` (sin scroll) como en `/pois` (con scroll).
+  - **Tipografía:** Fraunces para los títulos y Source Sans 3 para el texto (`@fontsource-variable`, OFL), con alternativas del sistema.
+  - **Paleta:** papel `#f5efe4`, terracota `#9a3b1b` y oliva `#4f6526` en claro, con sus equivalentes en oscuro. Tokens nuevos: `sunk`, `line` (solo decorativo) y `accent`. Contraste comprobado con un script sobre `page`, `surface` y `sunk` en los dos temas: **0 fallos**. Por ejemplo, el texto sobre el fondo da 13,4:1 en claro y 15,2:1 en oscuro, y el terracota sobre el fondo, 6,1:1 y 8,9:1. El par «foco sobre el color principal» ya no se comprueba, porque el anillo, con 2 px de separación, nunca queda encima del botón.
+  - **Cabecera y pie:** el nombre del pueblo con la fuente de títulos y el lema «Guía de bolsillo del pueblo», la navegación con la página actual subrayada en terracota (sigue marcada con `aria-current`) y un pie que aclara que las respuestas salen solo del catálogo.
+  - **Asistente:**
+    - una portada con un paisaje del pueblo en SVG propio, decorativo (`aria-hidden`), con castillo, iglesia, colinas y olivos;
+    - una introducción;
+    - el buscador grande;
+    - **sugerencias de pregunta** que preguntan con un clic y dejan la pregunta en la caja. Están en un grupo con nombre («Prueba con») y llevan test. Antes de fijarlas se comprobó contra la API que las ocho preguntas (cuatro por idioma) dan una respuesta correcta.
+    - La respuesta se presenta como una nota con borde terracota.
+  - **Tarjeta:**
+    - la categoría como antetítulo en oliva y el nombre con la fuente de títulos;
+    - el estado, la accesibilidad y el precio como etiquetas;
+    - toda la tarjeta es clicable (el enlace del nombre la cubre con `::after`), pero sigue siendo un único punto de tabulación.
+    - Los `<dt>` siguen en el HTML como `sr-only`, así que el lector de pantalla sigue oyendo «Accesibilidad: Accesible».
+    - El punto de color del estado es decorativo: el estado siempre va escrito.
+  - **Listado y ficha:** los filtros van en un bloque hundido y el número de resultados con la fuente de títulos. La ficha lleva la categoría como antetítulo y la descripción en un tamaño mayor.
+- Fallos propios corregidos durante el paso:
+  - Al cambiar las clases de la navegación se quitó sin querer `routerLinkActive`, que es lo que pone `aria-current`. Se devolvió.
+  - La última ola del paisaje usaba el color de la página y dejaba una franja oscura que cortaba la portada.
+  - Al probar el tema claro, una transición de color en las tarjetas hizo que la primera captura saliera gris. La transición se limitó al movimiento y la sombra.
+- Verificado:
+  - en Chrome, en tema oscuro y en claro (simulado sobrescribiendo los tokens en la página);
+  - sin scroll horizontal a 320 px en `/`, `/pois` y `/pois/poi-003`;
+  - `make check` limpio (270 tests del backend y 55 de la web) y build de producción sin avisos (estilos: 22,9 kB, 4,8 kB comprimidos).
+
+### Paso 12.1 · Paisaje en móvil, favicon y botón de tema — 2026-11-25
+- El autor revisó el rediseño. En escritorio le gustó, pero en móvil el recorte del paisaje cortaba el castillo por el borde y dejaba fuera el sol. Además pidió un favicon (un castillo) y un botón para cambiar entre modo claro y oscuro.
+- Cambios:
+  - **Paisaje:** una composición propia para móvil (`viewBox` 400×180, con el castillo centrado, la iglesia y el sol), visible solo por debajo de `sm`. La de escritorio no cambia. La portada tiene ahora las esquinas redondeadas también en móvil, en lugar de ir de borde a borde.
+  - **Favicon:** `web/public/favicon.svg`, un castillo en terracota que se aclara en modo oscuro. `index.html` lo enlaza en lugar del `favicon.ico` de Angular. La IA intentó borrar ese fichero con `git rm`, pero el bloqueo de comandos de Git que escriben lo impidió, como debía. El fichero queda sin uso y lo borrará el autor.
+  - **Botón de tema** (D-045, que revisa en parte D-030):
+    - `ThemePreference`, que sigue al sistema hasta que se elige y guarda la elección;
+    - `ThemeToggle`, el botón con `aria-pressed`;
+    - tokens con `light-dark()`;
+    - un script antes del primer pintado.
+    - TDD: tres tests (estado inicial, alternar y recordar, y arrancar con la elección guardada).
+- Verificado en Chrome:
+  - con el sistema en oscuro, el botón aparece pulsado;
+  - al pulsarlo, la página pasa a claro y lo mantiene tras recargar;
+  - los colores con transparencia (como `fill-primary/25`) se resuelven bien con `light-dark()`;
+  - en un iframe de 380 px se ven el castillo, la iglesia y el sol;
+  - `/favicon.svg` se sirve como `image/svg+xml`.
+  - Al terminar se borró la preferencia guardada durante la prueba.
+
+### Paso 13 · Mapa del pueblo (H11), ilustraciones y ubicación en la ficha — 2026-11-25
+- El autor pidió el mapa y propuso una galería de imágenes en la ficha y una indicación de cómo llegar a cada punto. Antes de programar, la IA revisó los datos:
+  - el catálogo no trae imágenes;
+  - las coordenadas caen en el centro de Madrid. El castillo está en la Puerta del Sol.
+
+  Se le explicó al autor que una foto de stock o un enlace a un mapa externo serían engañosos. **El autor eligió** una ilustración por categoría y una ubicación calculada desde las coordenadas. Decisión D-046, más una concreción de D-019.
+- TDD en el núcleo, con funciones puras y sus tests antes que los componentes:
+  - `pois/map-geometry.ts`: desplazamiento en metros (aproximación plana: a la escala de un pueblo, el error es inapreciable), rumbo en 8 puntos, encuadre con tamaño mínimo y proyección con la misma escala en los dos ejes y el norte arriba;
+  - `pois/relative-location.ts`: «A 120 m al oeste de Plaza Mayor» / «2.6 km southwest of Plaza Mayor», «Junto a…» por debajo de 50 m, en metros redondeados a 10 o en km con un decimal, con coma en español;
+  - `pois/nearby.ts`: los lugares más cercanos con su distancia.
+  - Error propio corregido: en un test se esperaba «2,5 km» para la bodega. El cálculo a mano da 2.581 m, que redondea a 2,6.
+- Componentes:
+  - `pois/village-map.ts`: un SVG con `role="group"` y el nombre «Mapa del pueblo».
+    - Cada punto es un enlace con el nombre del lugar y un área de pulsación mayor que el punto.
+    - El anillo de foco usa el color de foco, porque los navegadores dibujan mal el `outline` en los enlaces SVG. El nombre del punto aparece al pasar el ratón o con el tabulador.
+    - Tiene norte, escala gráfica y una cuadrícula.
+    - Botón «Ver el centro del pueblo» (`aria-pressed`, 600 m alrededor de la Plaza Mayor) que dice cuántos puntos quedan fuera.
+    - En la ficha, el punto propio lleva `aria-current="location"` y el mapa empieza acercado (`linkedSignal`) si el punto está en el centro.
+  - `pois/category-illustration.ts`: siete escenas decorativas, una por categoría, en un lienzo de 960×200 con la escena centrada. La primera versión, de 480×180, recortaba las torres del castillo en un bloque ancho.
+  - En `/pois`, en pantalla ancha, la lista va a la izquierda y el mapa fijo a la derecha. En móvil, el mapa va después de la lista, porque es complementario.
+  - En `/pois/:id`: la ilustración bajo el título y la sección «Ubicación» con la frase, «Cerca de aquí, en línea recta» y el mapa.
+- Ajustes vistos en el navegador:
+  - la escala tapaba la bodega, que está en la esquina de abajo a la izquierda, así que se pasó a la de abajo a la derecha;
+  - la sección de ubicación tenía un hueco grande, que llenó la lista de cercanos.
+- Los tests de la ficha se quedaban colgados porque `whenStable` espera también a la nueva petición del catálogo. Se añadió un ayudante `answerCatalogue()` y el componente no cambió.
+- **Para DATOS.md:** las coordenadas de todo el catálogo están en el centro de Madrid. Sirven para situar los puntos unos respecto a otros, pero no para enlazar a un mapa real.
+- Verificado:
+  - en Chrome: el zoom, el foco con el tabulador, las fichas del castillo (cerca) y de la bodega (lejos) y las siete ilustraciones en móvil;
+  - sin scroll horizontal a 320 px en `/pois`, `/pois/poi-001` y `/pois/poi-008`;
+  - `make check` limpio (270 tests del backend y 84 de la web) y build sin avisos.
+
+### Paso 13.1 · Mapa interactivo con vista Lista / Mapa — 2026-11-25
+- **El autor rechazó el primer mapa:** «queda muy cutre» y «no es accesible, no puede moverse con el ratón». Tenía razón: era una columna estrecha con puntos iguales, el centro quedaba apiñado y no se podía ni desplazar ni ampliar. **Para IA.md:** la primera propuesta de la IA cumplía lo mínimo (enlaces con nombre), pero no pensó en la interacción básica que se espera de cualquier mapa.
+- La IA propuso un mapa nuevo sin librería y tres colocaciones posibles. **El autor eligió** pestañas Lista / Mapa. Decisión D-047, que revisa en parte D-019.
+- TDD en el núcleo: `pois/map-viewport.ts`, un módulo puro con tests:
+  - el zoom conserva el punto bajo el puntero;
+  - el zoom va de 1 a 8;
+  - al desplazar, la vista nunca sale del mapa;
+  - centrar en un punto respeta los bordes;
+  - calcula dónde cae un punto en la vista.
+- Componente `pois/village-map.ts` + `.html`, rehecho:
+  - fondo SVG decorativo (casco antiguo, anillos y cuadrícula) que se mueve con el `viewBox`;
+  - encima, botones HTML con forma de chincheta y el icono de su categoría (`pois/category-glyph.ts`);
+  - interacción: arrastrar (la captura del puntero empieza solo tras 4 px, para que un clic siga llegando al marcador), rueda proporcional a cuánto gira, pellizco con dos dedos, botones «Acercar», «Alejar» y «Ver todo el pueblo», y teclado (flechas, + − y 0);
+  - escala que se actualiza con el zoom;
+  - tarjeta del punto elegido al lado, en una región `aria-live`.
+- `/pois`: pestañas «Lista / Mapa» con `aria-pressed` y `?vista=mapa`. Los filtros navegan con `queryParamsHandling: 'merge'` para no perder la vista.
+- La ficha: el texto (frase y cercanos) en dos columnas, y debajo el mapa a todo el ancho con su tarjeta.
+- Ajustes vistos al probar en Chrome:
+  - la tarjeta se estiraba a todo el alto del mapa (`self-start`);
+  - la rosa de los vientos tapaba un marcador, así que pasó por debajo;
+  - la rueda acercaba un paso fijo por evento, lento con ratón y descontrolado con trackpad. Ahora es proporcional a cuánto gira (`exp(-deltaY·0,0025)`).
+- Error propio corregido: un test usaba `unmount`, que Angular Testing Library no ofrece. Se dividió en dos casos.
+- Verificado en Chrome:
+  - con el ratón: rueda (sin mover la página), arrastre, «+» y clic en un marcador (aparece la tarjeta);
+  - con el teclado: foco en el mapa, `0`, `+`, flechas, Tab entre marcadores con foco visible y Enter;
+  - la ficha del castillo en tema claro, con el punto propio en verde y el mapa acercado;
+  - sin scroll horizontal a 320 px (el mapa queda pequeño, limitación anotada en D-047).
+- `make check` limpio (270 tests del backend y 91 de la web) y build sin avisos.
+
+### Paso 14 · Generador LLM opcional (H12) — 2026-11-25
+- **Decisión del autor:** usar Claude. Preguntó si es gratis; la IA comprobó los precios en la referencia oficial antes de responder: es de pago por uso, de céntimos por pregunta, y la suscripción de Claude no incluye saldo de API. Decisión D-048, que concreta D-004.
+- Antes de escribir código, la IA leyó la referencia del SDK de Python (inicialización, errores, motivos de parada y salidas estructuradas). Comprobó además en el SDK instalado (2.14) que `messages.create` acepta `output_config` y qué clases de error existen.
+- TDD:
+  - `tests/test_llm_prompt.py`: el mensaje lleva la pregunta y los hechos estructurados, **nunca la descripción** (con la inyección de prueba), en el idioma pedido;
+  - `tests/test_llm_generator.py`: se usa la respuesta válida, y se vuelve a la plantilla con un id no recuperado, sin ids, con JSON inválido, con un campo que falta o si falla la API. Sin lugares recuperados no se llama al modelo;
+  - `tests/test_answer_generator_choice.py`: la plantilla por defecto y el LLM solo con `GENERADOR=llm`.
+- Ficheros:
+  - `app/assistant/llm_prompt.py`: prompt de sistema y mensaje JSON;
+  - `app/assistant/llm_generator.py`: `LlmAnswerGenerator`, `Completion` y `CompletionError`;
+  - `app/assistant/anthropic_completion.py`: el adaptador del SDK;
+  - `app/settings.py`: `GENERADOR` y `LLM_MODELO`;
+  - `routes/dependencies.py`: un cliente por proceso;
+  - `Interpretation.question`: el generador libre necesita la pregunta original;
+  - en `main.py`, el log de arranque dice qué generador está activo.
+- Configuración: en `docker-compose.yml` se pasan `GENERADOR`, `LLM_MODELO` y `ANTHROPIC_API_KEY`, vacía por defecto. Actualizados `.env.example` y la tabla del README (fuera las marcas ⏳; `LLM_API_KEY` pasa a `ANTHROPIC_API_KEY`).
+- Fallo propio corregido: ruff pidió el sufijo `Error` en la excepción (`CompletionFailed` → `CompletionError`).
+- Verificado:
+  - prueba de humo con el SDK real apuntando a un puerto local cerrado (`ANTHROPIC_BASE_URL=http://127.0.0.1:9`, sin salir a internet): el log dice `APIConnectionError` y la respuesta es la de la plantilla, con 200 y los mismos ids;
+  - 284 tests del backend, ruff y mypy limpios;
+  - la evaluación con la plantilla sigue en 6/6.
+- **Pendiente:** la prueba real con la clave del autor. Comparar la evaluación con `GENERADOR=llm` y revisar a mano el tono de las respuestas.
+
+### Paso 14.1 · Del LLM de pago al local (Ollama), y lo que enseñó la prueba real — 2026-11-25
+- **Corrección del autor:** «aún no hemos decidido nada sobre qué API usar ni LLM, quiero uno gratuito, que no haga falta meter tarjeta de crédito». **Para IA.md:** el autor solo había preguntado si Claude era gratis; la IA respondió que no y aun así lo implementó sin que él lo hubiera decidido. Error de la IA, que lo reconoció.
+- La IA comprobó en la web las opciones gratuitas: Gemini (capa gratuita, pero no se pudo confirmar si pide tarjeta), Groq (sin tarjeta según su foro, pero con cuenta y clave) y Ollama (local). El autor preguntó cuál era mejor, teniendo en cuenta que lo levantará el evaluador. La respuesta fue **Ollama dentro de Docker Compose**: sin cuenta, sin clave y sin tarjeta para nadie. **El autor lo aprobó** y pidió quitar Claude. D-048 se reescribió.
+- Cambios:
+  - fuera el SDK `anthropic` y su adaptador;
+  - `app/assistant/ollama_completion.py`: `/api/chat` con esquema JSON y `urllib`, sin dependencias nuevas, con el envío HTTP sustituible en los tests (5 tests);
+  - `docker-compose.llm.yml`: `ollama/ollama:0.40.17`, un paso que descarga el modelo una vez y la API con `GENERADOR=llm`, que espera a tener el modelo;
+  - `make up-llm`; `make down` para también estos servicios;
+  - `.env.example` (`LLM_MODELO`) y el README (nueva subsección de arranque, tabla de configuración y árbol).
+- **Prueba real** (Docker, proyecto aparte en los puertos 18000 y 18080; la descarga del modelo, 1,9 GB, fue rápida). Hubo dos rediseños:
+  1. **El modelo escribía la respuesta entera:**
+     - contestó «El único sitio accesible del pueblo es el Mirador del Alto», falso y justo la trampa de q5;
+     - citó 2 de 12 lugares abiertos;
+     - escribió «Plazas Mayor» y coló «(poi-003)» en el texto;
+     - tardaba de 3 a 18 s.
+
+     Validar los ids no bastaba. **Rediseño:** el LLM escribe solo la introducción, la lista y los ids los pone el código, y si la pregunta da por hecho un único lugar, responde siempre la plantilla.
+  2. **Con la introducción sola, el modelo inventaba el nombre del pueblo** («Valmundo», «Valmuel») y que «el Castillo permanece cerrado los lunes». **Añadido** `introduction_check.py`: todo nombre propio tiene que estar en la pregunta, en los lugares o ser «Valdelumbre» (7 tests). El prompt nombra el pueblo y la temperatura pasa a 0.
+  3. **Resultado:**
+     - introducciones naturales y sin nombres inventados (por ejemplo, «En Valdelumbre puedes hacer senderismo en la Ruta del Río Lumbre o disfrutar del Parque de la Alameda con tu familia.»);
+     - de 2 a 7 s por respuesta;
+     - **`make eval EVAL_URL=http://localhost:18000` da 6/6 oficial y 6/6 estricto con el LLM**;
+     - en la pantalla de Docker se ve bien.
+- **Riesgo que queda**, anotado en D-048: no se detecta una afirmación falsa sobre un lugar que sí está en la lista. Por eso la plantilla sigue siendo el valor por defecto.
+- Verificado: 300 tests del backend, ruff y mypy limpios, y la evaluación con la plantilla en 6/6.
+- Queda en Docker el volumen de la prueba, `valdelumbre-llm_ollama-models` (1,9 GB). Lo puede borrar el autor con `docker volume rm valdelumbre-llm_ollama-models`.
+
+### Paso 14.2 · Se descarta el LLM — 2026-11-25
+- El autor probó `make up-llm` y preguntó qué función hacía el LLM, «porque es lo mismo que antes». La IA respondió con franqueza: tras los rediseños, el LLM solo cambiaba la primera frase. La lista, los lugares y las tarjetas eran idénticos. Le propuso tres caminos:
+  - dejarlo y explicarlo;
+  - darle un papel útil (interpretar preguntas fuera del vocabulario cerrado);
+  - quitarlo.
+- **Decisión del autor:** «si vamos a hacerlo mal, prefiero no meter LLM». D-048 queda como ❌ descartada, con el porqué, lo aprendido y lo que se haría con más tiempo.
+- Se quitó todo, editando ficheros (git lo gestiona el autor). Los ocho ficheros que solo cambiaron por el LLM entre `91f5161` y `bdae57e` se restauraron a su versión anterior (comprobado con `git diff --stat`). Se borraron:
+  - `llm_generator.py`, `llm_prompt.py`, `ollama_completion.py` e `introduction_check.py`;
+  - sus cinco ficheros de tests;
+  - `docker-compose.llm.yml` y `make up-llm`;
+  - la subsección y las variables del README.
+- **Para IA.md:** el experimento entero (Claude sin decidir → Ollama → dos rediseños tras la prueba real → descartado) es un buen ejemplo de qué se corrigió o se descartó y por qué. El código queda en el historial (`bdae57e`).
+- Verificado: 270 tests del backend, ruff y mypy limpios, y la evaluación en 6/6.
+
+### Paso 15 · Respuestas vacías que dicen por qué — 2026-11-25
+- **Contexto:** el autor repasó el enunciado con varias preguntas: si el asistente responde a cualquier pregunta o solo a las de la evaluación, si el mapa es usable con teclado y lector, si hay demasiados tests y si el script de evaluación está hecho.
+  - La IA probó 9 preguntas que no están en la evaluación: 5 bien, 3 mejorables y 1 fuera del vocabulario («algo para un día de lluvia»).
+  - Una de las mejorables parecía un fallo: «Quiero ver monumentos que sean accesibles» devolvía «No tengo información». Al investigarlo resultó que la búsqueda era correcta (el catálogo no tiene monumentos accesibles) y que lo engañoso era el mensaje.
+- **El autor aprobó la mejora.** Decisión D-049.
+- TDD:
+  - `tests/test_empty_answer.py`, 7 casos: filtros sin resultado en es/en, varias categorías con día y hora, lugar nombrado en es/en, y nada entendido;
+  - dos casos nuevos en `test_ask_endpoint.py` con el catálogo real.
+- Código:
+  - `app/assistant/empty_answer.py`, nuevo;
+  - `retrieval.named_places()`: los lugares nombrados, buscados en todo el catálogo;
+  - `answer_question`: si no se recupera nada, responde `empty_answer` en lugar del generador.
+- Error propio corregido: ruff marcó el orden de los imports.
+- Verificado con preguntas reales:
+  - «¿Qué museos abren el lunes?» → «Ningún lugar del catálogo cumple todo lo que buscas (museo · abierto el lunes).» Se contrastó con `GET /pois?categoria=museo&abierto_en=1T12:00`: los tres museos cierran los lunes;
+  - «¿Es accesible el puente romano?» → «no consta», porque su dato es desconocido.
+- 279 tests del backend, ruff y mypy limpios, y la evaluación en 6/6 (q6 sigue diciendo «No tengo información»).
