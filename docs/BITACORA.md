@@ -616,3 +616,4 @@ Con esto quedan cerradas todas las decisiones previas al código (D-001 a D-031)
   - `touch /datos/x` dentro del contenedor falla por solo lectura;
   - `make eval EVAL_URL=http://localhost:18000` da Oficial 6/6 · Estricto 6/6.
 - README: quitadas las marcas ⏳ de Docker y del frontend, y descritos los ficheros nuevos. Las variables del LLM siguen marcadas con ⏳.
+- Prueba desde un clon limpio (tras el commit `b86c9ca`): `git clone` de la rama desde GitHub en una carpeta temporal y `docker compose build --no-cache`. Los dos servicios quedan *healthy*, la API devuelve 17 puntos, nginx sirve `/pois/poi-003` y `/preguntar` responde. En el navegador, «¿Qué está abierto un lunes a las 12:00?» muestra la respuesta y las tarjetas.
