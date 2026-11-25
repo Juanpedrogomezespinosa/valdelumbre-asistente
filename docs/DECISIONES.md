@@ -65,6 +65,7 @@ Estados: ✅ aprobada · 🔄 revisada (enlaza a la que la sustituye) · ❌ des
 | [D-044](#d-044--diseño-de-guía-editorial-con-tipografía-propia-alojada-en-la-app) | Diseño de «guía editorial» con tipografía propia alojada en la app | ✅ |
 | [D-045](#d-045--botón-para-elegir-modo-claro-u-oscuro) | Botón para elegir modo claro u oscuro | ✅ |
 | [D-046](#d-046--ilustración-por-categoría-y-ubicación-relativa-en-lugar-de-fotos-y-enlaces-a-mapas) | Ilustración por categoría y ubicación relativa, en lugar de fotos y enlaces a mapas | ✅ |
+| [D-047](#d-047--mapa-interactivo-con-vista-lista--mapa) | Mapa interactivo, con vista Lista / Mapa | ✅ |
 
 ---
 
@@ -257,6 +258,7 @@ Estados: ✅ aprobada · 🔄 revisada (enlaza a la que la sustituye) · ❌ des
   - El mapa muestra los resultados del filtro. Un texto dice cuántos puntos no tienen ubicación.
   - Casi todo está a menos de 600 m de la Plaza Mayor, y lo demás a 2–3 km, así que hay un botón «Ver el centro del pueblo» (`aria-pressed`). Al pulsarlo, la vista se acerca y se dice cuántos puntos quedan fuera.
   - En la ficha, el mismo mapa marca el punto con `aria-current="location"` y empieza acercado si el punto está en el centro.
+- **🔄 Revisión parcial (autor, 2026-11-25) → [D-047](#d-047--mapa-interactivo-con-vista-lista--mapa):** el autor rechazó esta primera versión por pobre y porque no se podía mover. La sustituye un mapa que se desplaza y se amplía. El resto de D-019 (SVG propio, sin librería, complementario a la lista) sigue vigente.
 
 ## D-020 · Configuración de Claude Code dentro del repositorio
 **Estado:** ✅ aprobada · 2026-11-24
@@ -563,4 +565,32 @@ Estados: ✅ aprobada · 🔄 revisada (enlaza a la que la sustituye) · ❌ des
   - La Plaza Mayor (`poi-005`) es el punto de referencia, fijado en el código (`LANDMARK_ID`). Si no está en el catálogo, no se escribe la frase, pero sí la lista de cercanos.
   - Las distancias son en línea recta, y se dice así.
   - La ficha pide también el catálogo completo (`GET /pois`) para el mapa y los cercanos.
+
+## D-047 · Mapa interactivo, con vista Lista / Mapa
+**Estado:** ✅ aprobada por el autor · 2026-11-25
+
+- **Contexto:** el autor vio la primera versión del mapa (D-019) y la rechazó: «queda muy cutre» y «no es accesible, no puede moverse con el ratón». Era una columna estrecha con puntos iguales, y el centro del pueblo quedaba apiñado sin poder ampliarlo.
+- **Decisión:**
+  - **Interacción:**
+    - se desplaza arrastrando con el ratón o con el dedo;
+    - se amplía con la rueda (en proporción a cuánto gira, para que un trackpad no se dispare) o pellizcando con dos dedos;
+    - tiene botones «Acercar», «Alejar» y «Ver todo el pueblo»;
+    - con el foco en el mapa, las flechas lo mueven, + y − lo acercan o alejan, y 0 lo restablece.
+    - Las instrucciones están escritas debajo y enlazadas con `aria-describedby`.
+  - **Estructura:** un fondo SVG decorativo que se mueve cambiando su `viewBox`, y encima **botones HTML** como marcadores. Cada botón es una chincheta con el icono de su categoría y un nombre accesible con nombre y categoría («Museo del Aceite, Museo»). Al llegar con el tabulador a un marcador que está fuera de la vista, el mapa se centra en él.
+  - **Selección:** al pulsar un marcador (`aria-pressed`), su tarjeta (`app-poi-card`) aparece al lado, en una región `aria-live`.
+  - **En `/pois`:** pestañas «Lista / Mapa» (botones con `aria-pressed`). La vista se guarda en la URL (`?vista=mapa`) y se mantiene al cambiar los filtros.
+  - **En la ficha:** el punto propio va en verde con `aria-current="location"`, y el mapa empieza acercado si el punto está en el casco antiguo.
+  - **Fondo:** solo decorativo, sin calles ni río, que no están en los datos. Lleva el casco antiguo (600 m alrededor de la Plaza Mayor) como mancha suave, anillos y cuadrícula, una rosa de los vientos y una escala que se actualiza con el zoom.
+- **Por qué:**
+  - **Botones HTML y no elementos SVG:** dan foco, nombre, `aria-pressed` y área de pulsación nativos, y mantienen su tamaño al ampliar.
+  - **El estado del mapa** (centro y zoom) vive en un módulo puro con tests (`map-viewport.ts`), separado de los eventos del ratón.
+  - **Pestañas en lugar de dos columnas:** el mapa necesita anchura, y la lista sigue siendo la vista por defecto.
+- **Alternativas descartadas:**
+  - Leaflet u otra librería: con teselas reales mostraría Madrid (D-046), y sin ellas apenas aporta frente a un SVG propio.
+  - Marcadores como enlaces SVG: el foco y el tamaño al ampliar son peores.
+  - Mapa encima de la lista: obliga a bajar mucho para llegar a las tarjetas.
+- **Consecuencias:**
+  - El mapa mantiene la proporción 16:10 para no deformar las distancias, así que en un móvil de 320 px queda pequeño (unos 265×166 px). Se puede ampliar con dos dedos o con los botones.
+  - La rueda sobre el mapa amplía en lugar de desplazar la página. Es lo esperado en un mapa, pero hay que saberlo.
 

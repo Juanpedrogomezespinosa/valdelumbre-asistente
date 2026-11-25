@@ -10,6 +10,9 @@ import { PoiFilters, filtersFromQuery, filtersToQuery } from '../../pois/poi-fil
 import { PoisService } from '../../pois/pois-service';
 import { VillageMap } from '../../pois/village-map';
 
+type ListView = 'list' | 'map';
+const MAP_VIEW = 'mapa';
+
 @Component({
   selector: 'app-poi-list-page',
   imports: [PageHeading, PoiCard, VillageMap],
@@ -25,6 +28,14 @@ export class PoiListPage {
   protected readonly filters = toSignal(this.route.queryParamMap.pipe(map(filtersFromQuery)), {
     requireSync: true,
   });
+
+  /** List or map; kept in the URL (`?vista=mapa`) like the filters, so it can be shared. */
+  protected readonly view = toSignal(
+    this.route.queryParamMap.pipe(
+      map((query): ListView => (query.get('vista') === MAP_VIEW ? 'map' : 'list')),
+    ),
+    { requireSync: true },
+  );
 
   protected readonly results = rxResource({
     params: () => ({ filters: this.filters(), language: this.i18n.language() }),
@@ -58,10 +69,19 @@ export class PoiListPage {
     this.apply({ openNow: (event.target as HTMLInputElement).checked });
   }
 
+  protected showView(view: ListView): void {
+    void this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams: { vista: view === 'map' ? MAP_VIEW : null },
+      queryParamsHandling: 'merge',
+    });
+  }
+
   private apply(change: Partial<PoiFilters>): void {
     void this.router.navigate([], {
       relativeTo: this.route,
       queryParams: filtersToQuery({ ...this.filters(), ...change }),
+      queryParamsHandling: 'merge',
     });
   }
 }

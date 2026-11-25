@@ -132,10 +132,9 @@ describe('POI detail page location', () => {
 
     const location = screen.getByRole('region', { name: 'Ubicación' });
     expect(within(location).getByText('A 120 m al oeste de Plaza Mayor')).toBeVisible();
-    expect(within(location).getByRole('link', { name: 'Castillo de Valdelumbre' })).toHaveAttribute(
-      'aria-current',
-      'location',
-    );
+    expect(
+      within(location).getByRole('button', { name: 'Castillo de Valdelumbre, Monumento' }),
+    ).toHaveAttribute('aria-current', 'location');
   });
 
   it('lists the nearest places with their distance, as links', async () => {

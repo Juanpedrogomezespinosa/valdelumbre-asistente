@@ -3,7 +3,7 @@ import { HttpTestingController, provideHttpClientTesting } from '@angular/common
 import { TestBed } from '@angular/core/testing';
 import { Router, provideRouter } from '@angular/router';
 import { RouterTestingHarness } from '@angular/router/testing';
-import { screen } from '@testing-library/angular';
+import { screen, within } from '@testing-library/angular';
 import userEvent from '@testing-library/user-event';
 import { aPoi } from '../../../testing/poi-fixture';
 import { CLOCK } from '../../clock';
@@ -97,6 +97,39 @@ describe('POI list page', () => {
 
     expect(await screen.findByRole('status')).toHaveTextContent(
       'No se han podido cargar los puntos',
+    );
+  });
+});
+
+describe('POI list page views', () => {
+  it('switches between list and map, keeping the view in the URL', async () => {
+    const { harness, http } = await openList();
+    answer(http, 2);
+    await harness.fixture.whenStable();
+
+    const views = screen.getByRole('group', { name: 'Vista' });
+    expect(within(views).getByRole('button', { name: 'Lista' })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    );
+
+    await userEvent.click(within(views).getByRole('button', { name: 'Mapa' }));
+
+    await vi.waitFor(() => expect(TestBed.inject(Router).url).toBe('/pois?vista=mapa'));
+    answer(http, 2);
+    await harness.fixture.whenStable();
+    expect(screen.getByRole('group', { name: 'Mapa del pueblo' })).toBeInTheDocument();
+    expect(screen.queryByRole('list')).toBeNull();
+  });
+
+  it('keeps the map view when a filter changes', async () => {
+    const { http } = await openList('/pois?vista=mapa');
+    answer(http, 2);
+
+    await userEvent.selectOptions(screen.getByLabelText('Categoría'), 'museo');
+
+    await vi.waitFor(() =>
+      expect(TestBed.inject(Router).url).toBe('/pois?vista=mapa&categoria=museo'),
     );
   });
 });

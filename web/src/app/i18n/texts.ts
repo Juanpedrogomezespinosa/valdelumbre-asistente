@@ -35,6 +35,9 @@ const es = {
     hoursUnknown: 'Horario no disponible',
   },
   poiList: {
+    viewLabel: 'Vista',
+    listView: 'Lista',
+    mapView: 'Mapa',
     filters: 'Filtros',
     anyCategory: 'Todas',
     anyAccessibility: 'Cualquiera',
@@ -104,13 +107,12 @@ const es = {
     heading: 'Ubicación',
     nearby: 'Cerca de aquí, en línea recta',
     mapLabel: 'Mapa del pueblo',
-    zoomCentre: 'Ver el centro del pueblo',
-    outsideView: (count: number) =>
-      count === 1
-        ? '1 punto queda fuera de esta vista.'
-        : `${count} puntos quedan fuera de esta vista.`,
-    mapHint:
-      'Los mismos puntos que la lista. Pasa el ratón o usa el tabulador para ver cada nombre.',
+    zoomIn: 'Acercar',
+    zoomOut: 'Alejar',
+    reset: 'Ver todo el pueblo',
+    instructions:
+      'Arrastra para moverte y usa la rueda o los botones para acercar. Con el teclado: flechas para moverte, + y − para acercar o alejar, y 0 para ver todo el pueblo.',
+    pick: 'Elige un punto del mapa para ver su ficha.',
     north: 'N',
     directions: ['norte', 'noreste', 'este', 'sureste', 'sur', 'suroeste', 'oeste', 'noroeste'],
     decimalSeparator: ',',
@@ -169,6 +171,9 @@ const en: Texts = {
     hoursUnknown: 'Opening hours not available',
   },
   poiList: {
+    viewLabel: 'View',
+    listView: 'List',
+    mapView: 'Map',
     filters: 'Filters',
     anyCategory: 'All',
     anyAccessibility: 'Any',
@@ -235,10 +240,12 @@ const en: Texts = {
     heading: 'Location',
     nearby: 'Nearby, as the crow flies',
     mapLabel: 'Map of the village',
-    zoomCentre: 'Show the village centre',
-    outsideView: (count: number) =>
-      count === 1 ? '1 place is outside this view.' : `${count} places are outside this view.`,
-    mapHint: 'The same places as the list. Hover or use the Tab key to see each name.',
+    zoomIn: 'Zoom in',
+    zoomOut: 'Zoom out',
+    reset: 'Show the whole village',
+    instructions:
+      'Drag to move and use the wheel or the buttons to zoom. With the keyboard: arrows to move, + and − to zoom in or out, and 0 to show the whole village.',
+    pick: 'Choose a place on the map to see its card.',
     north: 'N',
     directions: [
       'north',

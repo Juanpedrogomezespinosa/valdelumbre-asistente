@@ -8,12 +8,20 @@ import { VillageMap } from './village-map';
 const CASTLE = aPoi({
   id: 'poi-001',
   nombre: { texto: 'Castillo de Valdelumbre', idioma: 'es' },
+  categoria: 'monumento',
   coordenadas: { lat: 40.4172, lon: -3.7051 },
 });
 const SQUARE = aPoi({
   id: 'poi-005',
   nombre: { texto: 'Plaza Mayor', idioma: 'es' },
+  categoria: 'espacio_publico',
   coordenadas: { lat: 40.4168, lon: -3.7038 },
+});
+const WINERY = aPoi({
+  id: 'poi-008',
+  nombre: { texto: 'Bodega La Encina', idioma: 'es' },
+  categoria: 'gastronomia',
+  coordenadas: { lat: 40.405, lon: -3.73 },
 });
 const NOWHERE = aPoi({
   id: 'poi-099',
@@ -26,80 +34,82 @@ async function renderMap(inputs: { pois: Poi[]; highlighted?: string }) {
   return render(VillageMap, { inputs, providers: [provideRouter([])] });
 }
 
+function scaleInMetres(): number {
+  return Number(/(\d+) m/.exec(scale())?.[1]);
+}
+
+function scale(): string {
+  return screen.getByTestId('map-scale').textContent?.trim() ?? '';
+}
+
 describe('VillageMap', () => {
-  it('is a labelled group with one link per located place', async () => {
+  it('is a labelled, focusable group with instructions and one button per located place', async () => {
     await renderMap({ pois: [CASTLE, SQUARE, NOWHERE] });
 
     const map = screen.getByRole('group', { name: 'Mapa del pueblo' });
-    const links = within(map).getAllByRole('link');
-    expect(links.map((link) => link.getAttribute('aria-label'))).toEqual([
-      'Castillo de Valdelumbre',
-      'Plaza Mayor',
-    ]);
-    expect(links[0]).toHaveAttribute('href', '/pois/poi-001');
-  });
-
-  it('says in words how many places could not be drawn', async () => {
-    await renderMap({ pois: [CASTLE, NOWHERE] });
-
+    expect(map).toHaveAttribute('tabindex', '0');
+    expect(map).toHaveAccessibleDescription(/Arrastra para moverte/);
+    expect(
+      within(map)
+        .getAllByRole('button', { name: /, / })
+        .map((button) => button.getAttribute('aria-label')),
+    ).toEqual(['Castillo de Valdelumbre, Monumento', 'Plaza Mayor, Espacio público']);
     expect(
       screen.getByText('1 punto no aparece en el mapa porque no tiene ubicación.'),
     ).toBeVisible();
   });
 
-  it('marks the highlighted place as the current one', async () => {
-    await renderMap({ pois: [CASTLE, SQUARE], highlighted: 'poi-001' });
+  it('shows the card of the place chosen on the map', async () => {
+    await renderMap({ pois: [CASTLE, SQUARE] });
+    expect(screen.getByText('Elige un punto del mapa para ver su ficha.')).toBeVisible();
 
-    expect(screen.getByRole('link', { name: 'Castillo de Valdelumbre' })).toHaveAttribute(
-      'aria-current',
-      'location',
+    const marker = screen.getByRole('button', { name: 'Plaza Mayor, Espacio público' });
+    await userEvent.click(marker);
+
+    expect(marker).toHaveAttribute('aria-pressed', 'true');
+    expect(screen.getByRole('heading', { name: 'Plaza Mayor' })).toBeVisible();
+    expect(screen.getByRole('link', { name: 'Plaza Mayor' })).toHaveAttribute(
+      'href',
+      '/pois/poi-005',
     );
-    expect(screen.getByRole('link', { name: 'Plaza Mayor' })).not.toHaveAttribute('aria-current');
-  });
-});
-
-describe('VillageMap zoom on the village centre', () => {
-  const WINERY = aPoi({
-    id: 'poi-008',
-    nombre: { texto: 'Bodega La Encina', idioma: 'es' },
-    coordenadas: { lat: 40.405, lon: -3.73 },
   });
 
-  it('can zoom on the centre, leaving far places out and saying how many', async () => {
+  it('zooms in and out with its buttons', async () => {
     await renderMap({ pois: [CASTLE, SQUARE, WINERY] });
-    const zoom = screen.getByRole('button', { name: 'Ver el centro del pueblo' });
-    expect(zoom).toHaveAttribute('aria-pressed', 'false');
-    expect(screen.getByRole('link', { name: 'Bodega La Encina' })).toBeInTheDocument();
+    const whole = scale();
 
-    await userEvent.click(zoom);
+    await userEvent.click(screen.getByRole('button', { name: 'Acercar' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Acercar' }));
+    expect(scale()).not.toBe(whole);
 
-    expect(zoom).toHaveAttribute('aria-pressed', 'true');
-    expect(screen.queryByRole('link', { name: 'Bodega La Encina' })).toBeNull();
-    expect(screen.getByRole('link', { name: 'Castillo de Valdelumbre' })).toBeInTheDocument();
-    expect(screen.getByText('1 punto queda fuera de esta vista.')).toBeVisible();
+    await userEvent.click(screen.getByRole('button', { name: 'Ver todo el pueblo' }));
+    expect(scale()).toBe(whole);
   });
 
-  it('starts zoomed in when the highlighted place is in the centre', async () => {
+  it('zooms with the keyboard when the map has focus', async () => {
+    await renderMap({ pois: [CASTLE, SQUARE, WINERY] });
+    const whole = scale();
+    screen.getByRole('group', { name: 'Mapa del pueblo' }).focus();
+
+    await userEvent.keyboard('++');
+    expect(scale()).not.toBe(whole);
+
+    await userEvent.keyboard('0');
+    expect(scale()).toBe(whole);
+  });
+
+  it('marks the place the page is about and starts close to it when it is in the centre', async () => {
     await renderMap({ pois: [CASTLE, SQUARE, WINERY], highlighted: 'poi-001' });
 
-    expect(screen.getByRole('button', { name: 'Ver el centro del pueblo' })).toHaveAttribute(
-      'aria-pressed',
-      'true',
-    );
+    expect(
+      screen.getByRole('button', { name: 'Castillo de Valdelumbre, Monumento' }),
+    ).toHaveAttribute('aria-current', 'location');
+    expect(scaleInMetres()).toBeLessThanOrEqual(250);
   });
 
-  it('starts with the whole village when the highlighted place is far away', async () => {
+  it('starts with the whole village when the place is far from the centre', async () => {
     await renderMap({ pois: [CASTLE, SQUARE, WINERY], highlighted: 'poi-008' });
 
-    expect(screen.getByRole('button', { name: 'Ver el centro del pueblo' })).toHaveAttribute(
-      'aria-pressed',
-      'false',
-    );
-  });
-
-  it('offers no zoom when the square is not among the places shown', async () => {
-    await renderMap({ pois: [CASTLE, WINERY] });
-
-    expect(screen.queryByRole('button', { name: 'Ver el centro del pueblo' })).toBeNull();
+    expect(scaleInMetres()).toBeGreaterThanOrEqual(500);
   });
 });

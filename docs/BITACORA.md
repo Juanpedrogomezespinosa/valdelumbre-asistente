@@ -697,3 +697,32 @@ Con esto quedan cerradas todas las decisiones previas al código (D-001 a D-031)
   - en Chrome: el zoom, el foco con el tabulador, las fichas del castillo (cerca) y de la bodega (lejos) y las siete ilustraciones en móvil;
   - sin scroll horizontal a 320 px en `/pois`, `/pois/poi-001` y `/pois/poi-008`;
   - `make check` limpio (270 tests del backend y 84 de la web) y build sin avisos.
+
+### Paso 13.1 · Mapa interactivo con vista Lista / Mapa — 2026-11-25
+- **El autor rechazó el primer mapa:** «queda muy cutre» y «no es accesible, no puede moverse con el ratón». Tenía razón: era una columna estrecha con puntos iguales, el centro quedaba apiñado y no se podía ni desplazar ni ampliar. **Para IA.md:** la primera propuesta de la IA cumplía lo mínimo (enlaces con nombre), pero no pensó en la interacción básica que se espera de cualquier mapa.
+- La IA propuso un mapa nuevo sin librería y tres colocaciones posibles. **El autor eligió** pestañas Lista / Mapa. Decisión D-047, que revisa en parte D-019.
+- TDD en el núcleo: `pois/map-viewport.ts`, un módulo puro con tests:
+  - el zoom conserva el punto bajo el puntero;
+  - el zoom va de 1 a 8;
+  - al desplazar, la vista nunca sale del mapa;
+  - centrar en un punto respeta los bordes;
+  - calcula dónde cae un punto en la vista.
+- Componente `pois/village-map.ts` + `.html`, rehecho:
+  - fondo SVG decorativo (casco antiguo, anillos y cuadrícula) que se mueve con el `viewBox`;
+  - encima, botones HTML con forma de chincheta y el icono de su categoría (`pois/category-glyph.ts`);
+  - interacción: arrastrar (la captura del puntero empieza solo tras 4 px, para que un clic siga llegando al marcador), rueda proporcional a cuánto gira, pellizco con dos dedos, botones «Acercar», «Alejar» y «Ver todo el pueblo», y teclado (flechas, + − y 0);
+  - escala que se actualiza con el zoom;
+  - tarjeta del punto elegido al lado, en una región `aria-live`.
+- `/pois`: pestañas «Lista / Mapa» con `aria-pressed` y `?vista=mapa`. Los filtros navegan con `queryParamsHandling: 'merge'` para no perder la vista.
+- La ficha: el texto (frase y cercanos) en dos columnas, y debajo el mapa a todo el ancho con su tarjeta.
+- Ajustes vistos al probar en Chrome:
+  - la tarjeta se estiraba a todo el alto del mapa (`self-start`);
+  - la rosa de los vientos tapaba un marcador, así que pasó por debajo;
+  - la rueda acercaba un paso fijo por evento, lento con ratón y descontrolado con trackpad. Ahora es proporcional a cuánto gira (`exp(-deltaY·0,0025)`).
+- Error propio corregido: un test usaba `unmount`, que Angular Testing Library no ofrece. Se dividió en dos casos.
+- Verificado en Chrome:
+  - con el ratón: rueda (sin mover la página), arrastre, «+» y clic en un marcador (aparece la tarjeta);
+  - con el teclado: foco en el mapa, `0`, `+`, flechas, Tab entre marcadores con foco visible y Enter;
+  - la ficha del castillo en tema claro, con el punto propio en verde y el mapa acercado;
+  - sin scroll horizontal a 320 px (el mapa queda pequeño, limitación anotada en D-047).
+- `make check` limpio (270 tests del backend y 91 de la web) y build sin avisos.

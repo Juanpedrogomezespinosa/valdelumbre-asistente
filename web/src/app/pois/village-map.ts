@@ -1,235 +1,280 @@
-import { Component, computed, inject, input, linkedSignal } from '@angular/core';
-import { RouterLink } from '@angular/router';
-import { I18n } from '../i18n/i18n';
 import {
-  Canvas,
-  Coordinates,
-  distanceInMetres,
-  frameAround,
-  offsetInMetres,
-  project,
-  scaleOf,
-} from './map-geometry';
+  Component,
+  ElementRef,
+  computed,
+  inject,
+  input,
+  linkedSignal,
+  signal,
+  viewChild,
+} from '@angular/core';
+import { I18n } from '../i18n/i18n';
+import { CATEGORY_GLYPHS } from './category-glyph';
+import { Canvas, Coordinates, frameAround, project, scaleOf } from './map-geometry';
+import {
+  Point,
+  Viewport,
+  centredOn,
+  fractionInView,
+  panBy,
+  viewBoxOf,
+  wholeMap,
+  zoomAt,
+} from './map-viewport';
 import { Poi } from './poi';
+import { PoiCard } from './poi-card';
 import { LANDMARK_ID } from './relative-location';
 
-const CANVAS: Canvas = { width: 400, height: 440, padding: 40 };
+const CANVAS: Canvas = { width: 1000, height: 625, padding: 70 };
 const MINIMUM_HALF_EXTENT_METRES = 400;
-const SCALE_STEPS_METRES = [100, 200, 250, 500, 1000, 2000, 5000];
-// The old town: everything within a short walk of Plaza Mayor (most places are 100-600 m away).
+const SCALE_STEPS_METRES = [25, 50, 100, 200, 250, 500, 1000, 2000];
+// The old town: most places are 100-600 m from Plaza Mayor, the rest 2-3 km away.
 const CENTRE_RADIUS_METRES = 600;
+const CENTRE_ZOOM = 3.5;
+const ZOOM_STEP = 1.5;
+const KEY_PAN_FRACTION = 0.15;
+// Movement (px) below which a press on a marker is a click, not the start of a drag.
+const DRAG_THRESHOLD = 4;
+const GRID_STEP = 50;
+const WHEEL_SENSITIVITY = 0.0025;
 
-interface PlacedPoint {
+interface Marker {
   poi: Poi;
-  x: number;
-  y: number;
+  point: Point;
+  label: string;
+  glyph: string;
+  left: number;
+  top: number;
+  selected: boolean;
   current: boolean;
-  labelAnchor: 'start' | 'middle' | 'end';
 }
 
+type Located = Poi & { coordenadas: Coordinates };
+
 /**
- * Own SVG map (D-019): complements the list, never replaces it. Each place is a link with
- * its name; places without coordinates are counted in words below the map.
+ * Own map (D-019, D-047): a decorative SVG background that pans and zooms through its
+ * viewBox, and real HTML buttons on top as markers, so focus, names and touch targets are
+ * the browser's. Mouse, touch, buttons and keyboard all move the same viewport.
  */
 @Component({
   selector: 'app-village-map',
-  imports: [RouterLink],
-  template: `
-    @let texts = i18n.texts().location;
-    @if (landmark()) {
-      <div class="mb-2 flex justify-end">
-        <button
-          type="button"
-          class="rounded-full border border-control-border bg-surface px-3 py-1 text-sm hover:border-primary hover:text-primary aria-pressed:border-primary aria-pressed:font-semibold aria-pressed:text-primary"
-          [attr.aria-pressed]="zoomedIn()"
-          (click)="zoomed.set(!zoomed())"
-        >
-          {{ texts.zoomCentre }}
-        </button>
-      </div>
-    }
-    @if (placed().length > 0) {
-      <svg
-        role="group"
-        [attr.aria-label]="texts.mapLabel"
-        [attr.viewBox]="viewBox"
-        class="block h-auto w-full rounded-2xl bg-sunk"
-      >
-        <g aria-hidden="true">
-          @for (offset of grid(); track offset) {
-            <line
-              [attr.x1]="canvas.width / 2 + offset"
-              y1="0"
-              [attr.x2]="canvas.width / 2 + offset"
-              [attr.y2]="canvas.height"
-              class="stroke-line"
-            />
-            <line
-              x1="0"
-              [attr.y1]="canvas.height / 2 + offset"
-              [attr.x2]="canvas.width"
-              [attr.y2]="canvas.height / 2 + offset"
-              class="stroke-line"
-            />
-          }
-          <g [attr.transform]="'translate(' + (canvas.width - 28) + ' 34)'" class="fill-muted">
-            <path d="M0 -18 L8 6 L0 1 L-8 6 Z" />
-            <text y="22" text-anchor="middle" class="text-[13px] font-semibold">
-              {{ texts.north }}
-            </text>
-          </g>
-          <g
-            [attr.transform]="
-              'translate(' +
-              (canvas.width - 20 - scaleBar().pixels) +
-              ' ' +
-              (canvas.height - 22) +
-              ')'
-            "
-          >
-            <line
-              x1="0"
-              y1="0"
-              [attr.x2]="scaleBar().pixels"
-              y2="0"
-              class="stroke-muted"
-              stroke-width="3"
-            />
-            <text
-              [attr.x]="scaleBar().pixels"
-              y="-8"
-              text-anchor="end"
-              class="fill-muted text-[12px]"
-            >
-              {{ texts.scale(scaleBar().metres) }}
-            </text>
-          </g>
-        </g>
-
-        @for (point of placed(); track point.poi.id) {
-          <a
-            class="group outline-none"
-            [routerLink]="['/pois', point.poi.id]"
-            [attr.aria-label]="point.poi.nombre.texto"
-            [attr.aria-current]="point.current ? 'location' : null"
-          >
-            <!-- A bigger, invisible target for pointer and touch. -->
-            <circle [attr.cx]="point.x" [attr.cy]="point.y" r="16" fill="transparent" />
-            @if (point.current) {
-              <circle [attr.cx]="point.x" [attr.cy]="point.y" r="17" class="fill-primary/25" />
-            }
-            <!-- The focus ring replaces the outline, which browsers draw unevenly on SVG links. -->
-            <circle
-              [attr.cx]="point.x"
-              [attr.cy]="point.y"
-              [attr.r]="point.current ? 9 : 7"
-              class="fill-primary stroke-surface group-focus-visible:stroke-focus"
-              stroke-width="2.5"
-            />
-            <text
-              [attr.x]="point.x"
-              [attr.y]="point.y - 15"
-              [attr.text-anchor]="point.labelAnchor"
-              paint-order="stroke"
-              stroke-width="4"
-              stroke-linejoin="round"
-              class="pointer-events-none fill-text stroke-sunk text-[13px] font-semibold opacity-0 group-hover:opacity-100 group-focus-visible:opacity-100"
-              [class.opacity-100]="point.current"
-            >
-              {{ point.poi.nombre.texto }}
-            </text>
-          </a>
-        }
-      </svg>
-    }
-    @if (outsideView() > 0) {
-      <p class="mt-2 text-sm text-muted">{{ texts.outsideView(outsideView()) }}</p>
-    }
-    @if (missing() > 0) {
-      <p class="mt-2 text-sm text-muted">{{ texts.notOnMap(missing()) }}</p>
-    }
-  `,
+  imports: [PoiCard],
+  templateUrl: './village-map.html',
 })
 export class VillageMap {
   readonly pois = input.required<readonly Poi[]>();
-  /** Id of the place the map is about (the detail page), drawn bigger and labelled. */
+  /** Id of the place the page is about (the detail page). */
   readonly highlighted = input<string | null>(null);
 
   protected readonly i18n = inject(I18n);
-  protected readonly canvas = CANVAS;
-  protected readonly viewBox = `0 0 ${CANVAS.width} ${CANVAS.height}`;
+  private readonly stage = viewChild.required<ElementRef<HTMLElement>>('stage');
 
-  private readonly located = computed(() =>
-    this.pois().filter(
-      (poi): poi is Poi & { coordenadas: Coordinates } => poi.coordenadas !== null,
-    ),
+  protected readonly located = computed(() =>
+    this.pois().filter((poi): poi is Located => poi.coordenadas !== null),
   );
   protected readonly missing = computed(() => this.pois().length - this.located().length);
 
-  protected readonly landmark = computed(
-    () => this.located().find((poi) => poi.id === LANDMARK_ID) ?? null,
-  );
-  /** Zoomed in from the start when the page is about a place in the old town. */
-  protected readonly zoomed = linkedSignal(() => {
-    const landmark = this.landmark();
-    const place = this.located().find((poi) => poi.id === this.highlighted());
-    return landmark !== null && place !== undefined && inCentre(landmark, place);
-  });
-  /** Only zoomed while the square is shown: filters may leave it out. */
-  protected readonly zoomedIn = computed(() => this.zoomed() && this.landmark() !== null);
-
-  private readonly frame = computed(() => {
-    const landmark = this.landmark();
-    const framed =
-      this.zoomedIn() && landmark
-        ? this.located().filter((poi) => inCentre(landmark, poi))
-        : this.located();
-    return frameAround(
-      framed.map((poi) => poi.coordenadas),
+  private readonly frame = computed(() =>
+    frameAround(
+      this.located().map((poi) => poi.coordenadas),
       MINIMUM_HALF_EXTENT_METRES,
-    );
+    ),
+  );
+  private readonly points = computed(
+    () =>
+      new Map(
+        this.located().map((poi) => [poi.id, project(this.frame(), poi.coordenadas, CANVAS)]),
+      ),
+  );
+
+  /** Starts close to the highlighted place when it is in the old town. */
+  protected readonly view = linkedSignal<Viewport>(() => this.initialView());
+  protected readonly selectedId = signal<string | null>(null);
+  protected readonly selected = computed(
+    () => this.located().find((poi) => poi.id === this.selectedId()) ?? null,
+  );
+
+  protected readonly viewBox = computed(() => {
+    const box = viewBoxOf(this.view(), CANVAS);
+    return `${box.x} ${box.y} ${box.width} ${box.height}`;
   });
 
-  protected readonly placed = computed<PlacedPoint[]>(() =>
-    this.located()
-      .map((poi) => {
-        const { x, y } = project(this.frame(), poi.coordenadas, CANVAS);
-        return { poi, x, y, current: poi.id === this.highlighted(), labelAnchor: anchorFor(x) };
-      })
-      .filter(({ x, y }) => x >= 0 && x <= CANVAS.width && y >= 0 && y <= CANVAS.height),
-  );
-  protected readonly outsideView = computed(() => this.located().length - this.placed().length);
+  protected readonly markers = computed<Marker[]>(() => {
+    const texts = this.i18n.texts();
+    return this.located().map((poi) => {
+      const point = this.points().get(poi.id) ?? { x: 0, y: 0 };
+      const fraction = fractionInView(this.view(), point, CANVAS);
+      return {
+        poi,
+        point,
+        label: `${poi.nombre.texto}, ${texts.categories[poi.categoria]}`,
+        glyph: CATEGORY_GLYPHS[poi.categoria],
+        left: fraction.x * 100,
+        top: fraction.y * 100,
+        selected: poi.id === this.selectedId(),
+        current: poi.id === this.highlighted(),
+      };
+    });
+  });
 
-  /** The longest round distance that fits in a third of the map. */
+  /** A round distance about a fifth of the visible width, as a bar of that width. */
   protected readonly scaleBar = computed(() => {
-    const pixelsPerMetre = scaleOf(this.frame(), CANVAS);
-    const fitting = SCALE_STEPS_METRES.filter(
-      (metres) => metres * pixelsPerMetre <= CANVAS.width / 3,
-    );
-    const metres = fitting.at(-1) ?? SCALE_STEPS_METRES[0];
-    return { metres, pixels: metres * pixelsPerMetre };
+    const visibleMetres = viewBoxOf(this.view(), CANVAS).width / scaleOf(this.frame(), CANVAS);
+    const metres =
+      SCALE_STEPS_METRES.filter((step) => step <= visibleMetres / 5).at(-1) ??
+      SCALE_STEPS_METRES[0];
+    return { metres, width: (metres / visibleMetres) * 100 };
   });
 
-  /** Decorative grid lines, one scale-bar length apart, from the centre outwards. */
-  protected readonly grid = computed(() => {
-    const step = this.scaleBar().pixels;
-    const offsets: number[] = [];
-    for (let offset = step; offset < CANVAS.height / 2; offset += step) {
-      offsets.push(offset, -offset);
+  /** The old town drawn as a soft patch around Plaza Mayor, with decorative rings around it. */
+  protected readonly oldTown = computed(() => {
+    const square = this.points().get(LANDMARK_ID);
+    return square
+      ? { ...square, radius: CENTRE_RADIUS_METRES * scaleOf(this.frame(), CANVAS) }
+      : null;
+  });
+  protected readonly contours = [1.5, 2.2, 3, 3.9, 4.9];
+  protected readonly gridX = gridLines(CANVAS.width);
+  protected readonly gridY = gridLines(CANVAS.height);
+  protected readonly canvas = CANVAS;
+  protected readonly zoomStep = ZOOM_STEP;
+
+  private readonly pointers = new Map<number, Point>();
+  private dragDistance = 0;
+
+  protected select(poi: Poi): void {
+    if (this.dragDistance > DRAG_THRESHOLD) {
+      return;
     }
-    return [0, ...offsets];
-  });
-}
-
-function inCentre(landmark: { coordenadas: Coordinates }, poi: { coordenadas: Coordinates }) {
-  return (
-    distanceInMetres(offsetInMetres(landmark.coordenadas, poi.coordenadas)) <= CENTRE_RADIUS_METRES
-  );
-}
-
-function anchorFor(x: number): 'start' | 'middle' | 'end' {
-  if (x < CANVAS.width * 0.25) {
-    return 'start';
+    this.selectedId.set(this.selectedId() === poi.id ? null : poi.id);
   }
-  return x > CANVAS.width * 0.75 ? 'end' : 'middle';
+
+  /** Tabbing to a marker outside the view brings it into view. */
+  protected reveal(marker: Marker): void {
+    if (marker.left < 5 || marker.left > 95 || marker.top < 8 || marker.top > 95) {
+      this.view.set(centredOn(marker.point, this.view().zoom, CANVAS));
+    }
+  }
+
+  protected zoomBy(factor: number): void {
+    this.view.set(zoomAt(this.view(), factor, this.view().centre, CANVAS));
+  }
+
+  protected reset(): void {
+    this.view.set(wholeMap(CANVAS));
+  }
+
+  protected onKey(event: KeyboardEvent): void {
+    const box = viewBoxOf(this.view(), CANVAS);
+    const step = { x: box.width * KEY_PAN_FRACTION, y: box.height * KEY_PAN_FRACTION };
+    const moves: Record<string, () => void> = {
+      ArrowLeft: () => this.pan({ x: -step.x, y: 0 }),
+      ArrowRight: () => this.pan({ x: step.x, y: 0 }),
+      ArrowUp: () => this.pan({ x: 0, y: -step.y }),
+      ArrowDown: () => this.pan({ x: 0, y: step.y }),
+      '+': () => this.zoomBy(ZOOM_STEP),
+      '=': () => this.zoomBy(ZOOM_STEP),
+      '-': () => this.zoomBy(1 / ZOOM_STEP),
+      '0': () => this.reset(),
+    };
+    const move = moves[event.key];
+    if (move) {
+      event.preventDefault();
+      move();
+    }
+  }
+
+  protected onWheel(event: WheelEvent): void {
+    event.preventDefault();
+    // Proportional to how far the wheel turned: a mouse notch (~100) is ~1.3x, and the many
+    // small steps of a trackpad add up smoothly instead of each one jumping a whole level.
+    const factor = Math.exp(-Math.max(-200, Math.min(200, event.deltaY)) * WHEEL_SENSITIVITY);
+    this.view.set(zoomAt(this.view(), factor, this.toMap(event), CANVAS));
+  }
+
+  protected onPointerDown(event: PointerEvent): void {
+    this.pointers.set(event.pointerId, { x: event.clientX, y: event.clientY });
+    this.dragDistance = 0;
+  }
+
+  protected onPointerMove(event: PointerEvent): void {
+    const previous = this.pointers.get(event.pointerId);
+    if (!previous) {
+      return;
+    }
+    const current = { x: event.clientX, y: event.clientY };
+    if (this.pointers.size === 2) {
+      this.pinch(event.pointerId, current);
+    } else {
+      const unitsPerPixel = this.unitsPerPixel();
+      this.dragDistance += Math.hypot(current.x - previous.x, current.y - previous.y);
+      if (this.dragDistance > DRAG_THRESHOLD) {
+        // Captured only once it is really a drag, so a plain click still reaches the marker.
+        this.stage().nativeElement.setPointerCapture?.(event.pointerId);
+      }
+      this.pan({
+        x: -(current.x - previous.x) * unitsPerPixel,
+        y: -(current.y - previous.y) * unitsPerPixel,
+      });
+    }
+    this.pointers.set(event.pointerId, current);
+  }
+
+  protected onPointerUp(event: PointerEvent): void {
+    this.pointers.delete(event.pointerId);
+  }
+
+  private pinch(movedId: number, moved: Point): void {
+    const [first, second] = [...this.pointers.entries()].map(([id, point]) =>
+      id === movedId ? { before: point, after: moved } : { before: point, after: point },
+    );
+    const before = Math.hypot(first.before.x - second.before.x, first.before.y - second.before.y);
+    const after = Math.hypot(first.after.x - second.after.x, first.after.y - second.after.y);
+    if (before > 0) {
+      this.dragDistance += DRAG_THRESHOLD + 1;
+      const middle = {
+        clientX: (first.after.x + second.after.x) / 2,
+        clientY: (first.after.y + second.after.y) / 2,
+      };
+      this.view.set(zoomAt(this.view(), after / before, this.toMap(middle), CANVAS));
+    }
+  }
+
+  private pan(delta: Point): void {
+    this.view.set(panBy(this.view(), delta, CANVAS));
+  }
+
+  private unitsPerPixel(): number {
+    const width = this.stage().nativeElement.getBoundingClientRect().width || CANVAS.width;
+    return viewBoxOf(this.view(), CANVAS).width / width;
+  }
+
+  private toMap(event: { clientX: number; clientY: number }): Point {
+    const rect = this.stage().nativeElement.getBoundingClientRect();
+    const box = viewBoxOf(this.view(), CANVAS);
+    if (!rect.width || !rect.height) {
+      return this.view().centre;
+    }
+    return {
+      x: box.x + ((event.clientX - rect.left) / rect.width) * box.width,
+      y: box.y + ((event.clientY - rect.top) / rect.height) * box.height,
+    };
+  }
+
+  private initialView(): Viewport {
+    const place = this.points().get(this.highlighted() ?? '');
+    const landmark = this.points().get(LANDMARK_ID);
+    if (!place || !landmark) {
+      return wholeMap(CANVAS);
+    }
+    const metres =
+      Math.hypot(place.x - landmark.x, place.y - landmark.y) / scaleOf(this.frame(), CANVAS);
+    return metres <= CENTRE_RADIUS_METRES
+      ? centredOn(place, CENTRE_ZOOM, CANVAS)
+      : wholeMap(CANVAS);
+  }
+}
+
+function gridLines(length: number): number[] {
+  return Array.from({ length: Math.floor(length / GRID_STEP) }, (_, i) => (i + 1) * GRID_STEP);
 }

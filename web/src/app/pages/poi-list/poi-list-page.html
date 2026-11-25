@@ -58,21 +58,43 @@
   </fieldset>
 </form>
 
-<p role="status" class="mb-5 font-display text-xl">{{ status() }}</p>
+<div class="mb-5 flex flex-wrap items-center justify-between gap-4">
+  <p role="status" class="font-display text-xl">{{ status() }}</p>
+  <div
+    role="group"
+    class="inline-flex rounded-full border border-control-border bg-surface p-1"
+    [attr.aria-label]="texts.poiList.viewLabel"
+  >
+    <button
+      type="button"
+      class="rounded-full px-5 py-1.5 font-semibold hover:text-primary aria-pressed:bg-primary aria-pressed:text-on-primary"
+      [attr.aria-pressed]="view() === 'list'"
+      (click)="showView('list')"
+    >
+      {{ texts.poiList.listView }}
+    </button>
+    <button
+      type="button"
+      class="rounded-full px-5 py-1.5 font-semibold hover:text-primary aria-pressed:bg-primary aria-pressed:text-on-primary"
+      [attr.aria-pressed]="view() === 'map'"
+      (click)="showView('map')"
+    >
+      {{ texts.poiList.mapView }}
+    </button>
+  </div>
+</div>
 
 @if (results.hasValue()) {
-  <div class="grid gap-8 lg:grid-cols-[minmax(0,1fr)_22rem]">
-    <ul class="grid content-start gap-5 sm:grid-cols-2">
+  @if (view() === 'map') {
+    <section aria-labelledby="map-heading">
+      <h2 id="map-heading" class="sr-only">{{ texts.location.mapLabel }}</h2>
+      <app-village-map [pois]="results.value()" />
+    </section>
+  } @else {
+    <ul class="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
       @for (poi of results.value(); track poi.id) {
         <li><app-poi-card [poi]="poi" /></li>
       }
     </ul>
-    @if (results.value().length > 0) {
-      <section aria-labelledby="map-heading" class="lg:sticky lg:top-6 lg:self-start">
-        <h2 id="map-heading" class="mb-1 text-2xl font-semibold">{{ texts.location.mapLabel }}</h2>
-        <p class="mb-3 text-sm text-muted">{{ texts.location.mapHint }}</p>
-        <app-village-map [pois]="results.value()" />
-      </section>
-    }
-  </div>
+  }
 }
