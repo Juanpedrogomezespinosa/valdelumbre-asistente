@@ -2,9 +2,11 @@ import { Language } from './language';
 
 const es = {
   siteName: 'Valdelumbre',
+  tagline: 'Guía de bolsillo del pueblo',
   skipToContent: 'Saltar al contenido',
   nav: { label: 'Principal', assistant: 'Asistente', pois: 'Puntos de interés' },
   languageLabel: 'Idioma',
+  darkMode: 'Modo oscuro',
   pages: {
     assistant: 'Pregunta al asistente',
     pois: 'Puntos de interés',
@@ -80,12 +82,26 @@ const es = {
   },
   assistant: {
     questionLabel: 'Tu pregunta',
+    intro:
+      'Pregunta lo que quieras saber del pueblo: qué ver, qué está abierto o qué es accesible. Respondo solo con lo que hay en el catálogo y te enseño en qué lugares me apoyo.',
     hint: 'Por ejemplo: «Voy en silla de ruedas, ¿qué museos puedo visitar?» o «¿Qué está abierto el domingo a las 12:00?»',
+    suggestionsLabel: 'Prueba con',
+    suggestions: [
+      {
+        label: 'En silla de ruedas',
+        question: 'Voy en silla de ruedas, ¿qué museos puedo visitar?',
+      },
+      { label: 'Con niños al aire libre', question: '¿Qué puedo hacer con niños al aire libre?' },
+      { label: 'El domingo a las 12:00', question: '¿Qué está abierto el domingo a las 12:00?' },
+      { label: 'Vino de la zona', question: '¿Dónde puedo probar vino de la zona?' },
+    ],
     submit: 'Preguntar',
     thinking: 'Buscando en el catálogo…',
     unreachable: 'No se ha podido contactar con el asistente. Inténtalo de nuevo en unos minutos.',
     cited: 'Puntos en los que se apoya la respuesta',
   },
+  footer:
+    'Respuestas generadas solo con el catálogo turístico de Valdelumbre, un pueblo inventado.',
   notFound: {
     message: 'La dirección no corresponde a ninguna página.',
     backHome: 'Volver al asistente',
@@ -96,9 +112,11 @@ export type Texts = typeof es;
 
 const en: Texts = {
   siteName: 'Valdelumbre',
+  tagline: 'Pocket guide to the village',
   skipToContent: 'Skip to content',
   nav: { label: 'Main', assistant: 'Assistant', pois: 'Points of interest' },
   languageLabel: 'Language',
+  darkMode: 'Dark mode',
   pages: {
     assistant: 'Ask the assistant',
     pois: 'Points of interest',
@@ -174,12 +192,22 @@ const en: Texts = {
   },
   assistant: {
     questionLabel: 'Your question',
+    intro:
+      'Ask anything about the village: what to see, what is open or what is accessible. I only answer with what is in the catalogue and show you the places I rely on.',
     hint: 'For example: “I use a wheelchair, which museums can I visit?” or “What is open on Sunday at 12:00?”',
+    suggestionsLabel: 'Try',
+    suggestions: [
+      { label: 'Wheelchair access', question: 'I use a wheelchair, which museums can I visit?' },
+      { label: 'Kids outdoors', question: 'Something to do with kids outdoors?' },
+      { label: 'Sunday at 12:00', question: 'What is open on Sunday at 12:00?' },
+      { label: 'Local wine', question: 'Where can I taste local wine?' },
+    ],
     submit: 'Ask',
     thinking: 'Searching the catalogue…',
     unreachable: 'The assistant could not be reached. Please try again in a few minutes.',
     cited: 'Points the answer is based on',
   },
+  footer: 'Answers come only from the tourist catalogue of Valdelumbre, an invented village.',
   notFound: {
     message: 'This address does not match any page.',
     backHome: 'Back to the assistant',

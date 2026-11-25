@@ -62,6 +62,8 @@ Estados: ✅ aprobada · 🔄 revisada (enlaza a la que la sustituye) · ❌ des
 | [D-041](#d-041--el-filtro-admite-varias-categorías-y-días-completos) | El filtro admite varias categorías y días completos | ✅ |
 | [D-042](#d-042--preguntar-devuelve-solo-respuesta-e-ids) | `/preguntar` devuelve solo `respuesta` e `ids` | ✅ |
 | [D-043](#d-043--recuperación-por-filtros-temas-y-nombres-respuesta-solo-con-campos-estructurados) | Recuperación por filtros, temas y nombres; respuesta solo con campos estructurados | ✅ |
+| [D-044](#d-044--diseño-de-guía-editorial-con-tipografía-propia-alojada-en-la-app) | Diseño de «guía editorial» con tipografía propia alojada en la app | ✅ |
+| [D-045](#d-045--botón-para-elegir-modo-claro-u-oscuro) | Botón para elegir modo claro u oscuro | ✅ |
 
 ---
 
@@ -342,6 +344,8 @@ Estados: ✅ aprobada · 🔄 revisada (enlaza a la que la sustituye) · ❌ des
 - **Por qué:** la prioridad es la legibilidad. La tipografía del sistema no descarga nada y el lector la conoce. Con los tokens de D-026, el modo oscuro es redefinir variables, no duplicar estilos.
 - **Alternativas descartadas:** estética neutra tipo dashboard (sin identidad); interruptor manual (un control más que hacer accesible, para poco beneficio).
 - **Consecuencias:** el contraste AA se comprueba en **los dos** temas.
+- **🔄 Revisión parcial (autor, 2026-11-25) → [D-044](#d-044--diseño-de-guía-editorial-con-tipografía-propia-alojada-en-la-app):** la tipografía del sistema se sustituye por dos fuentes libres servidas desde la propia app. El resto de D-030 (fondo claro, colores terrosos, modo oscuro según el sistema, contraste AA en los dos temas) sigue vigente.
+- **🔄 Revisión parcial (autor, 2026-11-25) → [D-045](#d-045--botón-para-elegir-modo-claro-u-oscuro):** se añade un botón para elegir el tema; el sistema sigue siendo el valor por defecto.
 
 ## D-031 · Fichas resumidas con enlace al detalle
 **Estado:** ✅ aprobada por el autor · 2026-11-24
@@ -479,3 +483,50 @@ Estados: ✅ aprobada · 🔄 revisada (enlaza a la que la sustituye) · ❌ des
   - Incluir la descripción en la respuesta: es texto no confiable.
   - Dar por válida cualquier palabra de un nombre: con «zipline adventure park» se citaban el parque y el aparcamiento.
 - **Consecuencias:** las respuestas son correctas pero esquemáticas. Si se pregunta por un lugar que no cumple el filtro («¿es accesible el castillo?»), la respuesta es «no tengo información» en lugar de «no, no es accesible». Es honesto, pero mejorable (queda para «qué haría con más tiempo»).
+
+## D-044 · Diseño de «guía editorial» con tipografía propia alojada en la app
+**Estado:** ✅ aprobada por el autor · 2026-11-25
+
+- **Contexto:** con lo obligatorio terminado, el autor revisó la pantalla y la vio correcta pero genérica: cajas con borde, enlaces subrayados y tipografía del sistema. Quería un diseño con identidad. Además, en `/pois` la página se desplazaba unos píxeles a la derecha cuando aparecía la barra de scroll.
+- **Decisión:**
+  - Dirección visual de «guía de viaje editorial», elegida por el autor entre tres propuestas (guía editorial, app de viaje moderna, minimal):
+    - títulos con serif;
+    - papel cálido, terracota como color principal y oliva como acento;
+    - portada con un paisaje del pueblo en SVG decorativo;
+    - sugerencias de pregunta con un clic;
+    - tarjetas con la categoría como antetítulo y los datos como etiquetas.
+  - Tipografías **Fraunces** (títulos) y **Source Sans 3** (texto), las dos con licencia OFL, instaladas con npm (`@fontsource-variable`) y servidas **desde la propia app**.
+  - `scrollbar-gutter: stable` en la raíz: el hueco de la barra se reserva siempre.
+- **Por qué:**
+  - La identidad visual ayuda a que la prueba se recuerde, y no cuesta accesibilidad si se mantienen las reglas de D-026.
+  - Al servir las fuentes la propia app, no se envía nada a terceros (Google Fonts), funcionan sin red y Docker no necesita nada más.
+  - Si la fuente no carga, se usa la del sistema (`font-family` con alternativas).
+- **Alternativas descartadas:**
+  - Google Fonts por CDN: envía la IP del visitante a un tercero y depende de la red.
+  - Mantener solo la tipografía del sistema: era la opción más ligera, pero el autor priorizó la identidad.
+  - «App de viaje moderna» y «minimal premium»: menos personalidad o menos color, según el autor.
+- **Consecuencias:**
+  - La primera visita descarga unos pocos KB de fuentes.
+  - La paleta nueva añade tres tokens: `sunk` (bloques hundidos), `line` (solo decorativo, nunca lleva información) y `accent` (oliva).
+  - El contraste AA se volvió a comprobar en los dos temas, con todos los pares de texto sobre `page`, `surface` y `sunk`: 0 fallos (ratios en la bitácora).
+
+## D-045 · Botón para elegir modo claro u oscuro
+**Estado:** ✅ aprobada por el autor · 2026-11-25
+
+- **Contexto:** D-030 descartó el interruptor de tema por ser «un control más que hacer accesible, para poco beneficio». Al revisar el rediseño, el autor lo pidió expresamente.
+- **Decisión:**
+  - Un botón en la cabecera con nombre fijo («Modo oscuro» / «Dark mode») y `aria-pressed`. El lector anuncia «Modo oscuro, botón de alternancia, activado o desactivado». El icono (sol o luna) es decorativo.
+  - Por defecto se sigue al sistema (`prefers-color-scheme`), y también sus cambios en directo. Cuando el visitante pulsa el botón, su elección se guarda en `localStorage` y se escribe como `data-theme` en `<html>`.
+  - Cada token de color es `light-dark(claro, oscuro)` y lo decide `color-scheme`: `light dark` por defecto, y `light` o `dark` si hay elección. Los valores de cada tema se definen una sola vez.
+  - Un script mínimo en `index.html` aplica el tema guardado antes del primer pintado, para que no se vea un parpadeo del tema equivocado.
+- **Por qué:**
+  - Hay personas que leen mejor en claro aunque su sistema esté en oscuro, o al revés, por ejemplo al leer al sol.
+  - Un botón con `aria-pressed` es el patrón de alternancia más sencillo y mejor soportado por los lectores de pantalla.
+  - `light-dark()` evita duplicar la paleta en tres bloques (sistema, elección clara y elección oscura).
+- **Alternativas descartadas:**
+  - Un selector de tres estados (sistema, claro, oscuro): es más completo, pero añade complejidad. Para volver a seguir al sistema basta con borrar la preferencia.
+  - Cambiar el nombre del botón según el estado («Activar modo oscuro» / «Activar modo claro») junto con `aria-pressed`: el lector anunciaría dos cosas contradictorias.
+- **Consecuencias:**
+  - `light-dark()` necesita navegadores de 2024 o posteriores (Chrome 123, Safari 17.5, Firefox 120).
+  - El favicon (un castillo en SVG) sigue al tema del sistema, no al botón: el navegador lo pinta fuera de la página.
+

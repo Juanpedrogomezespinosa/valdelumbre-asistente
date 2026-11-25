@@ -6,6 +6,7 @@ import { AssistantService } from '../../assistant/assistant-service';
 import { apiErrorDetail } from '../../http-error';
 import { I18n } from '../../i18n/i18n';
 import { PageHeading } from '../../layout/page-heading';
+import { VillageLandscape } from '../../layout/village-landscape';
 import { PoiCard } from '../../pois/poi-card';
 import { PoisService } from '../../pois/pois-service';
 
@@ -13,7 +14,7 @@ const MAX_QUESTION_LENGTH = 500;
 
 @Component({
   selector: 'app-assistant-page',
-  imports: [PageHeading, PoiCard],
+  imports: [PageHeading, PoiCard, VillageLandscape],
   templateUrl: './assistant-page.html',
 })
 export class AssistantPage {
@@ -73,5 +74,10 @@ export class AssistantPage {
   protected submit(event: Event): void {
     event.preventDefault();
     this.submitted.set({ text: this.question() });
+  }
+
+  protected ask(question: string): void {
+    this.question.set(question);
+    this.submitted.set({ text: question });
   }
 }

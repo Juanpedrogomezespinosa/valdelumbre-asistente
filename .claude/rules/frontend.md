@@ -15,7 +15,7 @@ paths:
 1. Solo los **tokens propios** definidos en `@theme` (colores con contraste AA comprobado); nada de colores arbitrarios (`bg-[#abc]`).
 2. Un patrón que se repite → **componente Angular**, no `@apply`.
 3. **Foco visible común** para toda la app; no quitar nunca el `outline` sin sustituirlo.
-4. Aspecto sobrio y cálido (color principal oliva o terracota), tipografía del sistema y modo oscuro por `prefers-color-scheme`. Contraste AA comprobado **en los dos temas** (D-030).
+4. Aspecto de guía editorial cálida (terracota y oliva), con títulos en Fraunces y texto en Source Sans 3, servidas desde la app y nunca desde un CDN, y modo oscuro según el sistema, con un botón para elegir que recuerda la elección. Contraste AA comprobado **en los dos temas** (D-030, D-044, D-045).
 
 ## Componentes
 - Una única tarjeta `<app-poi-card>` para el listado y el asistente: nombre, categoría, accesibilidad, «abierto ahora» y precio, con enlace a `/pois/:id` (D-031).

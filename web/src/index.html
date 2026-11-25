@@ -6,7 +6,14 @@
     <base href="/" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="description" content="Asistente turístico de Valdelumbre" />
-    <link rel="icon" type="image/x-icon" href="favicon.ico" />
+    <link rel="icon" type="image/svg+xml" href="favicon.svg" />
+    <script>
+      // Apply the remembered theme before the first paint (D-045); ThemePreference takes over later.
+      try {
+        const theme = localStorage.getItem('valdelumbre.tema');
+        if (theme === 'light' || theme === 'dark') document.documentElement.dataset.theme = theme;
+      } catch {}
+    </script>
   </head>
   <body>
     <app-root></app-root>

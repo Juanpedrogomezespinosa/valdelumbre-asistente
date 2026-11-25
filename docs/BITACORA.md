@@ -617,3 +617,52 @@ Con esto quedan cerradas todas las decisiones previas al código (D-001 a D-031)
   - `make eval EVAL_URL=http://localhost:18000` da Oficial 6/6 · Estricto 6/6.
 - README: quitadas las marcas ⏳ de Docker y del frontend, y descritos los ficheros nuevos. Las variables del LLM siguen marcadas con ⏳.
 - Prueba desde un clon limpio (tras el commit `b86c9ca`): `git clone` de la rama desde GitHub en una carpeta temporal y `docker compose build --no-cache`. Los dos servicios quedan *healthy*, la API devuelve 17 puntos, nginx sirve `/pois/poi-003` y `/preguntar` responde. En el navegador, «¿Qué está abierto un lunes a las 12:00?» muestra la respuesta y las tarjetas.
+
+### Paso 12 · Rediseño «guía editorial» — 2026-11-25
+- Con lo obligatorio terminado, el autor revisó la pantalla con capturas y pidió un diseño menos genérico, que diera ganas de contratar a quien lo hizo. También señaló un fallo: en `/pois`, al aparecer la barra de scroll, toda la página se desplazaba a la derecha.
+- La IA propuso tres direcciones con maquetas en texto: guía editorial, app de viaje moderna y minimal premium. **El autor eligió la guía editorial** y aprobó cambiar la regla «tipografía del sistema» por fuentes propias servidas desde la app. Decisión D-044, que revisa en parte D-030, y regla del frontend actualizada.
+- Cambios:
+  - **Scroll:** `scrollbar-gutter: stable` en la raíz. Comprobado en un iframe de 1400×1100: el logo queda en x=137 tanto en `/` (sin scroll) como en `/pois` (con scroll).
+  - **Tipografía:** Fraunces para los títulos y Source Sans 3 para el texto (`@fontsource-variable`, OFL), con alternativas del sistema.
+  - **Paleta:** papel `#f5efe4`, terracota `#9a3b1b` y oliva `#4f6526` en claro, con sus equivalentes en oscuro. Tokens nuevos: `sunk`, `line` (solo decorativo) y `accent`. Contraste comprobado con un script sobre `page`, `surface` y `sunk` en los dos temas: **0 fallos**. Por ejemplo, el texto sobre el fondo da 13,4:1 en claro y 15,2:1 en oscuro, y el terracota sobre el fondo, 6,1:1 y 8,9:1. El par «foco sobre el color principal» ya no se comprueba, porque el anillo, con 2 px de separación, nunca queda encima del botón.
+  - **Cabecera y pie:** el nombre del pueblo con la fuente de títulos y el lema «Guía de bolsillo del pueblo», la navegación con la página actual subrayada en terracota (sigue marcada con `aria-current`) y un pie que aclara que las respuestas salen solo del catálogo.
+  - **Asistente:**
+    - una portada con un paisaje del pueblo en SVG propio, decorativo (`aria-hidden`), con castillo, iglesia, colinas y olivos;
+    - una introducción;
+    - el buscador grande;
+    - **sugerencias de pregunta** que preguntan con un clic y dejan la pregunta en la caja. Están en un grupo con nombre («Prueba con») y llevan test. Antes de fijarlas se comprobó contra la API que las ocho preguntas (cuatro por idioma) dan una respuesta correcta.
+    - La respuesta se presenta como una nota con borde terracota.
+  - **Tarjeta:**
+    - la categoría como antetítulo en oliva y el nombre con la fuente de títulos;
+    - el estado, la accesibilidad y el precio como etiquetas;
+    - toda la tarjeta es clicable (el enlace del nombre la cubre con `::after`), pero sigue siendo un único punto de tabulación.
+    - Los `<dt>` siguen en el HTML como `sr-only`, así que el lector de pantalla sigue oyendo «Accesibilidad: Accesible».
+    - El punto de color del estado es decorativo: el estado siempre va escrito.
+  - **Listado y ficha:** los filtros van en un bloque hundido y el número de resultados con la fuente de títulos. La ficha lleva la categoría como antetítulo y la descripción en un tamaño mayor.
+- Fallos propios corregidos durante el paso:
+  - Al cambiar las clases de la navegación se quitó sin querer `routerLinkActive`, que es lo que pone `aria-current`. Se devolvió.
+  - La última ola del paisaje usaba el color de la página y dejaba una franja oscura que cortaba la portada.
+  - Al probar el tema claro, una transición de color en las tarjetas hizo que la primera captura saliera gris. La transición se limitó al movimiento y la sombra.
+- Verificado:
+  - en Chrome, en tema oscuro y en claro (simulado sobrescribiendo los tokens en la página);
+  - sin scroll horizontal a 320 px en `/`, `/pois` y `/pois/poi-003`;
+  - `make check` limpio (270 tests del backend y 55 de la web) y build de producción sin avisos (estilos: 22,9 kB, 4,8 kB comprimidos).
+
+### Paso 12.1 · Paisaje en móvil, favicon y botón de tema — 2026-11-25
+- El autor revisó el rediseño. En escritorio le gustó, pero en móvil el recorte del paisaje cortaba el castillo por el borde y dejaba fuera el sol. Además pidió un favicon (un castillo) y un botón para cambiar entre modo claro y oscuro.
+- Cambios:
+  - **Paisaje:** una composición propia para móvil (`viewBox` 400×180, con el castillo centrado, la iglesia y el sol), visible solo por debajo de `sm`. La de escritorio no cambia. La portada tiene ahora las esquinas redondeadas también en móvil, en lugar de ir de borde a borde.
+  - **Favicon:** `web/public/favicon.svg`, un castillo en terracota que se aclara en modo oscuro. `index.html` lo enlaza en lugar del `favicon.ico` de Angular. La IA intentó borrar ese fichero con `git rm`, pero el bloqueo de comandos de Git que escriben lo impidió, como debía. El fichero queda sin uso y lo borrará el autor.
+  - **Botón de tema** (D-045, que revisa en parte D-030):
+    - `ThemePreference`, que sigue al sistema hasta que se elige y guarda la elección;
+    - `ThemeToggle`, el botón con `aria-pressed`;
+    - tokens con `light-dark()`;
+    - un script antes del primer pintado.
+    - TDD: tres tests (estado inicial, alternar y recordar, y arrancar con la elección guardada).
+- Verificado en Chrome:
+  - con el sistema en oscuro, el botón aparece pulsado;
+  - al pulsarlo, la página pasa a claro y lo mantiene tras recargar;
+  - los colores con transparencia (como `fill-primary/25`) se resuelven bien con `light-dark()`;
+  - en un iframe de 380 px se ven el castillo, la iglesia y el sol;
+  - `/favicon.svg` se sirve como `image/svg+xml`.
+  - Al terminar se borró la preferencia guardada durante la prueba.

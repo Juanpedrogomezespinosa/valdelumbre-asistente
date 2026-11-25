@@ -1,52 +1,60 @@
 @import 'tailwindcss';
+@import '@fontsource-variable/fraunces/opsz.css';
+@import '@fontsource-variable/source-sans-3/wght.css';
 
 /*
  * Only these colour tokens exist (D-026): Tailwind's default palette is removed so no
  * unchecked colour can slip in. Every pair used for text meets WCAG AA (4.5:1) and
- * control borders and the focus ring meet 3:1, in both themes (D-030). Ratios: BITACORA, step 10.1.
+ * control borders and the focus ring meet 3:1, on page, surface and sunk, in both themes
+ * (D-030). Ratios: BITACORA, redesign step. `line` is decorative only and never carries meaning.
  */
 @theme {
   --color-*: initial;
-  --font-sans: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --font-sans: 'Source Sans 3 Variable', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-display: 'Fraunces Variable', Georgia, 'Times New Roman', serif;
 }
 
 @theme inline {
   --color-page: var(--page);
   --color-surface: var(--surface);
+  --color-sunk: var(--sunk);
+  --color-line: var(--line);
   --color-text: var(--text);
   --color-muted: var(--muted);
   --color-primary: var(--primary);
   --color-on-primary: var(--on-primary);
+  --color-accent: var(--accent);
   --color-control-border: var(--control-border);
   --color-focus: var(--focus);
   --color-error: var(--error);
 }
 
 :root {
-  --page: #faf7f2;
-  --surface: #ffffff;
-  --text: #1f1d1a;
-  --muted: #58524a;
-  --primary: #4b5d1c;
-  --on-primary: #ffffff;
-  --control-border: #857c6e;
-  --focus: #a4471a;
-  --error: #9f2a1d;
+  /* light-dark(): one token, both themes; `color-scheme` decides which one applies (D-045). */
+  --page: light-dark(#f5efe4, #1a1713);
+  --surface: light-dark(#fffcf6, #24201a);
+  --sunk: light-dark(#ebe2d2, #2d2820);
+  --line: light-dark(#ddd1bd, #3d362c);
+  --text: light-dark(#2b241e, #f3ece0);
+  --muted: light-dark(#5f5446, #c6baa6);
+  --primary: light-dark(#9a3b1b, #f2a57c);
+  --on-primary: light-dark(#fffcf6, #1a1713);
+  --accent: light-dark(#4f6526, #bccc8e);
+  --control-border: light-dark(#857a69, #91877a);
+  --focus: light-dark(#2f5f73, #8fc8de);
+  --error: light-dark(#a1221a, #ff9d8f);
   color-scheme: light dark;
+  /* Always reserve the scrollbar's space, so pages do not shift sideways when it appears. */
+  scrollbar-gutter: stable;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --page: #1a1916;
-    --surface: #262420;
-    --text: #f3efe7;
-    --muted: #c2baab;
-    --primary: #b8cc7e;
-    --on-primary: #1a1916;
-    --control-border: #8f8778;
-    --focus: #f0a26f;
-    --error: #ff9d8f;
-  }
+/* The visitor's choice from the theme button wins over the system preference. */
+:root[data-theme='light'] {
+  color-scheme: light;
+}
+
+:root[data-theme='dark'] {
+  color-scheme: dark;
 }
 
 @layer base {
@@ -54,17 +62,35 @@
     background-color: var(--page);
     color: var(--text);
     font-family: var(--font-sans);
+    font-size: 1.0625rem;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  h1,
+  h2,
+  h3 {
+    font-family: var(--font-display);
+    font-optical-sizing: auto;
+    line-height: 1.15;
+    letter-spacing: -0.01em;
+    text-wrap: balance;
   }
 
   a {
     color: var(--primary);
     text-decoration: underline;
-    text-underline-offset: 2px;
+    text-decoration-thickness: 1px;
+    text-underline-offset: 3px;
+  }
+
+  a:hover {
+    text-decoration-thickness: 2px;
   }
 
   /*
    * One visible focus style for the whole app (D-026). The 2px offset keeps the ring on
-   * the page or card background: on the primary button itself it would only reach 1.2:1.
+   * the page or card background, never on the primary button itself.
    */
   :focus-visible {
     outline: 3px solid var(--focus);

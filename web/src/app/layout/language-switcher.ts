@@ -8,7 +8,7 @@ import { LANGUAGES, LANGUAGE_NAMES, isLanguage } from '../i18n/language';
     <label for="language" class="mr-2 text-sm text-muted">{{ i18n.texts().languageLabel }}</label>
     <select
       id="language"
-      class="rounded border border-control-border bg-surface px-2 py-1 text-text"
+      class="rounded-lg border border-control-border bg-surface px-2 py-1 text-sm text-text"
       (change)="choose($event)"
     >
       @for (language of languages; track language) {

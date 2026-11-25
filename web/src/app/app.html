@@ -1,37 +1,63 @@
+@let texts = i18n.texts();
 <a
   href="#main"
-  class="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:rounded focus:bg-surface focus:px-4 focus:py-2"
+  class="sr-only focus:not-sr-only focus:absolute focus:top-3 focus:left-3 focus:z-10 focus:rounded-lg focus:bg-surface focus:px-4 focus:py-2"
   (click)="skipToMain($event)"
-  >{{ i18n.texts().skipToContent }}</a
+  >{{ texts.skipToContent }}</a
 >
 
-<header class="border-b border-control-border bg-surface">
-  <div class="mx-auto flex max-w-5xl flex-wrap items-center justify-between gap-4 px-4 py-3">
-    <a routerLink="/" class="text-xl font-bold text-text no-underline">{{
-      i18n.texts().siteName
-    }}</a>
-    <nav [attr.aria-label]="i18n.texts().nav.label">
-      <ul class="flex gap-6">
-        <li>
-          <a
-            routerLink="/"
-            routerLinkActive="font-bold"
-            ariaCurrentWhenActive="page"
-            [routerLinkActiveOptions]="{ exact: true }"
-            >{{ i18n.texts().nav.assistant }}</a
-          >
-        </li>
-        <li>
-          <a routerLink="/pois" routerLinkActive="font-bold" ariaCurrentWhenActive="page">{{
-            i18n.texts().nav.pois
-          }}</a>
-        </li>
-      </ul>
-    </nav>
-    <app-language-switcher />
-  </div>
-</header>
+<div class="flex min-h-screen flex-col">
+  <header class="border-b border-line">
+    <div class="mx-auto flex max-w-6xl flex-wrap items-center gap-x-8 gap-y-3 px-5 py-4">
+      <a
+        routerLink="/"
+        class="mr-auto flex flex-col no-underline sm:flex-row sm:items-baseline sm:gap-3"
+      >
+        <span class="font-display text-2xl font-semibold tracking-tight text-text">{{
+          texts.siteName
+        }}</span>
+        <span class="text-sm text-muted">{{ texts.tagline }}</span>
+      </a>
+      <nav [attr.aria-label]="texts.nav.label">
+        <ul class="flex gap-6">
+          <li>
+            <a
+              routerLink="/"
+              class="text-text no-underline decoration-primary decoration-2 underline-offset-8 hover:underline aria-[current=page]:underline"
+              routerLinkActive="font-semibold"
+              ariaCurrentWhenActive="page"
+              [routerLinkActiveOptions]="{ exact: true }"
+              >{{ texts.nav.assistant }}</a
+            >
+          </li>
+          <li>
+            <a
+              routerLink="/pois"
+              class="text-text no-underline decoration-primary decoration-2 underline-offset-8 hover:underline aria-[current=page]:underline"
+              routerLinkActive="font-semibold"
+              ariaCurrentWhenActive="page"
+              >{{ texts.nav.pois }}</a
+            >
+          </li>
+        </ul>
+      </nav>
+      <div class="flex items-center gap-3">
+        <app-language-switcher />
+        <app-theme-toggle />
+      </div>
+    </div>
+  </header>
 
-<main #main id="main" tabindex="-1" class="mx-auto max-w-5xl px-4 py-8 focus:outline-none">
-  <router-outlet />
-</main>
+  <main
+    #main
+    id="main"
+    tabindex="-1"
+    class="mx-auto w-full max-w-6xl flex-1 px-5 py-8 focus:outline-none sm:py-10"
+  >
+    <router-outlet />
+  </main>
+
+  <footer class="border-t border-line">
+    <p class="mx-auto max-w-6xl px-5 py-6 text-sm text-muted">{{ texts.footer }}</p>
+  </footer>
+</div>
