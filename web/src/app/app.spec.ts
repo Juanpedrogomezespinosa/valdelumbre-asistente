@@ -53,6 +53,20 @@ describe('App shell', () => {
     expect(document.title).toBe('Puntos de interés · Valdelumbre');
   });
 
+  it('keeps the focus where it is when only the filters or the view change', async () => {
+    const { navigate } = await renderApp();
+    await navigate('/pois');
+    const heading = await screen.findByRole('heading', { level: 1, name: 'Puntos de interés' });
+    await vi.waitFor(() => expect(heading).toHaveFocus());
+
+    const category = await screen.findByLabelText('Categoría');
+    category.focus();
+    await navigate('/pois?categoria=museo&vista=mapa');
+    await new Promise((resolve) => setTimeout(resolve, 50));
+
+    expect(category).toHaveFocus();
+  });
+
   it('titles the page in the current language', async () => {
     const { navigate } = await renderApp();
     await navigate('/pois');

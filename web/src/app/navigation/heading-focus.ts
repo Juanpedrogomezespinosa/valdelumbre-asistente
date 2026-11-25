@@ -3,8 +3,9 @@ import { NavigationEnd, Router } from '@angular/router';
 import { filter } from 'rxjs';
 
 /**
- * After each in-app navigation, focus the page's <h1> so screen readers announce the new
- * page (D-027). The first load is left alone: the reader starts at the top as usual.
+ * After moving to another page, focus its <h1> so screen readers announce it (D-027). The
+ * first load is left alone (the reader starts at the top as usual), and so are changes that
+ * only touch the query string, such as filters.
  */
 @Injectable({ providedIn: 'root' })
 export class HeadingFocus {
@@ -13,11 +14,23 @@ export class HeadingFocus {
   private readonly document = inject(DOCUMENT);
 
   watch(): void {
-    this.router.events.pipe(filter((event) => event instanceof NavigationEnd)).subscribe(() => {
-      if (this.router.lastSuccessfulNavigation()?.previousNavigation) {
-        afterNextRender(() => this.focusHeading(), { injector: this.injector });
-      }
-    });
+    this.router.events
+      .pipe(filter((event): event is NavigationEnd => event instanceof NavigationEnd))
+      .subscribe((event) => {
+        const previous = this.router.lastSuccessfulNavigation()?.previousNavigation?.finalUrl;
+        // Only a new page moves the focus: changing a filter or the list/map view keeps the
+        // keyboard user where they were.
+        if (
+          previous &&
+          this.pathOf(this.router.serializeUrl(previous)) !== this.pathOf(event.urlAfterRedirects)
+        ) {
+          afterNextRender(() => this.focusHeading(), { injector: this.injector });
+        }
+      });
+  }
+
+  private pathOf(url: string): string {
+    return url.split(/[?#]/)[0];
   }
 
   private focusHeading(): void {

@@ -113,3 +113,17 @@ describe('VillageMap', () => {
     expect(scaleInMetres()).toBeGreaterThanOrEqual(500);
   });
 });
+
+describe('VillageMap focus', () => {
+  it('never stays scrolled inside: the view moves instead of the stage', async () => {
+    await renderMap({ pois: [CASTLE, SQUARE, WINERY] });
+    const stage = screen.getByRole('group', { name: 'Mapa del pueblo' });
+
+    stage.scrollTop = 120;
+    stage.scrollLeft = 80;
+    stage.dispatchEvent(new Event('scroll'));
+
+    expect(stage.scrollTop).toBe(0);
+    expect(stage.scrollLeft).toBe(0);
+  });
+});
