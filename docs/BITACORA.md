@@ -529,3 +529,24 @@ Con esto quedan cerradas todas las decisiones previas al código (D-001 a D-031)
 - `Makefile`: `make web`; `install`, `test`, `lint` y `format` cubren también la web (lint de angular-eslint y comprobación de Prettier). README actualizado (Node 22.22.3 y `make web`).
 - Verificado: `make check` limpio (270 tests del backend y 9 de la web), `ng build` de producción sin avisos.
 - Al probar `make web`, el CLI de Angular preguntó si se quería compartir estadísticas de uso. Esa pregunta bloquearía a quien arranque el proyecto sin terminal interactiva (Docker, CI o el evaluador), así que se desactivó en `angular.json` (`"cli": { "analytics": false }`).
+
+### Paso 10.2 · Listado `/pois` — 2026-11-25
+- TDD: primero `poi-filters.spec.ts` (los filtros en la URL), `poi-card.spec.ts` y `poi-list-page.spec.ts`, este con `RouterTestingHarness` y `HttpTestingController`, así que no hay peticiones reales. Datos de prueba comunes en `web/src/testing/poi-fixture.ts`, carpeta que se excluye del build de producción.
+- Ficheros nuevos, uno por responsabilidad:
+  - `pois/poi.ts`: tipos de la respuesta de la API, con los nombres del contrato (D-021);
+  - `pois/poi-filters.ts`: de la URL a los filtros y vuelta; un valor que no se entiende se ignora;
+  - `pois/pois-service.ts`: el único que usa `HttpClient` para los puntos;
+  - `pois/poi-card.ts`: `<app-poi-card>` (D-031);
+  - `clock.ts`: la hora actual, inyectable;
+  - `pages/poi-list/`: la página.
+- Detalles:
+  - Filtros en la URL: `?categoria=museo&accesible=false&abierto=ahora` (D-027); el botón Atrás deshace un cambio de filtro.
+  - `accesible=false` significa «solo no accesibles», no «cualquiera» (D-008); los puntos sin datos solo aparecen sin filtro.
+  - «Abierto ahora» envía la fecha y hora actuales en ISO con zona (`…Z`), que la API convierte a hora de Madrid (D-012). Comprobado a través del proxy con la hora real.
+  - Los datos se piden con `rxResource`, que vuelve a pedirlos cuando cambian los filtros o el idioma.
+  - Una región `role="status"` anuncia «Cargando puntos…», «N puntos encontrados», «Ningún punto cumple estos filtros» o el error de carga.
+  - La tarjeta da accesibilidad y «ahora» siempre en texto, con sus tres estados, y pone `lang` en el nombre cuando llega en otro idioma.
+  - En los `<select>`, la opción elegida se marca con `[selected]` en cada `<option>`: enlazar `[value]` en el `<select>` puede aplicarse antes de que existan las opciones del `@for`.
+- Dos fallos iniciales eran de sincronización del propio test: `rxResource` actualiza el valor de forma asíncrona, y `whenStable` espera también a las peticiones pendientes. Se ajustaron los tests; la página no cambió.
+- Verificado: `make check` limpio (270 tests del backend y 23 de la web), build de producción sin avisos.
+- Trello: marcados los criterios de pantalla de H2 (tarjeta en texto; filtro con teclado y número anunciado), H3 (filtro «abierto ahora» y estados de la tarjeta) y H4 (categorías traducidas; filtro en la URL). **H2, H3 y H4 completas → «Revisión».**
