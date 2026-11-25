@@ -666,3 +666,34 @@ Con esto quedan cerradas todas las decisiones previas al código (D-001 a D-031)
   - en un iframe de 380 px se ven el castillo, la iglesia y el sol;
   - `/favicon.svg` se sirve como `image/svg+xml`.
   - Al terminar se borró la preferencia guardada durante la prueba.
+
+### Paso 13 · Mapa del pueblo (H11), ilustraciones y ubicación en la ficha — 2026-11-25
+- El autor pidió el mapa y propuso una galería de imágenes en la ficha y una indicación de cómo llegar a cada punto. Antes de programar, la IA revisó los datos:
+  - el catálogo no trae imágenes;
+  - las coordenadas caen en el centro de Madrid. El castillo está en la Puerta del Sol.
+
+  Se le explicó al autor que una foto de stock o un enlace a un mapa externo serían engañosos. **El autor eligió** una ilustración por categoría y una ubicación calculada desde las coordenadas. Decisión D-046, más una concreción de D-019.
+- TDD en el núcleo, con funciones puras y sus tests antes que los componentes:
+  - `pois/map-geometry.ts`: desplazamiento en metros (aproximación plana: a la escala de un pueblo, el error es inapreciable), rumbo en 8 puntos, encuadre con tamaño mínimo y proyección con la misma escala en los dos ejes y el norte arriba;
+  - `pois/relative-location.ts`: «A 120 m al oeste de Plaza Mayor» / «2.6 km southwest of Plaza Mayor», «Junto a…» por debajo de 50 m, en metros redondeados a 10 o en km con un decimal, con coma en español;
+  - `pois/nearby.ts`: los lugares más cercanos con su distancia.
+  - Error propio corregido: en un test se esperaba «2,5 km» para la bodega. El cálculo a mano da 2.581 m, que redondea a 2,6.
+- Componentes:
+  - `pois/village-map.ts`: un SVG con `role="group"` y el nombre «Mapa del pueblo».
+    - Cada punto es un enlace con el nombre del lugar y un área de pulsación mayor que el punto.
+    - El anillo de foco usa el color de foco, porque los navegadores dibujan mal el `outline` en los enlaces SVG. El nombre del punto aparece al pasar el ratón o con el tabulador.
+    - Tiene norte, escala gráfica y una cuadrícula.
+    - Botón «Ver el centro del pueblo» (`aria-pressed`, 600 m alrededor de la Plaza Mayor) que dice cuántos puntos quedan fuera.
+    - En la ficha, el punto propio lleva `aria-current="location"` y el mapa empieza acercado (`linkedSignal`) si el punto está en el centro.
+  - `pois/category-illustration.ts`: siete escenas decorativas, una por categoría, en un lienzo de 960×200 con la escena centrada. La primera versión, de 480×180, recortaba las torres del castillo en un bloque ancho.
+  - En `/pois`, en pantalla ancha, la lista va a la izquierda y el mapa fijo a la derecha. En móvil, el mapa va después de la lista, porque es complementario.
+  - En `/pois/:id`: la ilustración bajo el título y la sección «Ubicación» con la frase, «Cerca de aquí, en línea recta» y el mapa.
+- Ajustes vistos en el navegador:
+  - la escala tapaba la bodega, que está en la esquina de abajo a la izquierda, así que se pasó a la de abajo a la derecha;
+  - la sección de ubicación tenía un hueco grande, que llenó la lista de cercanos.
+- Los tests de la ficha se quedaban colgados porque `whenStable` espera también a la nueva petición del catálogo. Se añadió un ayudante `answerCatalogue()` y el componente no cambió.
+- **Para DATOS.md:** las coordenadas de todo el catálogo están en el centro de Madrid. Sirven para situar los puntos unos respecto a otros, pero no para enlazar a un mapa real.
+- Verificado:
+  - en Chrome: el zoom, el foco con el tabulador, las fichas del castillo (cerca) y de la bodega (lejos) y las siete ilustraciones en móvil;
+  - sin scroll horizontal a 320 px en `/pois`, `/pois/poi-001` y `/pois/poi-008`;
+  - `make check` limpio (270 tests del backend y 84 de la web) y build sin avisos.

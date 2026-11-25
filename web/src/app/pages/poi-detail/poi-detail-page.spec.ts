@@ -3,7 +3,7 @@ import { HttpTestingController, provideHttpClientTesting } from '@angular/common
 import { TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { RouterTestingHarness } from '@angular/router/testing';
-import { screen } from '@testing-library/angular';
+import { screen, within } from '@testing-library/angular';
 import { aPoi } from '../../../testing/poi-fixture';
 import { providePageTitles } from '../../navigation/page-titles';
 import { Poi } from '../../pois/poi';
@@ -23,10 +23,16 @@ async function openDetail(id = 'poi-003') {
   return { harness, http: TestBed.inject(HttpTestingController) };
 }
 
+/** The page also loads the whole catalogue for its map; these tests do not need it. */
+function answerCatalogue(http: HttpTestingController, pois: Poi[] = []) {
+  http.expectOne('/api/pois?idioma=es').flush(pois);
+}
+
 async function showDetail(poi: Poi) {
   const { harness, http } = await openDetail(poi.id);
   const request = http.expectOne(`/api/pois/${poi.id}?idioma=es`);
   request.flush(poi);
+  answerCatalogue(http);
   await harness.fixture.whenStable();
 }
 
@@ -89,6 +95,7 @@ describe('POI detail page', () => {
     http
       .expectOne('/api/pois/poi-999?idioma=es')
       .flush({ detail: 'No existe' }, { status: 404, statusText: 'Not Found' });
+    answerCatalogue(http);
     await harness.fixture.whenStable();
 
     expect(screen.getByRole('status')).toHaveTextContent('Este punto no existe en el catálogo.');
@@ -96,5 +103,57 @@ describe('POI detail page', () => {
       'href',
       '/pois',
     );
+  });
+});
+
+describe('POI detail page location', () => {
+  const SQUARE = aPoi({
+    id: 'poi-005',
+    nombre: { texto: 'Plaza Mayor', idioma: 'es' },
+    categoria: 'espacio_publico',
+    coordenadas: { lat: 40.4168, lon: -3.7038 },
+  });
+  const CASTLE = aPoi({
+    id: 'poi-001',
+    nombre: { texto: 'Castillo de Valdelumbre', idioma: 'es' },
+    categoria: 'monumento',
+    coordenadas: { lat: 40.4172, lon: -3.7051 },
+  });
+
+  async function showWithCatalogue(poi: Poi) {
+    const { harness, http } = await openDetail(poi.id);
+    http.expectOne(`/api/pois/${poi.id}?idioma=es`).flush(poi);
+    answerCatalogue(http, [CASTLE, SQUARE]);
+    await harness.fixture.whenStable();
+  }
+
+  it('says where the place is from the square and marks it on the map', async () => {
+    await showWithCatalogue(CASTLE);
+
+    const location = screen.getByRole('region', { name: 'Ubicación' });
+    expect(within(location).getByText('A 120 m al oeste de Plaza Mayor')).toBeVisible();
+    expect(within(location).getByRole('link', { name: 'Castillo de Valdelumbre' })).toHaveAttribute(
+      'aria-current',
+      'location',
+    );
+  });
+
+  it('lists the nearest places with their distance, as links', async () => {
+    await showWithCatalogue(CASTLE);
+
+    const nearby = screen.getByRole('list', { name: 'Cerca de aquí, en línea recta' });
+    const item = within(nearby).getByRole('listitem');
+    expect(item).toHaveTextContent('Plaza Mayor');
+    expect(item).toHaveTextContent('120 m');
+    expect(within(item).getByRole('link', { name: 'Plaza Mayor' })).toHaveAttribute(
+      'href',
+      '/pois/poi-005',
+    );
+  });
+
+  it('says so when the catalogue has no location for the place', async () => {
+    await showWithCatalogue(aPoi({ id: 'poi-001', coordenadas: null }));
+
+    expect(screen.getByText('El catálogo no tiene la ubicación de este punto.')).toBeVisible();
   });
 });

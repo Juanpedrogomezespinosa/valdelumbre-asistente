@@ -64,6 +64,7 @@ Estados: ✅ aprobada · 🔄 revisada (enlaza a la que la sustituye) · ❌ des
 | [D-043](#d-043--recuperación-por-filtros-temas-y-nombres-respuesta-solo-con-campos-estructurados) | Recuperación por filtros, temas y nombres; respuesta solo con campos estructurados | ✅ |
 | [D-044](#d-044--diseño-de-guía-editorial-con-tipografía-propia-alojada-en-la-app) | Diseño de «guía editorial» con tipografía propia alojada en la app | ✅ |
 | [D-045](#d-045--botón-para-elegir-modo-claro-u-oscuro) | Botón para elegir modo claro u oscuro | ✅ |
+| [D-046](#d-046--ilustración-por-categoría-y-ubicación-relativa-en-lugar-de-fotos-y-enlaces-a-mapas) | Ilustración por categoría y ubicación relativa, en lugar de fotos y enlaces a mapas | ✅ |
 
 ---
 
@@ -250,6 +251,12 @@ Estados: ✅ aprobada · 🔄 revisada (enlaza a la que la sustituye) · ❌ des
 - **Decisión:** un SVG con proyección lineal sobre el área que ocupan los puntos. Cada punto es un elemento enfocable con nombre accesible que lleva a su ficha. El mapa complementa al listado, no lo sustituye.
 - **Por qué:** a la escala de un pueblo la distorsión de una proyección lineal es despreciable, y un SVG semántico es navegable con teclado.
 - **Concreción (autor, 2026-11-24):** se hace **al final**, solo si da tiempo tras lo obligatorio. Va en `/pois`, junto al listado, y muestra los mismos puntos filtrados. Se marca como complementario: el listado es la vía principal. Los puntos sin coordenadas válidas no aparecen en el mapa, pero sí en el listado.
+- **Concreción (autor, 2026-11-25, al construirlo):**
+  - Se proyecta con una aproximación plana (equirrectangular) y la misma escala en los dos ejes, con el norte arriba, una escala gráfica y una cuadrícula decorativa.
+  - Cada punto es un enlace con el nombre del lugar, y el nombre se ve al pasar el ratón o al llegar con el tabulador.
+  - El mapa muestra los resultados del filtro. Un texto dice cuántos puntos no tienen ubicación.
+  - Casi todo está a menos de 600 m de la Plaza Mayor, y lo demás a 2–3 km, así que hay un botón «Ver el centro del pueblo» (`aria-pressed`). Al pulsarlo, la vista se acerca y se dice cuántos puntos quedan fuera.
+  - En la ficha, el mismo mapa marca el punto con `aria-current="location"` y empieza acercado si el punto está en el centro.
 
 ## D-020 · Configuración de Claude Code dentro del repositorio
 **Estado:** ✅ aprobada · 2026-11-24
@@ -529,4 +536,31 @@ Estados: ✅ aprobada · 🔄 revisada (enlaza a la que la sustituye) · ❌ des
 - **Consecuencias:**
   - `light-dark()` necesita navegadores de 2024 o posteriores (Chrome 123, Safari 17.5, Firefox 120).
   - El favicon (un castillo en SVG) sigue al tema del sistema, no al botón: el navegador lo pinta fuera de la página.
+
+## D-046 · Ilustración por categoría y ubicación relativa, en lugar de fotos y enlaces a mapas
+**Estado:** ✅ aprobada por el autor · 2026-11-25
+
+- **Contexto:** el autor propuso una galería de imágenes en la ficha de cada punto y una indicación de cómo llegar. Al revisar los datos se vieron dos problemas:
+  - el catálogo no tiene imágenes;
+  - las coordenadas caen en el **centro de Madrid** (el castillo, en 40,4172 -3,7051, es la Puerta del Sol), porque el pueblo es inventado.
+- **Decisión** (el autor eligió entre opciones con sus riesgos explicados):
+  - **Imágenes:** una ilustración SVG propia por categoría (monumento, museo, naturaleza, ruta, gastronomía, servicio y espacio público), decorativa (`aria-hidden`) y del mismo estilo que el paisaje de la portada.
+  - **Ubicación:** una sección «Ubicación» en la ficha, con todo calculado desde las coordenadas:
+    - una frase respecto a la Plaza Mayor («A 120 m al oeste de Plaza Mayor»), o «Junto a…» por debajo de 50 m;
+    - «Cerca de aquí, en línea recta»: los tres lugares más próximos, con su distancia y un enlace;
+    - el mapa del pueblo con el punto marcado.
+  - Si el punto no tiene coordenadas, se dice en texto.
+- **Por qué:**
+  - Una foto de stock pasaría por el lugar real: sería inventar (regla del proyecto).
+  - Un enlace a Google Maps u OpenStreetMap llevaría al turista a Madrid.
+  - Las coordenadas sí son fiables **entre sí**, así que distancias, rumbos y vecinos se pueden dar sin inventar nada.
+  - La frase y la lista dan la ubicación en texto, sin depender del mapa ni del color.
+- **Alternativas descartadas:**
+  - Fotos de stock: contenido inventado.
+  - Enlace «Ver en el mapa» con las coordenadas, aunque fuera con aviso: lleva a un sitio que no es el pueblo.
+  - Sin imágenes: válido, pero el autor prefirió la ilustración.
+- **Consecuencias:**
+  - La Plaza Mayor (`poi-005`) es el punto de referencia, fijado en el código (`LANDMARK_ID`). Si no está en el catálogo, no se escribe la frase, pero sí la lista de cercanos.
+  - Las distancias son en línea recta, y se dice así.
+  - La ficha pide también el catálogo completo (`GET /pois`) para el mapa y los cercanos.
 

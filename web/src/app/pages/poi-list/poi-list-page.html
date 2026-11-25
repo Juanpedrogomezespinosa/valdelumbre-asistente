@@ -61,9 +61,18 @@
 <p role="status" class="mb-5 font-display text-xl">{{ status() }}</p>
 
 @if (results.hasValue()) {
-  <ul class="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-    @for (poi of results.value(); track poi.id) {
-      <li><app-poi-card [poi]="poi" /></li>
+  <div class="grid gap-8 lg:grid-cols-[minmax(0,1fr)_22rem]">
+    <ul class="grid content-start gap-5 sm:grid-cols-2">
+      @for (poi of results.value(); track poi.id) {
+        <li><app-poi-card [poi]="poi" /></li>
+      }
+    </ul>
+    @if (results.value().length > 0) {
+      <section aria-labelledby="map-heading" class="lg:sticky lg:top-6 lg:self-start">
+        <h2 id="map-heading" class="mb-1 text-2xl font-semibold">{{ texts.location.mapLabel }}</h2>
+        <p class="mb-3 text-sm text-muted">{{ texts.location.mapHint }}</p>
+        <app-village-map [pois]="results.value()" />
+      </section>
     }
-  </ul>
+  </div>
 }

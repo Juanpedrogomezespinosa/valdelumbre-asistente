@@ -20,6 +20,9 @@
 
 @if (poi.hasValue()) {
   @let place = poi.value();
+  <div class="mb-5 overflow-hidden rounded-3xl bg-sunk">
+    <app-category-illustration [category]="place.categoria" />
+  </div>
   <div class="grid gap-5 md:grid-cols-2">
     <section class="rounded-2xl border border-line bg-surface p-6 shadow-sm md:col-span-2 sm:p-8">
       <h2 class="mb-3 text-2xl font-semibold">{{ texts.poiDetail.description }}</h2>
@@ -57,6 +60,40 @@
             <li>{{ slotDescription(slot) }}</li>
           }
         </ul>
+      }
+    </section>
+
+    <section
+      aria-labelledby="location-heading"
+      class="grid gap-6 rounded-2xl border border-line bg-surface p-6 shadow-sm md:col-span-2 md:grid-cols-[minmax(0,1fr)_20rem] sm:p-8"
+    >
+      <div>
+        <h2 id="location-heading" class="mb-3 text-2xl font-semibold">
+          {{ texts.location.heading }}
+        </h2>
+        @if (location(); as sentence) {
+          <p class="mb-6 font-display text-xl">{{ sentence }}</p>
+        }
+        @if (nearbyPlaces().length > 0) {
+          <h3 id="nearby-heading" class="mb-2 text-lg font-semibold">
+            {{ texts.location.nearby }}
+          </h3>
+          <ul aria-labelledby="nearby-heading" class="divide-y divide-line">
+            @for (place of nearbyPlaces(); track place.poi.id) {
+              <li class="flex items-baseline justify-between gap-4 py-2">
+                <a
+                  [routerLink]="['/pois', place.poi.id]"
+                  [attr.lang]="foreignLanguage(place.poi.nombre)"
+                  >{{ place.poi.nombre.texto }}</a
+                >
+                <span class="shrink-0 text-sm text-muted">{{ place.distance }}</span>
+              </li>
+            }
+          </ul>
+        }
+      </div>
+      @if (catalogue.hasValue()) {
+        <app-village-map [pois]="catalogue.value()" [highlighted]="place.id" />
       }
     </section>
   </div>

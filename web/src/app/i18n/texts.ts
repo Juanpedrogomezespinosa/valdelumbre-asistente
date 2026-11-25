@@ -100,6 +100,30 @@ const es = {
     unreachable: 'No se ha podido contactar con el asistente. Inténtalo de nuevo en unos minutos.',
     cited: 'Puntos en los que se apoya la respuesta',
   },
+  location: {
+    heading: 'Ubicación',
+    nearby: 'Cerca de aquí, en línea recta',
+    mapLabel: 'Mapa del pueblo',
+    zoomCentre: 'Ver el centro del pueblo',
+    outsideView: (count: number) =>
+      count === 1
+        ? '1 punto queda fuera de esta vista.'
+        : `${count} puntos quedan fuera de esta vista.`,
+    mapHint:
+      'Los mismos puntos que la lista. Pasa el ratón o usa el tabulador para ver cada nombre.',
+    north: 'N',
+    directions: ['norte', 'noreste', 'este', 'sureste', 'sur', 'suroeste', 'oeste', 'noroeste'],
+    decimalSeparator: ',',
+    away: (distance: string, direction: string, landmark: string) =>
+      `A ${distance} al ${direction} de ${landmark}`,
+    nextTo: (landmark: string) => `Junto a ${landmark}`,
+    unknown: 'El catálogo no tiene la ubicación de este punto.',
+    scale: (metres: number) => `Escala: ${metres} m`,
+    notOnMap: (count: number) =>
+      count === 1
+        ? '1 punto no aparece en el mapa porque no tiene ubicación.'
+        : `${count} puntos no aparecen en el mapa porque no tienen ubicación.`,
+  },
   footer:
     'Respuestas generadas solo con el catálogo turístico de Valdelumbre, un pueblo inventado.',
   notFound: {
@@ -206,6 +230,36 @@ const en: Texts = {
     thinking: 'Searching the catalogue…',
     unreachable: 'The assistant could not be reached. Please try again in a few minutes.',
     cited: 'Points the answer is based on',
+  },
+  location: {
+    heading: 'Location',
+    nearby: 'Nearby, as the crow flies',
+    mapLabel: 'Map of the village',
+    zoomCentre: 'Show the village centre',
+    outsideView: (count: number) =>
+      count === 1 ? '1 place is outside this view.' : `${count} places are outside this view.`,
+    mapHint: 'The same places as the list. Hover or use the Tab key to see each name.',
+    north: 'N',
+    directions: [
+      'north',
+      'northeast',
+      'east',
+      'southeast',
+      'south',
+      'southwest',
+      'west',
+      'northwest',
+    ],
+    decimalSeparator: '.',
+    away: (distance: string, direction: string, landmark: string) =>
+      `${distance} ${direction} of ${landmark}`,
+    nextTo: (landmark: string) => `Next to ${landmark}`,
+    unknown: 'The catalogue has no location for this place.',
+    scale: (metres: number) => `Scale: ${metres} m`,
+    notOnMap: (count: number) =>
+      count === 1
+        ? '1 place is not on the map because it has no location.'
+        : `${count} places are not on the map because they have no location.`,
   },
   footer: 'Answers come only from the tourist catalogue of Valdelumbre, an invented village.',
   notFound: {

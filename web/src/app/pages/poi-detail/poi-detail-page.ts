@@ -10,10 +10,17 @@ import { accessibilityText, openNowText } from '../../pois/poi-labels';
 import { PoisService } from '../../pois/pois-service';
 import { isNotFound } from '../../http-error';
 import { slotText } from '../../pois/schedule-text';
+import { CategoryIllustration } from '../../pois/category-illustration';
+import { NO_FILTERS } from '../../pois/poi-filters';
+import { nearby } from '../../pois/nearby';
+import { LANDMARK_ID, relativeLocation } from '../../pois/relative-location';
+import { VillageMap } from '../../pois/village-map';
+
+const NEARBY_COUNT = 3;
 
 @Component({
   selector: 'app-poi-detail-page',
-  imports: [PageHeading, RouterLink],
+  imports: [PageHeading, RouterLink, CategoryIllustration, VillageMap],
   templateUrl: './poi-detail-page.html',
 })
 export class PoiDetailPage {
@@ -30,6 +37,41 @@ export class PoiDetailPage {
     params: () => ({ id: this.id(), language: this.i18n.language() }),
     stream: ({ params }) => this.pois.get(params.id, params.language),
   });
+
+  /** The whole catalogue, for the map and the square the location is measured from. */
+  protected readonly catalogue = rxResource({
+    params: () => ({ language: this.i18n.language() }),
+    stream: ({ params }) => this.pois.list(NO_FILTERS, params.language),
+  });
+
+  /** "A 120 m al oeste de Plaza Mayor"; nothing for the square itself. */
+  protected readonly location = computed(() => {
+    if (!this.poi.hasValue()) {
+      return null;
+    }
+    const place = this.poi.value();
+    const texts = this.i18n.texts();
+    if (!place.coordenadas) {
+      return texts.location.unknown;
+    }
+    const landmark = this.catalogue.hasValue()
+      ? this.catalogue.value().find((poi) => poi.id === LANDMARK_ID)
+      : undefined;
+    if (!landmark?.coordenadas || landmark.id === place.id) {
+      return null;
+    }
+    return relativeLocation(
+      place.coordenadas,
+      { name: landmark.nombre.texto, coordinates: landmark.coordenadas },
+      texts,
+    );
+  });
+
+  protected readonly nearbyPlaces = computed(() =>
+    this.poi.hasValue() && this.catalogue.hasValue()
+      ? nearby(this.poi.value(), this.catalogue.value(), NEARBY_COUNT, this.i18n.texts())
+      : [],
+  );
 
   /** Empty once loaded: the region stays in the page so later changes are still announced. */
   protected readonly status = computed(() => {

@@ -8,10 +8,11 @@ import { CATEGORIES, isCategory } from '../../pois/poi';
 import { PoiCard } from '../../pois/poi-card';
 import { PoiFilters, filtersFromQuery, filtersToQuery } from '../../pois/poi-filters';
 import { PoisService } from '../../pois/pois-service';
+import { VillageMap } from '../../pois/village-map';
 
 @Component({
   selector: 'app-poi-list-page',
-  imports: [PageHeading, PoiCard],
+  imports: [PageHeading, PoiCard, VillageMap],
   templateUrl: './poi-list-page.html',
 })
 export class PoiListPage {
