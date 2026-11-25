@@ -100,16 +100,18 @@ Qué levanta `docker-compose.yml`:
 
 ## 4. Arranque sin Docker (desarrollo)
 
-⏳ Necesitas dos terminales.
+Necesitas dos terminales.
 
 **Terminal 1 · API**
 ```bash
-cd api
-uv sync                                      # crea .venv e instala dependencias (incluida Python 3.12 si falta)
-uv run uvicorn app.main:app --reload --port 8000
+make install                                 # crea api/.venv e instala las dependencias exactas (incluida Python 3.12 si falta)
+make api                                     # http://localhost:8000 · documentación en http://localhost:8000/docs
 ```
+Sin `make`: `cd api && uv sync --locked && uv run uvicorn app.main:app --reload --port 8000`.
 
-**Terminal 2 · Web**
+Al arrancar, la API carga el catálogo y escribe en el log los avisos de calidad de datos que ha encontrado y corregido (ver `DATOS.md`).
+
+**Terminal 2 · Web** ⏳
 ```bash
 cd web
 npm ci                                       # instala dependencias exactas del lockfile
@@ -156,7 +158,7 @@ Salida esperada de la evaluación: el resultado de cada pregunta (✅/❌ con lo
 
 ## 6. Uso de la API
 
-⏳ La referencia completa está en http://localhost:8000/docs. Ejemplos:
+La referencia completa está en http://localhost:8000/docs. Ejemplos (⏳ `/preguntar` aún no existe):
 
 ```bash
 # Todos los puntos
@@ -185,8 +187,10 @@ curl -X POST "http://localhost:8000/preguntar" \
 |-----------|---------|-------|
 | `categoria` | `monumento`, `museo`, `naturaleza`, `ruta`, `gastronomia`, `servicio`, `espacio_publico` | |
 | `accesible` | `true` / `false` | Los puntos sin datos de accesibilidad no aparecen con ninguno de los dos ([D-008](docs/DECISIONES.md#d-008--accesibilidad-en-tres-estados)) |
-| `abierto_en` | `1T12:00` o `2026-07-06T12:00` | Formato inválido → 422 ([D-012](docs/DECISIONES.md#d-012--formato-del-filtro-abierto_en)) |
+| `abierto_en` | `1T12:00` o `2026-07-06T12:00` | Sin zona horaria, hora de Madrid. Los horarios desconocidos no aparecen ([D-012](docs/DECISIONES.md#d-012--formato-del-filtro-abierto_en)) |
 | `idioma` | `es` (por defecto) / `en` | Si falta la traducción, se devuelve el español ([D-015](docs/DECISIONES.md#d-015--idioma-con-fallback-a-español)) |
+
+Los filtros se combinan y la respuesta es una lista de puntos en el orden del catálogo. Un valor no válido devuelve 422 con un mensaje en el idioma pedido (en español si `idioma` tampoco es válido), por ejemplo `{"detail": "El parámetro «categoria» no es válido. Valores posibles: …"}` ([D-039](docs/DECISIONES.md#d-039--los-errores-422-se-escriben-en-el-idioma-pedido)).
 
 ---
 

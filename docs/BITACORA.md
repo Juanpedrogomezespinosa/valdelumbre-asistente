@@ -354,3 +354,66 @@ Con esto quedan cerradas todas las decisiones previas al código (D-001 a D-031)
 - Trello:
   - H1: marcados los criterios del duplicado, de poi-011 y de los tests con ruff + mypy. Queda «avisos en el log al arrancar», que llega con el arranque de la API en `feat/api-routes`; H1 sigue en «En curso» hasta entonces.
   - H9: marcado el criterio de la limpieza de la inyección al cargar.
+
+---
+
+## Paso 8 · `feat/api-routes`: arranque de la API — 2026-11-24
+- `feat/api-data` fusionada en `main` por el autor (`--no-ff`); se abre `feat/api-routes`.
+- Plan del bloque aprobado por el autor en versión corta (lo esencial ya estaba en D-007, D-008, D-011, D-012, D-015, D-018 y D-021). Pasos: arranque, `GET /pois/{id}` y `GET /pois` con filtros. Detalles acordados: filtrado en el dominio, reutilizable por `/preguntar`; respuesta con los textos ya en el idioma pedido; reloj inyectado; catálogo cargado una vez en el `lifespan`.
+
+### Paso 8.1 · Arranque
+- Dependencias: `fastapi` y `uvicorn[standard]`; para desarrollo, `httpx` (lo necesita el `TestClient`).
+- TDD: primero `api/tests/test_app_startup.py` y después:
+  - `api/app/settings.py`: ruta del catálogo, configurable con `RUTA_POIS` (necesario para Docker);
+  - `api/app/main.py`: la app FastAPI con un `lifespan` que carga el catálogo **una vez** al arrancar, lo guarda en `app.state` y escribe en el log un resumen y cada aviso de calidad (D-033: la capa de datos devuelve los avisos y la aplicación decide registrarlos).
+- `make api` (puerto configurable con `API_PORT`). README, sección 4, actualizada: el arranque de la API ya no lleva ⏳.
+- Comprobado levantando el servidor de verdad: el log muestra «Catalog loaded: 17 POIs, 7 data warnings» y los 7 avisos, y `/docs` responde 200.
+- Starlette 1.10 marca como deprecado usar `httpx` con su `TestClient` y recomienda `httpx2`. Se comprobó en el código de Starlette que la recomendación es auténtica. **Decisión del autor:** mantener `httpx`, que funciona, y no añadir un paquete nuevo con la entrega cerca. El aviso de deprecación en los tests es conocido y no afecta al funcionamiento.
+- Verificado: `make check` limpio, 93 tests.
+- Trello: H1 completa (último criterio: avisos en el log al arrancar) → «Revisión».
+
+### Paso 8.2 · `GET /pois/{id}` — 2026-11-24
+- TDD: primero `api/tests/test_poi_detail_endpoint.py`, `test_price_text.py` y `test_poi_presenter.py`, más `tests/conftest.py` con un cliente de tests cuyo reloj está fijado (lunes 23-11-2026 a las 12:00 en Madrid).
+- Ficheros nuevos, uno por responsabilidad:
+  - `app/clock.py` y `village_time_zone()` en `app/settings.py` (`ZONA_HORARIA`, por defecto `Europe/Madrid`): la hora «ahora» del pueblo, inyectable (D-011).
+  - `app/routes/dependencies.py`: dependencias de FastAPI para el catálogo y el reloj.
+  - `app/routes/schemas.py`: formato JSON de respuesta, con los nombres de campo en español porque son el contrato de la API (D-021).
+  - `app/routes/presenters/poi.py` y `price_text.py`: de `Poi` a la respuesta en el idioma pedido; el precio se escribe como en cada idioma («4,50 €» / «€4.50», «Gratis» / «Free», «Sin datos» / «No data»).
+  - `app/routes/messages.py`: mensajes de error en es/en.
+  - `app/routes/pois.py`: el endpoint.
+- Respuesta: textos en el idioma pedido, cada uno con su idioma real (concreción de D-015); coordenadas o `null`; accesibilidad sí/no/`null`; `abierto_ahora` sí/no/`null`; horario con franjas y temporadas; precio como datos y como texto; etiquetas.
+- 404 con mensaje en el idioma pedido, para un id inexistente y para el duplicado descartado poi-004 (D-007).
+- Comprobado también contra el servidor de desarrollo del autor (`make api`, con recarga automática): `GET /pois/poi-011?idioma=en` responde con las coordenadas corregidas y la accesibilidad desconocida.
+- Verificado: `make check` limpio, 110 tests (el único aviso es la deprecación conocida de `httpx`).
+- Trello: H6, criterios de API marcados y tarjeta en «En curso» (le falta la ficha en la pantalla). H5, criterio del fallback reescrito con la concreción de D-015 y marcado.
+
+### Paso 8.3 · `GET /pois` con filtros — 2026-11-25
+- Plan propuesto por la IA y aprobado por el autor con tres decisiones: 422 en el idioma pedido con un manejador global (D-039), `abierto_en` completo interpretado en hora de Madrid (concreción de D-012) y respuesta como lista sin envoltorio.
+- TDD: primero los tests y comprobación de que fallaban (faltaban los módulos). Después:
+  - `tests/test_poi_filter.py`: filtro del dominio con puntos construidos a mano. Accesibilidad tri-estado, horario desconocido nunca abierto, criterios combinados y día ISO inválido.
+  - `tests/test_open_at_param.py`: `1T12:00` con la fecha de hoy para las temporadas, fecha completa, fecha con zona convertida a Madrid y nueve formatos inválidos.
+  - `tests/test_poi_list_endpoint.py`: contra el catálogo real. Entre otros, q3 de la evaluación (lunes 12:00: incluye 001, 002, 005, 006 y 010 y excluye 003, 008 y 015), poi-014 cerrado en noviembre y abierto en julio, poi-013 fuera de `accesible=true` aunque su descripción diga lo contrario, y poi-004 ausente.
+  - `tests/test_validation_errors.py`: mensajes 422 en es/en, español si `idioma` no es válido (también en `/pois/{id}`) y explicación del formato de `abierto_en`.
+- Ficheros nuevos, uno por responsabilidad:
+  - `app/domain/opening_query.py`: el momento por el que se pregunta (día ISO, hora y fecha de referencia para las temporadas). `/preguntar` lo construirá a partir de la pregunta.
+  - `app/domain/poi_filter.py`: `PoiCriteria` y `filter_pois()`, la función única de filtrado que reutilizará `/preguntar` (D-005).
+  - `app/routes/open_at_param.py`: lectura del parámetro `abierto_en`. La forma día-hora se valida con una expresión regular estricta, porque `time.fromisoformat("12")` aceptaría una hora sin minutos.
+  - `app/routes/validation_errors.py`: el manejador de 422 de D-039.
+- Cambios: `app/routes/pois.py` (endpoint `GET /pois`), `app/routes/messages.py` (mensajes de 422) y `app/main.py` (registro del manejador).
+- Decisión D-039: Los errores 422 se escriben en el idioma pedido.
+- Decisión D-012: concreción sobre la zona horaria de `abierto_en`.
+- README, sección 6: los ejemplos de `/pois` ya no llevan ⏳ (verificados uno a uno; solo `/preguntar` sigue pendiente), con la nota sobre la combinación de filtros y los 422.
+- Comprobado también levantando el servidor en un puerto aparte: `abierto_en=1T12:00` con el reloj real (25-11-2026) da el mismo resultado que en los tests, y los tres 422 probados (`categoria=playa`, `abierto_en=lunes&idioma=en` e `idioma=fr`) responden con su mensaje.
+- Verificado: `make check` limpio, 145 tests (35 nuevos). El único aviso es la deprecación conocida de `httpx`.
+- **Para `IA.md`:** dos autocorrecciones de la IA antes de entregar.
+  - Para registrar el manejador había puesto un `# type: ignore` (Starlette tipa los manejadores con `Exception` genérica). Comprobó que era necesario y lo sustituyó por el parámetro `exception_handlers` del constructor de FastAPI, que acepta el tipo sin silenciar a mypy.
+  - El primer borrador del mensaje de error habría dejado un «Valores posibles: .» vacío para un parámetro fuera de la tabla. Ahora en ese caso se omite la lista.
+- Trello: H2, H3, H4 y H5 pasan a «En curso» y se marcan sus criterios de API (H2: `accesible=true` y tri-estado; H3: `abierto_en`, poi-018 y la temporada de poi-014; H4: filtro y 422 localizado; H5: `?idioma=en`). Siguen en «En curso» porque les faltan la pantalla y, en H2, H3 y H5, las preguntas de la evaluación vía `/preguntar`.
+
+### Paso 8.4 · Corrección: los errores documentados en `/docs` — 2026-11-25
+- **Detectado al revisar `/docs` con el autor:** tras D-039, la documentación OpenAPI seguía mostrando el 422 por defecto de FastAPI (una lista con `loc`, `msg` y `type`), pero la API responde `{"detail": "<mensaje>"}`. Además, el 404 de `/pois/{id}` no estaba documentado. Quien leyera `/docs`, o una pantalla que generase sus tipos a partir de ella, esperaría una estructura que no existe.
+- TDD: primero `tests/test_openapi_errors.py`. Lee `/openapi.json` y comprueba que el 422 de las dos rutas y el 404 del detalle apuntan a `ErrorResponse`, y que ya no se anuncia `HTTPValidationError`. Los cuatro tests fallaban antes del cambio.
+- Cambios: esquema `ErrorResponse` (con un ejemplo) en `app/routes/schemas.py`; en `app/routes/pois.py`, el 422 se declara en el router y el 404 en la ruta del detalle. Si la ruta declara su 422, FastAPI deja de añadir el suyo por defecto.
+- D-039: añadida la concreción.
+- Verificado: `make check` limpio, 149 tests.
+- **Para `IA.md`:** la IA no detectó la incoherencia al implementar D-039; la encontró después, al revisar la captura de `/docs` que el autor compartió durante la prueba manual. Lección: un cambio en el formato de respuesta se comprueba también en el contrato publicado, no solo en los tests de comportamiento.
