@@ -107,6 +107,18 @@ describe('Assistant page', () => {
     expect(screen.getByRole('status')).toHaveTextContent(
       'La pregunta no puede estar vacía ni superar los 500 caracteres.',
     );
+    const box = screen.getByLabelText('Tu pregunta');
+    expect(box).toBeInvalid();
+    expect(box).toHaveAccessibleDescription(/no puede estar vacía/);
+  });
+
+  it('does not mark the question as invalid when the assistant cannot be reached', async () => {
+    const { harness, http } = await openAssistant();
+    await ask('hola');
+    http.expectOne('/api/preguntar').error(new ProgressEvent('error'));
+    await harness.fixture.whenStable();
+
+    expect(screen.getByLabelText('Tu pregunta')).toBeValid();
   });
 
   it('explains when the assistant cannot be reached', async () => {

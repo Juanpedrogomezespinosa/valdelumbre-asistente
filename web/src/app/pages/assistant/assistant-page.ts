@@ -56,6 +56,12 @@ export class AssistantPage {
     return error ? (apiErrorDetail(error) ?? texts.unreachable) : null;
   });
 
+  /** A 422 from /preguntar is about the question itself, so it is tied to the text box. */
+  protected readonly invalidQuestion = computed(() => {
+    const error = this.answer.error();
+    return error !== undefined && apiErrorDetail(error) !== null;
+  });
+
   protected readonly answerParts = computed(() =>
     this.answer.hasValue() ? splitAnswer(this.answer.value().respuesta) : null,
   );

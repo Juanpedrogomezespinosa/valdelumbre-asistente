@@ -9,11 +9,12 @@ import { LANGUAGES, LANGUAGE_NAMES, isLanguage } from '../i18n/language';
     <select
       id="language"
       class="rounded border border-control-border bg-surface px-2 py-1 text-text"
-      [value]="i18n.language()"
       (change)="choose($event)"
     >
       @for (language of languages; track language) {
-        <option [value]="language" [attr.lang]="language">{{ names[language] }}</option>
+        <option [value]="language" [attr.lang]="language" [selected]="language === i18n.language()">
+          {{ names[language] }}
+        </option>
       }
     </select>
   `,

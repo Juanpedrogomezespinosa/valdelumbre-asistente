@@ -36,6 +36,13 @@ describe('App shell', () => {
     expect(document.documentElement.lang).toBe('en');
   });
 
+  it('shows the remembered language as selected when the app starts', async () => {
+    localStorage.setItem('valdelumbre.idioma', 'en');
+    await render(App, { routes, providers: [providePageTitles()], initialRoute: '/' });
+
+    expect(screen.getByLabelText('Language')).toHaveValue('en');
+  });
+
   it('moves focus to the page heading and updates the title after navigating', async () => {
     const { navigate } = await renderApp();
 

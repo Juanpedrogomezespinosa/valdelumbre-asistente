@@ -582,3 +582,19 @@ Con esto quedan cerradas todas las decisiones previas al código (D-001 a D-031)
 - En los tests, las peticiones de las tarjetas solo salen tras procesar la respuesta; un ayudante `pending()` espera a que aparezcan.
 - Verificado: `make check` limpio (270 tests del backend y 52 de la web), build sin avisos.
 - Trello: H7 completa (pantalla del asistente) → «Revisión». Solo queda en curso H10, la revisión de accesibilidad.
+
+### Paso 10.5 · Revisión de accesibilidad — 2026-11-25
+- Checklist de la skill `revisar-accesibilidad` aplicado a cada plantilla, y después un recorrido real en Chrome (modo oscuro) solo con teclado.
+- Dos hallazgos, corregidos con test primero:
+  - **El error de la pregunta no quedaba ligado al campo.** El 422 se anunciaba en la región de estado, pero el campo no decía que era incorrecto. Ahora lleva `aria-invalid="true"` y `aria-describedby` apunta también al mensaje, que se muestra en el color de error. Si el problema es de conexión, el campo no se marca: la pregunta no tiene la culpa.
+  - **Selector de idioma:** con el inglés guardado, al arrancar podía mostrar «Español». Es el mismo problema de `[value]` en el `<select>` del paso 10.2, y se resolvió igual, con `[selected]` en cada opción.
+- Comprobado en el navegador:
+  - el primer Tab muestra «Saltar al contenido», y Enter lleva el foco a `<main>`;
+  - el siguiente Tab llega a la caja de pregunta, Enter envía, se ve la respuesta y el Tab siguiente alcanza la primera tarjeta citada con el foco visible;
+  - Enter en la tarjeta abre la ficha con el foco en el `<h1>` y el título «Museo del Aceite · Valdelumbre»;
+  - en el listado se llega a los filtros en orden;
+  - con la pregunta vacía, el mensaje de la API aparece en rojo y el campo queda con `aria-invalid`.
+- **320 px:** la ventana no se podía redimensionar, así que se cargaron `/`, `/pois`, `/pois/poi-003` y `/pois/poi-012` en un iframe de 320 px. En ninguna hay scroll horizontal; la cabecera y los filtros pasan a una columna.
+- Ya cumplido de pasos anteriores: un único `<h1>` y jerarquía sin saltos (tarjetas en `<h3>` bajo la sección del asistente), landmarks, `lang` en el `<html>` y en los textos en otro idioma, `fieldset`/`legend` en los filtros, número de resultados anunciado, estados desconocidos en texto, contraste AA en los dos temas (paso 10.1) y `prefers-reduced-motion`.
+- **Sin comprobar por la IA:** el recorrido con VoiceOver, que necesita oírlo una persona. Lo hará el autor.
+- Verificado: `make check` limpio (270 tests del backend y 54 de la web).
