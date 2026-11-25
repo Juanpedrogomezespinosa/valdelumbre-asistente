@@ -550,3 +550,17 @@ Con esto quedan cerradas todas las decisiones previas al código (D-001 a D-031)
 - Dos fallos iniciales eran de sincronización del propio test: `rxResource` actualiza el valor de forma asíncrona, y `whenStable` espera también a las peticiones pendientes. Se ajustaron los tests; la página no cambió.
 - Verificado: `make check` limpio (270 tests del backend y 23 de la web), build de producción sin avisos.
 - Trello: marcados los criterios de pantalla de H2 (tarjeta en texto; filtro con teclado y número anunciado), H3 (filtro «abierto ahora» y estados de la tarjeta) y H4 (categorías traducidas; filtro en la URL). **H2, H3 y H4 completas → «Revisión».**
+
+### Paso 10.3 · Ficha `/pois/:id` — 2026-11-25
+- TDD: primero `pois/schedule-text.spec.ts` (el horario en palabras, es/en) y `pages/poi-detail/poi-detail-page.spec.ts`.
+- Ficheros nuevos:
+  - `pois/schedule-text.ts`: días ISO en palabras («martes a domingo», «viernes y sábado», «lunes, miércoles y viernes», «todos los días»), temporada («del 1 de junio al 30 de septiembre») y franja completa. Los tramos de tres días o más se leen como rango y los más cortos como lista;
+  - `pois/poi-labels.ts`: textos de accesibilidad y de «abierto ahora», que antes estaban en la tarjeta y ahora comparten tarjeta y ficha;
+  - `pois/not-found-error.ts`: distingue un 404 de otro error (los `rxResource` envuelven `HttpErrorResponse` y dejan el original en `cause`, comprobado en el código de Angular);
+  - `pages/poi-detail/`: la página.
+- La ficha tiene un enlace para volver al listado, el nombre en el `<h1>`, la descripción (ya limpia de la inyección), los datos, y el horario por franjas, «abierto siempre» o «Horario no disponible: consulta en la Oficina de Turismo» (D-009). Lleva `lang` en cada texto servido en otro idioma (D-015). Un punto inexistente da «Este punto no existe en el catálogo», distinto de un error de carga.
+- El `<h1>` es siempre el mismo elemento: primero dice «Ficha del punto» y luego el nombre. Si se cambiara de elemento al cargar, se perdería el foco que la navegación acaba de poner en él.
+- Título de la pestaña con el nombre del punto: un servicio `PageName` permite a una página dar su propio nombre, y la estrategia de títulos vuelve al nombre genérico en la siguiente navegación.
+- Error propio corregido: en la plantilla, la variable del bucle `slot` tapaba el método `slot()`; se renombró a `slotDescription()`.
+- Verificado: `make check` limpio (270 + 39 tests), build sin avisos.
+- Trello: H6 (descripción, horario, precio y accesibilidad; foco y título) y H5 (`lang="es"` en la pantalla; el selector cambia `lang` al momento, que tiene test desde el paso 10.1) completas → «Revisión».

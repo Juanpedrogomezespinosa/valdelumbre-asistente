@@ -2,6 +2,7 @@ import { Component, computed, inject, input } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { I18n } from '../i18n/i18n';
 import { Poi } from './poi';
+import { accessibilityText, openNowText } from './poi-labels';
 
 /** The one card for the list and the assistant (D-031). Unknown states are said in words. */
 @Component({
@@ -38,21 +39,10 @@ export class PoiCard {
     return served === this.i18n.language() ? null : served;
   });
 
-  protected readonly accessibility = computed(() => {
-    const texts = this.i18n.texts().poi;
-    const accessible = this.poi().accesible;
-    if (accessible === null) {
-      return texts.accessibilityUnknown;
-    }
-    return accessible ? texts.accessible : texts.notAccessible;
-  });
-
-  protected readonly openNow = computed(() => {
-    const texts = this.i18n.texts().poi;
-    const open = this.poi().abierto_ahora;
-    if (open === null) {
-      return texts.hoursUnknown;
-    }
-    return open ? texts.open : texts.closed;
-  });
+  protected readonly accessibility = computed(() =>
+    accessibilityText(this.poi().accesible, this.i18n.texts()),
+  );
+  protected readonly openNow = computed(() =>
+    openNowText(this.poi().abierto_ahora, this.i18n.texts()),
+  );
 }

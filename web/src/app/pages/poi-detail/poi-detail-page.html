@@ -1,0 +1,53 @@
+@let texts = i18n.texts();
+<p class="mb-4">
+  <a routerLink="/pois"><span aria-hidden="true">← </span>{{ texts.poiDetail.back }}</a>
+</p>
+
+<app-page-heading>
+  @if (poi.hasValue()) {
+    <span [attr.lang]="foreignLanguage(poi.value().nombre)">{{ poi.value().nombre.texto }}</span>
+  } @else {
+    {{ texts.pages.poiDetail }}
+  }
+</app-page-heading>
+
+<p role="status" class="mb-4">{{ status() }}</p>
+
+@if (poi.hasValue()) {
+  @let place = poi.value();
+  <div class="grid gap-6 md:grid-cols-2">
+    <section class="rounded-lg border border-control-border bg-surface p-4 md:col-span-2">
+      <h2 class="mb-2 text-xl font-semibold">{{ texts.poiDetail.description }}</h2>
+      <p [attr.lang]="foreignLanguage(place.descripcion)">{{ place.descripcion.texto }}</p>
+    </section>
+
+    <section class="rounded-lg border border-control-border bg-surface p-4">
+      <h2 class="mb-2 text-xl font-semibold">{{ texts.poiDetail.details }}</h2>
+      <dl class="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1">
+        <dt class="text-muted">{{ texts.poi.category }}</dt>
+        <dd>{{ texts.categories[place.categoria] }}</dd>
+        <dt class="text-muted">{{ texts.poi.accessibility }}</dt>
+        <dd>{{ accessibility(place.accesible) }}</dd>
+        <dt class="text-muted">{{ texts.poi.openNow }}</dt>
+        <dd>{{ openNow(place.abierto_ahora) }}</dd>
+        <dt class="text-muted">{{ texts.poi.price }}</dt>
+        <dd>{{ place.precio.texto }}</dd>
+      </dl>
+    </section>
+
+    <section class="rounded-lg border border-control-border bg-surface p-4">
+      <h2 class="mb-2 text-xl font-semibold">{{ texts.poiDetail.schedule }}</h2>
+      @if (place.horario.siempre_abierto) {
+        <p>{{ texts.poiDetail.alwaysOpen }}</p>
+      } @else if (!place.horario.conocido) {
+        <p>{{ texts.poiDetail.unknownSchedule }}</p>
+      } @else {
+        <ul class="list-disc pl-5">
+          @for (slot of place.horario.franjas; track $index) {
+            <li>{{ slotDescription(slot) }}</li>
+          }
+        </ul>
+      }
+    </section>
+  </div>
+}
