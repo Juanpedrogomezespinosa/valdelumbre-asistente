@@ -61,6 +61,7 @@ Estados: ✅ aprobada · 🔄 revisada (enlaza a la que la sustituye) · ❌ des
 | [D-040](#d-040--el-asistente-interpreta-las-preguntas-con-un-vocabulario-cerrado) | El asistente interpreta las preguntas con un vocabulario cerrado | ✅ |
 | [D-041](#d-041--el-filtro-admite-varias-categorías-y-días-completos) | El filtro admite varias categorías y días completos | ✅ |
 | [D-042](#d-042--preguntar-devuelve-solo-respuesta-e-ids) | `/preguntar` devuelve solo `respuesta` e `ids` | ✅ |
+| [D-043](#d-043--recuperación-por-filtros-temas-y-nombres-respuesta-solo-con-campos-estructurados) | Recuperación por filtros, temas y nombres; respuesta solo con campos estructurados | ✅ |
 
 ---
 
@@ -455,3 +456,22 @@ Estados: ✅ aprobada · 🔄 revisada (enlaza a la que la sustituye) · ❌ des
 - **Por qué:** el contrato lo fija el enunciado, y un campo de más es algo que el evaluador no ha pedido y tendría que entender.
 - **Alternativas descartadas:** incluir `puntos` (amplía el contrato sin que el enunciado lo pida).
 - **Consecuencias:** la pantalla hace una petición por cada punto citado, como mucho una por punto del catálogo.
+
+## D-043 · Recuperación por filtros, temas y nombres; respuesta solo con campos estructurados
+**Estado:** ✅ aprobada por el autor · 2026-11-25
+
+- **Contexto:** tras interpretar la pregunta (D-040) hay que decidir qué puntos se citan y cómo se redacta la respuesta sin LLM (D-004), sin inventar (D-032) y sin dejarse manipular por el catálogo (D-006).
+- **Decisión:**
+  - **Recuperación** (`app/assistant/retrieval.py`):
+    1. Se filtra con `filter_pois` (D-005).
+    2. Si la pregunta tiene un **tema** o **nombra un lugar**, cada candidato suma 1 punto por cada tema que coincide con sus etiquetas o su categoría, y 1 por cada palabra de su nombre (en español o en inglés). Se quedan los que suman al menos 1, de mayor a menor puntuación. Ese es el umbral.
+    3. Si solo hay filtros, se quedan todos los candidatos.
+    4. Si no hay nada reconocible, no se recupera nada → «no lo sé» (D-032).
+  - **Nombres**: una palabra solo nombra un lugar si aparece en el nombre de **un único** punto del catálogo («park» está en «Alameda Park» y en «Cuesta Car Park», así que no identifica ninguno). Los nombres se buscan en todo el catálogo: si la pregunta nombra un lugar que no pasa los filtros («¿es accesible el castillo?»), no se responde con otros lugares en su lugar.
+  - **Respuesta** (`TemplateAnswerGenerator`, detrás del protocolo `AnswerGenerator`): una introducción y una línea por lugar con nombre, categoría, accesibilidad en palabras y temporada si la tiene (D-011). Si la pregunta da por hecho un único resultado y hay varios, la introducción lo corrige (q5, D-006). **Las descripciones nunca entran en la respuesta.**
+  - **Comprobación final** (`answer_question`): se descarta cualquier id que el generador cite sin haberlo recuperado.
+- **Por qué:** cada hecho de la respuesta sale de un campo estructurado, así que una descripción manipulada no puede cambiar lo que se dice ni lo que se cita. Hay un test con una inyección que esquiva los patrones de limpieza. La regla de los nombres sale de los datos, no de una lista escrita a mano.
+- **Alternativas descartadas:**
+  - Incluir la descripción en la respuesta: es texto no confiable.
+  - Dar por válida cualquier palabra de un nombre: con «zipline adventure park» se citaban el parque y el aparcamiento.
+- **Consecuencias:** las respuestas son correctas pero esquemáticas. Si se pregunta por un lugar que no cumple el filtro («¿es accesible el castillo?»), la respuesta es «no tengo información» en lugar de «no, no es accesible». Es honesto, pero mejorable (queda para «qué haría con más tiempo»).

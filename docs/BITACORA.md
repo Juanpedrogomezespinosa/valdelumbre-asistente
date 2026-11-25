@@ -437,3 +437,29 @@ Con esto quedan cerradas todas las decisiones previas al código (D-001 a D-031)
 - Decisiones D-040, D-041 y D-042.
 - Verificado: `make check` limpio, 214 tests.
 - **Para `IA.md`:** la IA propuso añadir `puntos` a la respuesta de `/preguntar`. Ante la pauta del autor de seguir el enunciado al pie de la letra, lo descartó ella misma (D-042).
+
+### Paso 9.2 · Recuperación, generador y servicio — 2026-11-25
+- TDD: primero `tests/test_retrieval.py`, `test_template_generator.py` y `test_answer_question.py` (este último con el catálogo real y el reloj fijado). Se comprobó que fallaban (faltaban los módulos). Helper común para construir puntos en los tests: `tests/poi_factory.py`.
+- Ficheros nuevos en `app/assistant/`, uno por responsabilidad:
+  - `answer.py`: `Answer` y el protocolo `AnswerGenerator` (D-004);
+  - `retrieval.py`: filtro + puntuación por temas y nombres + umbral;
+  - `template_texts.py`: textos y etiquetas en es/en (categorías, accesibilidad, meses);
+  - `template_generator.py`: `TemplateAnswerGenerator`;
+  - `answer_question.py`: interpretar → recuperar → generar, y descartar al final cualquier id no recuperado.
+- Las seis preguntas de la evaluación pasadas por el servicio con el catálogo real: 6/6, también q6 con el criterio estricto (ninguna cita).
+- Dos problemas detectados por los propios tests y corregidos antes de entregar:
+  - Preguntar por un lugar que no pasa los filtros («¿es accesible el castillo?») devolvía *otros* lugares accesibles. Ahora los nombres se buscan en todo el catálogo.
+  - «Is there any zipline adventure park?» citaba el Parque de la Alameda y el **aparcamiento** («Cuesta Car Park»). Ahora una palabra solo nombra un lugar si aparece en un único nombre del catálogo.
+- `tests/__init__.py`: necesario para que mypy no vea el helper de tests con dos nombres de módulo.
+- Decisión D-043.
+- Verificado: `make check` limpio, 244 tests.
+- Trello: marcados los criterios ya cubiertos por tests:
+  - H7: mismos filtros que `GET /pois`; solo cita ids recuperados;
+  - H8: umbral → «no lo sé» con ids vacíos; no nombra ningún punto; test fuera de catálogo en es/en;
+  - H9: hechos solo de campos estructurados; q5 corrige la premisa sin citar poi-013; test con una inyección sintética.
+
+  Quedan para los pasos 9.3 y 9.4 los que dependen de `POST /preguntar` y del script de evaluación.
+- **Para `IA.md`:** tres errores de la IA que encontraron sus propios tests antes de entregar:
+  - en un test esperaba «no accesible» de un punto creado sin datos de accesibilidad;
+  - había escrito un test de relleno que no comprobaba nada (se eliminó);
+  - y, sobre todo, el caso «zipline adventure park» → aparcamiento, que no se le había ocurrido al diseñar la recuperación y que solo apareció al pedir el test en inglés que exigía un criterio de Trello.
