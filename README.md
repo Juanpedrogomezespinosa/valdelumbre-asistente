@@ -64,7 +64,7 @@ Para pararlo: `Ctrl + C` y después `docker compose down`.
 |-------------|---------|-----------------|
 | Python | 3.12 | `uv` la descarga automáticamente si no la tienes |
 | uv | 0.5 o superior | `curl -LsSf https://astral.sh/uv/install.sh \| sh` (macOS/Linux) · [otras plataformas](https://docs.astral.sh/uv/getting-started/installation/) |
-| Node.js | 22 LTS o superior | https://nodejs.org o `nvm install --lts` |
+| Node.js | 22.22.3 o superior (lo exige Angular CLI 22) | https://nodejs.org o `nvm install 22` (en `web/` hay un `.nvmrc`: `nvm use`) |
 | npm | el que trae Node | `npm --version` |
 | make | cualquiera | Viene instalado en macOS y Linux (`make --version`). En Windows, usa Docker o los comandos directos de cada sección. |
 
@@ -111,12 +111,11 @@ Sin `make`: `cd api && uv sync --locked && uv run uvicorn app.main:app --reload 
 
 Al arrancar, la API carga el catálogo y escribe en el log los avisos de calidad de datos que ha encontrado y corregido (ver `DATOS.md`).
 
-**Terminal 2 · Web** ⏳
+**Terminal 2 · Web**
 ```bash
-cd web
-npm ci                                       # instala dependencias exactas del lockfile
-npm start                                    # ng serve en http://localhost:4200 con proxy /api → :8000
+make web                                     # ng serve en http://localhost:4200 con proxy /api → :8000
 ```
+Sin `make`: `cd web && npm ci && npm start`. `make install` ya instala también las dependencias de la web. Si tu Node por defecto es anterior a 22.22.3, ejecuta antes `nvm use` dentro de `web/`.
 
 Abre http://localhost:4200.
 

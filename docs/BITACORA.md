@@ -494,3 +494,38 @@ Con esto quedan cerradas todas las decisiones previas al código (D-001 a D-031)
   - H8 completa → «Revisión».
   - H9 → «Revisión» con 4/5. El quinto criterio solo aplica si se usa un LLM (no es el caso, D-004); está explicado en un comentario de la tarjeta.
   - H2, H3, H5 y H7 siguen «En curso»: les falta la pantalla.
+
+---
+
+## Paso 10 · `feat/web` — 2026-11-25
+- `feat/assistant` fusionada en `main` por el autor (`cc78627`); en `main`, `make check` (270 tests) y `make eval` (6/6 · 6/6). Se abre `feat/web`.
+- Al preparar el plan, la IA detectó una contradicción entre D-031 («el asistente incluye en su texto los avisos de la descripción») y D-043 («las descripciones nunca entran en la respuesta»). El autor aprobó mantener D-043 y marcar la frase de D-031 como revisada (🔄).
+- Plan aprobado por el autor: 10.1 andamiaje y estructura común; 10.2 listado; 10.3 ficha; 10.4 asistente; 10.5 revisión de accesibilidad; 10.6 mapa SVG (opcional). Objetivo del autor: el proyecto listo hoy, o mañana como muy tarde.
+- Trello: H10 → «En curso».
+
+### Paso 10.1 · Andamiaje y estructura común de la web — 2026-11-25
+- **Node:** Angular CLI 22.3 (la última estable, regla del frontend) exige Node 22.22.3 o superior, y el autor tenía 22.21.0. Con su aprobación, la IA instaló Node 22.23.5 con `nvm` (solo en su usuario y sin cambiar la versión por defecto) y añadió `web/.nvmrc` y `engines` en `package.json`.
+- `ng new` con componentes standalone, rutas, sin SSR, sin zone.js, Vitest y `--style=tailwind` (Tailwind v4 integrado por el CLI). Se quitaron el README y la carpeta `.vscode` generados. Añadidos angular-eslint (incluye las reglas de accesibilidad de plantillas), Testing Library y `jest-dom`. TypeScript en modo `strict` con `strictTemplates`, porque el proyecto generado no lo traía.
+- **Proxy de desarrollo** (`web/proxy.conf.json`): `/api/*` → `http://localhost:8000`, quitando el prefijo. La API no cambia. Comprobado con `ng serve`: `/api/pois` y `/api/preguntar` responden a través del proxy, y una ruta profunda (`/pois/poi-003`) sirve la aplicación.
+- **Tokens de color** (D-026, D-030) en `web/src/styles.css`. Se elimina la paleta por defecto de Tailwind, así que solo existen los colores comprobados. Contraste WCAG calculado con un script (fórmula de luminancia relativa):
+
+  | Par | Claro | Oscuro | Mínimo |
+  |---|---|---|---|
+  | texto / fondo de página | 15,73 | 15,33 | 4,5 |
+  | texto / tarjeta | 16,81 | 13,51 | 4,5 |
+  | texto secundario / página · tarjeta | 7,22 · 7,72 | 9,13 · 8,04 | 4,5 |
+  | principal (enlaces) / página · tarjeta | 6,82 · 7,29 | 10,03 · 8,83 | 4,5 |
+  | texto sobre botón principal | 7,29 | 10,03 | 4,5 |
+  | error / página · tarjeta | 6,96 · 7,44 | 8,77 · 7,72 | 4,5 |
+  | borde de controles / tarjeta · página | 4,11 · 3,85 | 4,36 · 4,94 | 3 |
+  | foco / página · tarjeta | 5,62 · 6,01 | 8,46 · 7,45 | 3 |
+
+  El color de foco sobre el botón principal solo llegaba a 1,2:1. Se resolvió con `outline-offset: 2px`: el anillo queda sobre el fondo de la página o de la tarjeta, donde sí cumple.
+- **Estructura común:** enlace «saltar al contenido», cabecera con la navegación principal etiquetada (`aria-current` en la página activa), selector de idioma con su etiqueta y `<main id="main">`. Con `<base href="/">`, un enlace `#main` navegaría al inicio, así que el enlace mueve el foco a `<main>` por script.
+- **Idioma** (D-028): servicio `I18n` con signals; el diccionario tipado en `i18n/texts.ts` hace que falte una traducción sea un error de compilación. Cambiar de idioma actualiza `<html lang>` al momento y la elección se recuerda en `localStorage`. Los nombres de los idiomas van en su propio idioma («Español», «English»), con `lang` en cada opción.
+- **Navegación** (D-027): cada ruta declara su clave de página como `title` y una `TitleStrategy` propia lo convierte en «Nombre · Valdelumbre» en el idioma activo, también al cambiar de idioma. Tras cada navegación dentro de la app, el foco va al `<h1>` (`<app-page-heading>`, con `tabindex="-1"`); en la primera carga no, para que el lector empiece por arriba como en cualquier web.
+- Rutas `/`, `/pois`, `/pois/:id` y página «no encontrada». De momento las páginas solo tienen su título; se rellenan en los pasos 10.2 a 10.4.
+- TDD: primero `i18n/i18n.spec.ts` y `app.spec.ts`. Dos fallos iniciales eran del propio test (no registraba la estrategia de títulos y no hacía la navegación inicial de la app real); se ajustó el test para arrancar como la app.
+- `Makefile`: `make web`; `install`, `test`, `lint` y `format` cubren también la web (lint de angular-eslint y comprobación de Prettier). README actualizado (Node 22.22.3 y `make web`).
+- Verificado: `make check` limpio (270 tests del backend y 9 de la web), `ng build` de producción sin avisos.
+- Al probar `make web`, el CLI de Angular preguntó si se quería compartir estadísticas de uso. Esa pregunta bloquearía a quien arranque el proyecto sin terminal interactiva (Docker, CI o el evaluador), así que se desactivó en `angular.json` (`"cli": { "analytics": false }`).

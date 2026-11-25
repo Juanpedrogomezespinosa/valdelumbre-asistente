@@ -350,6 +350,7 @@ Estados: ✅ aprobada · 🔄 revisada (enlaza a la que la sustituye) · ❌ des
 - **Por qué:** las listas cortas son más fáciles de recorrer con lector de pantalla. Los tres estados de accesibilidad y horario (D-008, D-009) se ven sin entrar en la ficha. Un único componente de tarjeta sirve para el listado y para el asistente (regla 2 de D-026).
 - **Alternativas descartadas:** ficha completa en cada tarjeta (ruido); tarjeta desplegable (más estado y más ARIA para poco beneficio).
 - **Consecuencias:** los avisos que solo están en la descripción (por ejemplo «reserva previa obligatoria») solo se ven en el detalle. El asistente sí los incluye en su texto al citar el punto (D-005).
+- **🔄 Revisión parcial (autor, 2026-11-25) → [D-043](#d-043--recuperación-por-filtros-temas-y-nombres-respuesta-solo-con-campos-estructurados):** la última frase de las consecuencias queda sustituida. El asistente **no** incluye las descripciones en su texto, porque son datos no confiables (D-006) y una inyección que esquivara la limpieza podría colarse en la respuesta. Los avisos de la descripción se ven en la ficha `/pois/:id`, a la que enlaza la tarjeta de cada punto citado. El resto de D-031 sigue vigente.
 
 ## D-032 · Sin respuesta en el catálogo: «no lo sé», sin sugerencias ni citas
 **Estado:** ✅ aprobada por el autor · 2026-11-24
