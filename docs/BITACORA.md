@@ -494,3 +494,107 @@ Con esto quedan cerradas todas las decisiones previas al código (D-001 a D-031)
   - H8 completa → «Revisión».
   - H9 → «Revisión» con 4/5. El quinto criterio solo aplica si se usa un LLM (no es el caso, D-004); está explicado en un comentario de la tarjeta.
   - H2, H3, H5 y H7 siguen «En curso»: les falta la pantalla.
+
+---
+
+## Paso 10 · `feat/web` — 2026-11-25
+- `feat/assistant` fusionada en `main` por el autor (`cc78627`); en `main`, `make check` (270 tests) y `make eval` (6/6 · 6/6). Se abre `feat/web`.
+- Al preparar el plan, la IA detectó una contradicción entre D-031 («el asistente incluye en su texto los avisos de la descripción») y D-043 («las descripciones nunca entran en la respuesta»). El autor aprobó mantener D-043 y marcar la frase de D-031 como revisada (🔄).
+- Plan aprobado por el autor: 10.1 andamiaje y estructura común; 10.2 listado; 10.3 ficha; 10.4 asistente; 10.5 revisión de accesibilidad; 10.6 mapa SVG (opcional). Objetivo del autor: el proyecto listo hoy, o mañana como muy tarde.
+- Trello: H10 → «En curso».
+
+### Paso 10.1 · Andamiaje y estructura común de la web — 2026-11-25
+- **Node:** Angular CLI 22.3 (la última estable, regla del frontend) exige Node 22.22.3 o superior, y el autor tenía 22.21.0. Con su aprobación, la IA instaló Node 22.23.5 con `nvm` (solo en su usuario y sin cambiar la versión por defecto) y añadió `web/.nvmrc` y `engines` en `package.json`.
+- `ng new` con componentes standalone, rutas, sin SSR, sin zone.js, Vitest y `--style=tailwind` (Tailwind v4 integrado por el CLI). Se quitaron el README y la carpeta `.vscode` generados. Añadidos angular-eslint (incluye las reglas de accesibilidad de plantillas), Testing Library y `jest-dom`. TypeScript en modo `strict` con `strictTemplates`, porque el proyecto generado no lo traía.
+- **Proxy de desarrollo** (`web/proxy.conf.json`): `/api/*` → `http://localhost:8000`, quitando el prefijo. La API no cambia. Comprobado con `ng serve`: `/api/pois` y `/api/preguntar` responden a través del proxy, y una ruta profunda (`/pois/poi-003`) sirve la aplicación.
+- **Tokens de color** (D-026, D-030) en `web/src/styles.css`. Se elimina la paleta por defecto de Tailwind, así que solo existen los colores comprobados. Contraste WCAG calculado con un script (fórmula de luminancia relativa):
+
+  | Par | Claro | Oscuro | Mínimo |
+  |---|---|---|---|
+  | texto / fondo de página | 15,73 | 15,33 | 4,5 |
+  | texto / tarjeta | 16,81 | 13,51 | 4,5 |
+  | texto secundario / página · tarjeta | 7,22 · 7,72 | 9,13 · 8,04 | 4,5 |
+  | principal (enlaces) / página · tarjeta | 6,82 · 7,29 | 10,03 · 8,83 | 4,5 |
+  | texto sobre botón principal | 7,29 | 10,03 | 4,5 |
+  | error / página · tarjeta | 6,96 · 7,44 | 8,77 · 7,72 | 4,5 |
+  | borde de controles / tarjeta · página | 4,11 · 3,85 | 4,36 · 4,94 | 3 |
+  | foco / página · tarjeta | 5,62 · 6,01 | 8,46 · 7,45 | 3 |
+
+  El color de foco sobre el botón principal solo llegaba a 1,2:1. Se resolvió con `outline-offset: 2px`: el anillo queda sobre el fondo de la página o de la tarjeta, donde sí cumple.
+- **Estructura común:** enlace «saltar al contenido», cabecera con la navegación principal etiquetada (`aria-current` en la página activa), selector de idioma con su etiqueta y `<main id="main">`. Con `<base href="/">`, un enlace `#main` navegaría al inicio, así que el enlace mueve el foco a `<main>` por script.
+- **Idioma** (D-028): servicio `I18n` con signals; el diccionario tipado en `i18n/texts.ts` hace que falte una traducción sea un error de compilación. Cambiar de idioma actualiza `<html lang>` al momento y la elección se recuerda en `localStorage`. Los nombres de los idiomas van en su propio idioma («Español», «English»), con `lang` en cada opción.
+- **Navegación** (D-027): cada ruta declara su clave de página como `title` y una `TitleStrategy` propia lo convierte en «Nombre · Valdelumbre» en el idioma activo, también al cambiar de idioma. Tras cada navegación dentro de la app, el foco va al `<h1>` (`<app-page-heading>`, con `tabindex="-1"`); en la primera carga no, para que el lector empiece por arriba como en cualquier web.
+- Rutas `/`, `/pois`, `/pois/:id` y página «no encontrada». De momento las páginas solo tienen su título; se rellenan en los pasos 10.2 a 10.4.
+- TDD: primero `i18n/i18n.spec.ts` y `app.spec.ts`. Dos fallos iniciales eran del propio test (no registraba la estrategia de títulos y no hacía la navegación inicial de la app real); se ajustó el test para arrancar como la app.
+- `Makefile`: `make web`; `install`, `test`, `lint` y `format` cubren también la web (lint de angular-eslint y comprobación de Prettier). README actualizado (Node 22.22.3 y `make web`).
+- Verificado: `make check` limpio (270 tests del backend y 9 de la web), `ng build` de producción sin avisos.
+- Al probar `make web`, el CLI de Angular preguntó si se quería compartir estadísticas de uso. Esa pregunta bloquearía a quien arranque el proyecto sin terminal interactiva (Docker, CI o el evaluador), así que se desactivó en `angular.json` (`"cli": { "analytics": false }`).
+
+### Paso 10.2 · Listado `/pois` — 2026-11-25
+- TDD: primero `poi-filters.spec.ts` (los filtros en la URL), `poi-card.spec.ts` y `poi-list-page.spec.ts`, este con `RouterTestingHarness` y `HttpTestingController`, así que no hay peticiones reales. Datos de prueba comunes en `web/src/testing/poi-fixture.ts`, carpeta que se excluye del build de producción.
+- Ficheros nuevos, uno por responsabilidad:
+  - `pois/poi.ts`: tipos de la respuesta de la API, con los nombres del contrato (D-021);
+  - `pois/poi-filters.ts`: de la URL a los filtros y vuelta; un valor que no se entiende se ignora;
+  - `pois/pois-service.ts`: el único que usa `HttpClient` para los puntos;
+  - `pois/poi-card.ts`: `<app-poi-card>` (D-031);
+  - `clock.ts`: la hora actual, inyectable;
+  - `pages/poi-list/`: la página.
+- Detalles:
+  - Filtros en la URL: `?categoria=museo&accesible=false&abierto=ahora` (D-027); el botón Atrás deshace un cambio de filtro.
+  - `accesible=false` significa «solo no accesibles», no «cualquiera» (D-008); los puntos sin datos solo aparecen sin filtro.
+  - «Abierto ahora» envía la fecha y hora actuales en ISO con zona (`…Z`), que la API convierte a hora de Madrid (D-012). Comprobado a través del proxy con la hora real.
+  - Los datos se piden con `rxResource`, que vuelve a pedirlos cuando cambian los filtros o el idioma.
+  - Una región `role="status"` anuncia «Cargando puntos…», «N puntos encontrados», «Ningún punto cumple estos filtros» o el error de carga.
+  - La tarjeta da accesibilidad y «ahora» siempre en texto, con sus tres estados, y pone `lang` en el nombre cuando llega en otro idioma.
+  - En los `<select>`, la opción elegida se marca con `[selected]` en cada `<option>`: enlazar `[value]` en el `<select>` puede aplicarse antes de que existan las opciones del `@for`.
+- Dos fallos iniciales eran de sincronización del propio test: `rxResource` actualiza el valor de forma asíncrona, y `whenStable` espera también a las peticiones pendientes. Se ajustaron los tests; la página no cambió.
+- Verificado: `make check` limpio (270 tests del backend y 23 de la web), build de producción sin avisos.
+- Trello: marcados los criterios de pantalla de H2 (tarjeta en texto; filtro con teclado y número anunciado), H3 (filtro «abierto ahora» y estados de la tarjeta) y H4 (categorías traducidas; filtro en la URL). **H2, H3 y H4 completas → «Revisión».**
+
+### Paso 10.3 · Ficha `/pois/:id` — 2026-11-25
+- TDD: primero `pois/schedule-text.spec.ts` (el horario en palabras, es/en) y `pages/poi-detail/poi-detail-page.spec.ts`.
+- Ficheros nuevos:
+  - `pois/schedule-text.ts`: días ISO en palabras («martes a domingo», «viernes y sábado», «lunes, miércoles y viernes», «todos los días»), temporada («del 1 de junio al 30 de septiembre») y franja completa. Los tramos de tres días o más se leen como rango y los más cortos como lista;
+  - `pois/poi-labels.ts`: textos de accesibilidad y de «abierto ahora», que antes estaban en la tarjeta y ahora comparten tarjeta y ficha;
+  - `pois/not-found-error.ts`: distingue un 404 de otro error (los `rxResource` envuelven `HttpErrorResponse` y dejan el original en `cause`, comprobado en el código de Angular);
+  - `pages/poi-detail/`: la página.
+- La ficha tiene un enlace para volver al listado, el nombre en el `<h1>`, la descripción (ya limpia de la inyección), los datos, y el horario por franjas, «abierto siempre» o «Horario no disponible: consulta en la Oficina de Turismo» (D-009). Lleva `lang` en cada texto servido en otro idioma (D-015). Un punto inexistente da «Este punto no existe en el catálogo», distinto de un error de carga.
+- El `<h1>` es siempre el mismo elemento: primero dice «Ficha del punto» y luego el nombre. Si se cambiara de elemento al cargar, se perdería el foco que la navegación acaba de poner en él.
+- Título de la pestaña con el nombre del punto: un servicio `PageName` permite a una página dar su propio nombre, y la estrategia de títulos vuelve al nombre genérico en la siguiente navegación.
+- Error propio corregido: en la plantilla, la variable del bucle `slot` tapaba el método `slot()`; se renombró a `slotDescription()`.
+- Verificado: `make check` limpio (270 + 39 tests), build sin avisos.
+- Trello: H6 (descripción, horario, precio y accesibilidad; foco y título) y H5 (`lang="es"` en la pantalla; el selector cambia `lang` al momento, que tiene test desde el paso 10.1) completas → «Revisión».
+
+### Paso 10.4 · Pantalla del asistente `/` — 2026-11-25
+- El autor preguntó si el asistente usaría un LLM. La IA le recordó D-004 (sin LLM por defecto, generador detrás de una interfaz) y le planteó las ventajas e inconvenientes de añadirlo. **Decisión del autor:** terminar lo obligatorio y añadir el LLM opcional (H12) al final, si da tiempo.
+- TDD: primero `assistant/answer-text.spec.ts`, `http-error.spec.ts` y `pages/assistant/assistant-page.spec.ts`.
+- Ficheros:
+  - `assistant/assistant-service.ts`: `POST /api/preguntar` con `{pregunta, idioma}` → `{respuesta, ids}` (D-042);
+  - `assistant/answer-text.ts`: separa la introducción de las líneas «- …» para mostrarlas como una lista de verdad, y que el lector anuncie cuántos lugares hay en lugar de leer cada guion;
+  - `http-error.ts`: sustituye a `pois/not-found-error.ts`, porque ahora también hace falta leer el mensaje 422 de la API;
+  - `pages/assistant/`: la página.
+- La página:
+  - Formulario con etiqueta visible, pista con ejemplos (`aria-describedby`), un máximo de 500 caracteres y el botón «Preguntar».
+  - Región `role="status"` con «Buscando en el catálogo…», la respuesta, el mensaje 422 de la API tal cual (ya viene en el idioma pedido, D-039) o un mensaje propio si no hay conexión.
+  - Debajo, la sección «Puntos en los que se apoya la respuesta», con una tarjeta por id citado, pedida con `GET /pois/{id}`. Va fuera de la región anunciada, para no leer dos veces lo mismo.
+  - Preguntar dos veces lo mismo vuelve a preguntar.
+- Fallo de estructura que la IA vio al repasar la plantilla, y que los tests no cubrían: las tarjetas citadas llevaban `<h2>`, al mismo nivel que el encabezado de su sección. `<app-poi-card>` admite ahora `headingLevel` (2 en el listado, 3 en el asistente), con test.
+- En los tests, las peticiones de las tarjetas solo salen tras procesar la respuesta; un ayudante `pending()` espera a que aparezcan.
+- Verificado: `make check` limpio (270 tests del backend y 52 de la web), build sin avisos.
+- Trello: H7 completa (pantalla del asistente) → «Revisión». Solo queda en curso H10, la revisión de accesibilidad.
+
+### Paso 10.5 · Revisión de accesibilidad — 2026-11-25
+- Checklist de la skill `revisar-accesibilidad` aplicado a cada plantilla, y después un recorrido real en Chrome (modo oscuro) solo con teclado.
+- Dos hallazgos, corregidos con test primero:
+  - **El error de la pregunta no quedaba ligado al campo.** El 422 se anunciaba en la región de estado, pero el campo no decía que era incorrecto. Ahora lleva `aria-invalid="true"` y `aria-describedby` apunta también al mensaje, que se muestra en el color de error. Si el problema es de conexión, el campo no se marca: la pregunta no tiene la culpa.
+  - **Selector de idioma:** con el inglés guardado, al arrancar podía mostrar «Español». Es el mismo problema de `[value]` en el `<select>` del paso 10.2, y se resolvió igual, con `[selected]` en cada opción.
+- Comprobado en el navegador:
+  - el primer Tab muestra «Saltar al contenido», y Enter lleva el foco a `<main>`;
+  - el siguiente Tab llega a la caja de pregunta, Enter envía, se ve la respuesta y el Tab siguiente alcanza la primera tarjeta citada con el foco visible;
+  - Enter en la tarjeta abre la ficha con el foco en el `<h1>` y el título «Museo del Aceite · Valdelumbre»;
+  - en el listado se llega a los filtros en orden;
+  - con la pregunta vacía, el mensaje de la API aparece en rojo y el campo queda con `aria-invalid`.
+- **320 px:** la ventana no se podía redimensionar, así que se cargaron `/`, `/pois`, `/pois/poi-003` y `/pois/poi-012` en un iframe de 320 px. En ninguna hay scroll horizontal; la cabecera y los filtros pasan a una columna.
+- Ya cumplido de pasos anteriores: un único `<h1>` y jerarquía sin saltos (tarjetas en `<h3>` bajo la sección del asistente), landmarks, `lang` en el `<html>` y en los textos en otro idioma, `fieldset`/`legend` en los filtros, número de resultados anunciado, estados desconocidos en texto, contraste AA en los dos temas (paso 10.1) y `prefers-reduced-motion`.
+- **Sin comprobar por la IA:** el recorrido con VoiceOver, que necesita oírlo una persona. Lo hará el autor.
+- Verificado: `make check` limpio (270 tests del backend y 54 de la web).

@@ -1,0 +1,48 @@
+{
+  "name": "valdelumbre-web",
+  "version": "0.0.0",
+  "scripts": {
+    "ng": "ng",
+    "start": "ng serve",
+    "build": "ng build",
+    "watch": "ng build --watch --configuration development",
+    "test": "ng test --watch=false",
+    "lint": "ng lint",
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
+  },
+  "private": true,
+  "packageManager": "npm@10.9.9",
+  "dependencies": {
+    "@angular/common": "^22.3.0",
+    "@angular/compiler": "^22.3.0",
+    "@angular/core": "^22.3.0",
+    "@angular/forms": "^22.3.0",
+    "@angular/platform-browser": "^22.3.0",
+    "@angular/router": "^22.3.0",
+    "rxjs": "~7.8.0",
+    "tslib": "^2.3.0"
+  },
+  "devDependencies": {
+    "@angular/build": "^22.3.0",
+    "@angular/cli": "^22.3.0",
+    "@angular/compiler-cli": "^22.3.0",
+    "@eslint/js": "^10.0.1",
+    "@tailwindcss/postcss": "^4.1.12",
+    "@testing-library/angular": "^19.6.0",
+    "@testing-library/jest-dom": "^8.0.0",
+    "@testing-library/user-event": "^14.6.13",
+    "angular-eslint": "22.8.0",
+    "eslint": "^10.14.0",
+    "jsdom": "^31.0.0",
+    "postcss": "^8.5.3",
+    "prettier": "^3.8.1",
+    "tailwindcss": "^4.1.12",
+    "typescript": "~6.0.2",
+    "typescript-eslint": "8.72.2",
+    "vitest": "^5.0.0"
+  },
+  "engines": {
+    "node": ">=22.22.3"
+  }
+}

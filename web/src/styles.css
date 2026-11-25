@@ -1,0 +1,83 @@
+@import 'tailwindcss';
+
+/*
+ * Only these colour tokens exist (D-026): Tailwind's default palette is removed so no
+ * unchecked colour can slip in. Every pair used for text meets WCAG AA (4.5:1) and
+ * control borders and the focus ring meet 3:1, in both themes (D-030). Ratios: BITACORA, step 10.1.
+ */
+@theme {
+  --color-*: initial;
+  --font-sans: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+}
+
+@theme inline {
+  --color-page: var(--page);
+  --color-surface: var(--surface);
+  --color-text: var(--text);
+  --color-muted: var(--muted);
+  --color-primary: var(--primary);
+  --color-on-primary: var(--on-primary);
+  --color-control-border: var(--control-border);
+  --color-focus: var(--focus);
+  --color-error: var(--error);
+}
+
+:root {
+  --page: #faf7f2;
+  --surface: #ffffff;
+  --text: #1f1d1a;
+  --muted: #58524a;
+  --primary: #4b5d1c;
+  --on-primary: #ffffff;
+  --control-border: #857c6e;
+  --focus: #a4471a;
+  --error: #9f2a1d;
+  color-scheme: light dark;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --page: #1a1916;
+    --surface: #262420;
+    --text: #f3efe7;
+    --muted: #c2baab;
+    --primary: #b8cc7e;
+    --on-primary: #1a1916;
+    --control-border: #8f8778;
+    --focus: #f0a26f;
+    --error: #ff9d8f;
+  }
+}
+
+@layer base {
+  body {
+    background-color: var(--page);
+    color: var(--text);
+    font-family: var(--font-sans);
+  }
+
+  a {
+    color: var(--primary);
+    text-decoration: underline;
+    text-underline-offset: 2px;
+  }
+
+  /*
+   * One visible focus style for the whole app (D-026). The 2px offset keeps the ring on
+   * the page or card background: on the primary button itself it would only reach 1.2:1.
+   */
+  :focus-visible {
+    outline: 3px solid var(--focus);
+    outline-offset: 2px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

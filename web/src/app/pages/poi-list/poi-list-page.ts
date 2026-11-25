@@ -1,0 +1,70 @@
+import { Component, computed, inject } from '@angular/core';
+import { rxResource, toSignal } from '@angular/core/rxjs-interop';
+import { ActivatedRoute, Router } from '@angular/router';
+import { map } from 'rxjs';
+import { I18n } from '../../i18n/i18n';
+import { PageHeading } from '../../layout/page-heading';
+import { CATEGORIES, isCategory } from '../../pois/poi';
+import { PoiCard } from '../../pois/poi-card';
+import { PoiFilters, filtersFromQuery, filtersToQuery } from '../../pois/poi-filters';
+import { PoisService } from '../../pois/pois-service';
+
+@Component({
+  selector: 'app-poi-list-page',
+  imports: [PageHeading, PoiCard],
+  templateUrl: './poi-list-page.html',
+})
+export class PoiListPage {
+  protected readonly i18n = inject(I18n);
+  private readonly router = inject(Router);
+  private readonly route = inject(ActivatedRoute);
+  private readonly pois = inject(PoisService);
+
+  protected readonly categories = CATEGORIES;
+  protected readonly filters = toSignal(this.route.queryParamMap.pipe(map(filtersFromQuery)), {
+    requireSync: true,
+  });
+
+  protected readonly results = rxResource({
+    params: () => ({ filters: this.filters(), language: this.i18n.language() }),
+    stream: ({ params }) => this.pois.list(params.filters, params.language),
+  });
+
+  /** Announced politely after every change, so the result count is heard (role="status"). */
+  protected readonly status = computed(() => {
+    const texts = this.i18n.texts().poiList;
+    if (this.results.isLoading()) {
+      return texts.loading;
+    }
+    if (this.results.error()) {
+      return texts.loadError;
+    }
+    const count = this.results.hasValue() ? this.results.value().length : 0;
+    return count === 0 ? texts.none : texts.found(count);
+  });
+
+  protected chooseCategory(event: Event): void {
+    const value = selectedValue(event);
+    this.apply({ category: isCategory(value) ? value : null });
+  }
+
+  protected chooseAccessibility(event: Event): void {
+    const value = selectedValue(event);
+    this.apply({ accessible: value === 'true' ? true : value === 'false' ? false : null });
+  }
+
+  protected toggleOpenNow(event: Event): void {
+    this.apply({ openNow: (event.target as HTMLInputElement).checked });
+  }
+
+  private apply(change: Partial<PoiFilters>): void {
+    void this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams: filtersToQuery({ ...this.filters(), ...change }),
+    });
+  }
+}
+
+function selectedValue(event: Event): string {
+  return (event.target as HTMLSelectElement).value;
+}
