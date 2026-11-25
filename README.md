@@ -27,12 +27,12 @@ Asistente turístico para el pueblo (ficticio) de Valdelumbre:
 
 ## 1. Arranque rápido (un comando)
 
-⏳ Con Docker instalado y en marcha:
+Con Docker instalado y en marcha:
 
 ```bash
 git clone <url-del-repositorio> valdelumbre-asistente
 cd valdelumbre-asistente
-docker compose up --build
+docker compose up --build        # o, con make: make up
 ```
 
 Cuando termine de construir:
@@ -74,8 +74,6 @@ Puertos que deben estar libres: **8000** (API) y **8080** (web con Docker) o **4
 
 ## 3. Arranque paso a paso con Docker
 
-⏳
-
 ```bash
 # 1. Construir las imágenes y arrancar ambos servicios en primer plano
 docker compose up --build
@@ -93,8 +91,8 @@ open http://localhost:8080      # macOS · en Linux: xdg-open · en Windows: sta
 ```
 
 Qué levanta `docker-compose.yml`:
-- **`api`**: FastAPI con uvicorn en el puerto 8000. Lee `datos/pois.json` al arrancar, lo normaliza y escribe en el log los avisos de calidad de datos encontrados.
-- **`web`**: el build de Angular servido por nginx en el puerto 8080. nginx reenvía `/api/*` a la API (sin CORS).
+- **`api`** (`api/Dockerfile`): FastAPI con uvicorn en el puerto 8000, con las dependencias exactas de `uv.lock`. Lee `datos/pois.json`, que se monta **en solo lectura**, lo normaliza y escribe en el log los avisos de calidad de datos encontrados (`docker compose logs api`).
+- **`web`** (`web/Dockerfile`): el build de producción de Angular servido por nginx en el puerto 8080. nginx (`web/nginx/default.conf`) reenvía `/api/*` a la API, como el proxy de desarrollo, así que no hace falta CORS. Arranca cuando la API ya responde (healthcheck).
 
 ---
 
@@ -135,13 +133,13 @@ make eval      # evalúa el asistente con datos/evaluacion.json, en proceso
 make eval EVAL_URL=http://localhost:8000   # … o contra un servidor en marcha
 ```
 
-Comandos equivalentes sin `make` (⏳ los que aún no existen):
+Comandos equivalentes sin `make`:
 
 ```bash
 # Calidad y tests del backend
 cd api && uv run ruff check . && uv run mypy . && uv run pytest
 
-# Lint y tests del frontend ⏳
+# Lint y tests del frontend
 cd web && npm run lint && npm test
 
 # Evaluación del asistente con datos/evaluacion.json
@@ -212,14 +210,14 @@ Los filtros se combinan y la respuesta es una lista de puntos en el orden del ca
 
 ## 7. Configuración
 
-⏳ Todas las variables son opcionales. Se pueden poner en un fichero `.env` en la raíz (hay una plantilla en `.env.example`).
+Todas las variables son opcionales. Con Docker se ponen en un fichero `.env` en la raíz (plantilla: `cp .env.example .env`); sin Docker, como variables de entorno al arrancar la API. Las marcadas con ⏳ llegarán con el generador LLM opcional.
 
 | Variable | Por defecto | Para qué |
 |----------|-------------|----------|
-| `GENERADOR` | `plantilla` | `plantilla` (sin red) o `llm` |
-| `LLM_API_KEY` | — | Solo si `GENERADOR=llm` |
+| ⏳ `GENERADOR` | `plantilla` | `plantilla` (sin red) o `llm` |
+| ⏳ `LLM_API_KEY` | — | Solo si `GENERADOR=llm` |
 | `ZONA_HORARIA` | `Europe/Madrid` | Zona del pueblo para "abierto ahora" y temporadas ([D-011](docs/DECISIONES.md#d-011--temporadas-se-evalúan-con-la-fecha-actual-de-madrid)) |
-| `RUTA_POIS` | `datos/pois.json` | Ruta del catálogo |
+| `RUTA_POIS` | `datos/pois.json` | Ruta del catálogo. En Docker es fija: `datos/` se monta en el contenedor en solo lectura |
 
 ---
 
@@ -228,6 +226,7 @@ Los filtros se combinan y la respuesta es una lista de puntos en el orden del ca
 ```
 valdelumbre-asistente/
 ├── api/                    Backend (FastAPI)
+│   ├── Dockerfile
 │   ├── app/
 │   │   ├── data/           Carga del catálogo y avisos de calidad
 │   │   │   └── rules/      Una regla de normalización por módulo (precio, textos, coordenadas, duplicados)
@@ -236,6 +235,8 @@ valdelumbre-asistente/
 │   │   └── routes/         Endpoints: /pois, /pois/{id}, /preguntar
 │   └── tests/
 ├── web/                    Frontend (Angular)
+│   ├── Dockerfile          Build de Angular + nginx
+│   └── nginx/              Configuración de nginx (proxy /api y rutas de Angular)
 ├── scripts/
 │   └── evaluate.py         Pasa datos/evaluacion.json contra /preguntar
 ├── datos/                  Datos originales, SIN modificar
@@ -248,7 +249,8 @@ valdelumbre-asistente/
 │   ├── skills/             Procedimientos repetibles
 │   └── settings.json       Permisos (incluye el bloqueo de edición de datos/)
 ├── Makefile                Comandos del proyecto (`make` los lista)
-├── docker-compose.yml
+├── docker-compose.yml      Levanta api y web (make up)
+├── .env.example            Plantilla de configuración opcional
 ├── README.md               Este fichero
 ├── DATOS.md                Problemas en los datos y qué se ha hecho con cada uno
 └── IA.md                   Cómo se ha usado la IA

@@ -1,0 +1,24 @@
+services:
+  api:
+    build: ./api
+    ports:
+      - "8000:8000"
+    environment:
+      RUTA_POIS: /datos/pois.json
+      ZONA_HORARIA: ${ZONA_HORARIA:-Europe/Madrid}
+    volumes:
+      # Read-only: the catalogue is never modified, only normalised in memory.
+      - ./datos:/datos:ro
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/pois')"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  web:
+    build: ./web
+    ports:
+      - "8080:8080"
+    depends_on:
+      api:
+        condition: service_healthy

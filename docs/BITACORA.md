@@ -598,3 +598,22 @@ Con esto quedan cerradas todas las decisiones previas al código (D-001 a D-031)
 - Ya cumplido de pasos anteriores: un único `<h1>` y jerarquía sin saltos (tarjetas en `<h3>` bajo la sección del asistente), landmarks, `lang` en el `<html>` y en los textos en otro idioma, `fieldset`/`legend` en los filtros, número de resultados anunciado, estados desconocidos en texto, contraste AA en los dos temas (paso 10.1) y `prefers-reduced-motion`.
 - **Sin comprobar por la IA:** el recorrido con VoiceOver, que necesita oírlo una persona. Lo hará el autor.
 - Verificado: `make check` limpio (270 tests del backend y 54 de la web).
+
+### Paso 11 · Docker Compose — 2026-11-25 (rama `chore/docker`)
+- Objetivo del enunciado: arrancarlo con un comando. Ahora basta `docker compose up --build` (o `make up`): la web queda en http://localhost:8080 y la API en http://localhost:8000.
+- Ficheros:
+  - `api/Dockerfile`: `python:3.12-slim` y uv 0.5.9 (la misma versión que en local). Instala las dependencias de `uv.lock` sin las de desarrollo en una capa propia, para que un cambio de código no las reinstale.
+  - `web/Dockerfile`: dos etapas. `node:22-alpine` hace `npm ci` y el build de producción, y `nginx:1.27-alpine` sirve el resultado.
+  - `web/nginx/default.conf`: `/api/` se reenvía a `api:8000/` quitando el prefijo, igual que `proxy.conf.json` en desarrollo, y el resto vuelve a `index.html` para que funcionen las rutas de Angular al recargar (`/pois/poi-003`).
+  - `docker-compose.yml`: `datos/` se monta **en solo lectura**, para que el invariante «los datos no se modifican» lo garantice también el sistema de ficheros. La web espera a que la API pase el healthcheck.
+  - `.env.example`: por ahora solo `ZONA_HORARIA`; las variables del LLM llegarán con él.
+  - `.dockerignore` en `api/` y `web/`; `make up` y `make down` en el Makefile.
+- Verificado (en los puertos 18000 y 18080 con un override temporal, porque la API de desarrollo ocupaba el 8000):
+  - los dos contenedores quedan *healthy*;
+  - responden `GET /pois` (17 puntos), `/` y `/pois/poi-003` (Angular);
+  - a través de nginx funcionan `/api/pois/poi-003?idioma=en`, `/api/preguntar` y un 422 en inglés;
+  - el log de la API muestra los 7 avisos de datos;
+  - `touch /datos/x` dentro del contenedor falla por solo lectura;
+  - `make eval EVAL_URL=http://localhost:18000` da Oficial 6/6 · Estricto 6/6.
+- README: quitadas las marcas ⏳ de Docker y del frontend, y descritos los ficheros nuevos. Las variables del LLM siguen marcadas con ⏳.
+- Prueba desde un clon limpio (tras el commit `b86c9ca`): `git clone` de la rama desde GitHub en una carpeta temporal y `docker compose build --no-cache`. Los dos servicios quedan *healthy*, la API devuelve 17 puntos, nginx sirve `/pois/poi-003` y `/preguntar` responde. En el navegador, «¿Qué está abierto un lunes a las 12:00?» muestra la respuesta y las tarjetas.
