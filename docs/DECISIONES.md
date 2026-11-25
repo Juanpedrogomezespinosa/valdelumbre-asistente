@@ -57,6 +57,7 @@ Estados: ✅ aprobada · 🔄 revisada (enlaza a la que la sustituye) · ❌ des
 | [D-036](#d-036--commits-pequeños-con-push-al-terminar-cada-paso-que-funciona) | Commits pequeños con push al terminar cada paso que funciona | ✅ |
 | [D-037](#d-037--makefile-en-la-raíz-como-punto-de-entrada-de-los-comandos) | Makefile en la raíz como punto de entrada de los comandos | ✅ |
 | [D-038](#d-038--ficheros-pequeños-un-módulo-por-responsabilidad) | Ficheros pequeños: un módulo por responsabilidad | ✅ |
+| [D-039](#d-039--los-errores-422-se-escriben-en-el-idioma-pedido) | Los errores 422 se escriben en el idioma pedido | ✅ |
 
 ---
 
@@ -180,6 +181,7 @@ Estados: ✅ aprobada · 🔄 revisada (enlaza a la que la sustituye) · ❌ des
 - **Decisión:** `abierto_en=<día ISO 1-7>T<HH:MM>` (por ejemplo `abierto_en=1T12:00`). También se acepta una fecha y hora ISO completa (`2026-07-06T12:00`), que además resuelve temporadas. Un formato inválido devuelve 422 con un mensaje claro.
 - **Por qué:** es compacto, no depende del idioma (sin "lunes"/"monday") y reutiliza la convención ISO de D-010.
 - **Consecuencias:** "abierto ahora" en la pantalla envía la fecha y hora actuales completas.
+- **Concreción (2026-11-25):** una fecha y hora completa sin zona horaria (`2026-07-06T12:00`) se interpreta en hora de Madrid. Si trae zona (`2026-07-05T23:30:00+00:00`), se convierte a Madrid antes de evaluar, y con ella cambian el día de la semana y la temporada (en el ejemplo, lunes 6 a la 01:30). Con `1T12:00` la temporada se evalúa con la fecha de hoy del reloj inyectado (D-011). Un horario desconocido nunca aparece en el filtro (D-009).
 
 ## D-013 · Las coordenadas invertidas se corrigen con una regla genérica
 **Estado:** ✅ aprobada · 2026-11-24
@@ -406,3 +408,14 @@ Estados: ✅ aprobada · 🔄 revisada (enlaza a la que la sustituye) · ❌ des
 - **Por qué:** cada regla se lee entera de un vistazo, con sus constantes al lado, y se encuentra por su nombre. Los cambios en una regla no tocan las demás, y los diffs son más fáciles de revisar.
 - **Alternativas descartadas:** mantener un único fichero (crece con cada regla y mezcla responsabilidades).
 - **Consecuencias:** más ficheros, pero todos de entre 6 y 61 líneas. La refactorización no cambia el comportamiento: los 76 tests siguen pasando sin más cambios que los imports.
+
+## D-039 · Los errores 422 se escriben en el idioma pedido
+**Estado:** ✅ aprobada por el autor · 2026-11-25
+
+- **Contexto:** cuando un parámetro no era válido (`?categoria=playa`, `?idioma=fr`), FastAPI devolvía su 422 por defecto: una lista de errores de pydantic con mensajes en inglés. La regla del proyecto exige que los errores, que ve el usuario final, estén en el idioma pedido. También afectaba ya a `GET /pois/{id}`.
+- **Decisión:** un único manejador global de `RequestValidationError` (`api/app/routes/validation_errors.py`) sustituye esa respuesta por `{"detail": "<mensaje>"}`, una cadena con la misma forma que el 404. El idioma se toma de `?idioma`; si falta o no es válido, se usa el español. El mensaje nombra el parámetro y, cuando son pocos y fijos, sus valores posibles («El parámetro «categoria» no es válido. Valores posibles: monumento, museo, …»). El formato inválido de `abierto_en` (D-012) da un 422 con la misma forma, que explica con ejemplos los dos formatos aceptados.
+- **Por qué:** un mensaje útil y en el idioma del usuario se puede mostrar tal cual en la pantalla. Un solo manejador cubre todos los endpoints, también `/preguntar` cuando exista, sin repetir la lógica en cada ruta.
+- **Alternativas descartadas:**
+  - Conservar la lista de errores de FastAPI y traducir solo los mensajes: la pantalla tendría que recorrer una estructura técnica (`loc`, `type`) para mostrar una frase.
+  - Validar a mano cada parámetro como texto en la ruta: repite código en cada endpoint y pierde la documentación automática de `/docs`, con los valores enumerados.
+- **Consecuencias:** se pierde el detalle técnico del 422 estándar (ubicación y tipo de cada error), que solo es útil para depurar. Los valores posibles de cada parámetro están en una tabla del manejador, que habrá que ampliar si aparece un parámetro enumerado nuevo. Si no está en la tabla, el mensaje se da sin la lista de valores.

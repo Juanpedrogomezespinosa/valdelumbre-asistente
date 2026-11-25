@@ -3,9 +3,11 @@ from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
+from fastapi.exceptions import RequestValidationError
 
 from app.data.catalog import Catalog, load_catalog
 from app.routes import pois
+from app.routes.validation_errors import localized_validation_error
 from app.settings import catalog_path
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s:     %(name)s - %(message)s")
@@ -30,5 +32,9 @@ def _log_data_warnings(catalog: Catalog) -> None:
         )
 
 
-app = FastAPI(title="Valdelumbre · Asistente turístico", lifespan=lifespan)
+app = FastAPI(
+    title="Valdelumbre · Asistente turístico",
+    lifespan=lifespan,
+    exception_handlers={RequestValidationError: localized_validation_error},
+)
 app.include_router(pois.router)

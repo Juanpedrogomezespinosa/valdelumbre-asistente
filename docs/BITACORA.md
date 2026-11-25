@@ -386,3 +386,26 @@ Con esto quedan cerradas todas las decisiones previas al código (D-001 a D-031)
 - Comprobado también contra el servidor de desarrollo del autor (`make api`, con recarga automática): `GET /pois/poi-011?idioma=en` responde con las coordenadas corregidas y la accesibilidad desconocida.
 - Verificado: `make check` limpio, 110 tests (el único aviso es la deprecación conocida de `httpx`).
 - Trello: H6, criterios de API marcados y tarjeta en «En curso» (le falta la ficha en la pantalla). H5, criterio del fallback reescrito con la concreción de D-015 y marcado.
+
+### Paso 8.3 · `GET /pois` con filtros — 2026-11-25
+- Plan propuesto por la IA y aprobado por el autor con tres decisiones: 422 en el idioma pedido con un manejador global (D-039), `abierto_en` completo interpretado en hora de Madrid (concreción de D-012) y respuesta como lista sin envoltorio.
+- TDD: primero los tests y comprobación de que fallaban (faltaban los módulos). Después:
+  - `tests/test_poi_filter.py`: filtro del dominio con puntos construidos a mano. Accesibilidad tri-estado, horario desconocido nunca abierto, criterios combinados y día ISO inválido.
+  - `tests/test_open_at_param.py`: `1T12:00` con la fecha de hoy para las temporadas, fecha completa, fecha con zona convertida a Madrid y nueve formatos inválidos.
+  - `tests/test_poi_list_endpoint.py`: contra el catálogo real. Entre otros, q3 de la evaluación (lunes 12:00: incluye 001, 002, 005, 006 y 010 y excluye 003, 008 y 015), poi-014 cerrado en noviembre y abierto en julio, poi-013 fuera de `accesible=true` aunque su descripción diga lo contrario, y poi-004 ausente.
+  - `tests/test_validation_errors.py`: mensajes 422 en es/en, español si `idioma` no es válido (también en `/pois/{id}`) y explicación del formato de `abierto_en`.
+- Ficheros nuevos, uno por responsabilidad:
+  - `app/domain/opening_query.py`: el momento por el que se pregunta (día ISO, hora y fecha de referencia para las temporadas). `/preguntar` lo construirá a partir de la pregunta.
+  - `app/domain/poi_filter.py`: `PoiCriteria` y `filter_pois()`, la función única de filtrado que reutilizará `/preguntar` (D-005).
+  - `app/routes/open_at_param.py`: lectura del parámetro `abierto_en`. La forma día-hora se valida con una expresión regular estricta, porque `time.fromisoformat("12")` aceptaría una hora sin minutos.
+  - `app/routes/validation_errors.py`: el manejador de 422 de D-039.
+- Cambios: `app/routes/pois.py` (endpoint `GET /pois`), `app/routes/messages.py` (mensajes de 422) y `app/main.py` (registro del manejador).
+- Decisión D-039: Los errores 422 se escriben en el idioma pedido.
+- Decisión D-012: concreción sobre la zona horaria de `abierto_en`.
+- README, sección 6: los ejemplos de `/pois` ya no llevan ⏳ (verificados uno a uno; solo `/preguntar` sigue pendiente), con la nota sobre la combinación de filtros y los 422.
+- Comprobado también levantando el servidor en un puerto aparte: `abierto_en=1T12:00` con el reloj real (25-11-2026) da el mismo resultado que en los tests, y los tres 422 probados (`categoria=playa`, `abierto_en=lunes&idioma=en` e `idioma=fr`) responden con su mensaje.
+- Verificado: `make check` limpio, 145 tests (35 nuevos). El único aviso es la deprecación conocida de `httpx`.
+- **Para `IA.md`:** dos autocorrecciones de la IA antes de entregar.
+  - Para registrar el manejador había puesto un `# type: ignore` (Starlette tipa los manejadores con `Exception` genérica). Comprobó que era necesario y lo sustituyó por el parámetro `exception_handlers` del constructor de FastAPI, que acepta el tipo sin silenciar a mypy.
+  - El primer borrador del mensaje de error habría dejado un «Valores posibles: .» vacío para un parámetro fuera de la tabla. Ahora en ese caso se omite la lista.
+- Trello: H2, H3, H4 y H5 pasan a «En curso» y se marcan sus criterios de API (H2: `accesible=true` y tri-estado; H3: `abierto_en`, poi-018 y la temporada de poi-014; H4: filtro y 422 localizado; H5: `?idioma=en`). Siguen en «En curso» porque les faltan la pantalla y, en H2, H3 y H5, las preguntas de la evaluación vía `/preguntar`.
