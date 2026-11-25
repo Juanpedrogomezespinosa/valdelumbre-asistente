@@ -8,7 +8,7 @@ from fastapi.exceptions import RequestValidationError
 from app.data.catalog import Catalog, load_catalog
 from app.routes import ask, pois
 from app.routes.validation_errors import localized_validation_error
-from app.settings import catalog_path
+from app.settings import answer_generator_name, catalog_path, llm_model, ollama_url
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s:     %(name)s - %(message)s")
 logger = logging.getLogger("valdelumbre")
@@ -18,8 +18,20 @@ logger = logging.getLogger("valdelumbre")
 async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     catalog = load_catalog(catalog_path())
     _log_data_warnings(catalog)
+    _log_answer_generator()
     app.state.catalog = catalog
     yield
+
+
+def _log_answer_generator() -> None:
+    if answer_generator_name() == "llm":
+        logger.info(
+            "Answer generator: LLM %s at %s, falling back to the template",
+            llm_model(),
+            ollama_url(),
+        )
+    else:
+        logger.info("Answer generator: template (no network)")
 
 
 def _log_data_warnings(catalog: Catalog) -> None:

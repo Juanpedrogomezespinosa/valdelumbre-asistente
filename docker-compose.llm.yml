@@ -1,0 +1,35 @@
+# Optional: the assistant words its answers with a local model (D-048). No key, no account.
+#   docker compose -f docker-compose.yml -f docker-compose.llm.yml up --build   (or: make up-llm)
+# The first time it downloads the model (~2 GB); later starts reuse it.
+services:
+  ollama:
+    image: ollama/ollama:0.40.17
+    volumes:
+      - ollama-models:/root/.ollama
+    healthcheck:
+      test: ["CMD", "ollama", "list"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  # Downloads the model once and exits; the API starts only when it is there.
+  ollama-model:
+    image: ollama/ollama:0.40.17
+    environment:
+      OLLAMA_HOST: http://ollama:11434
+    entrypoint: ["ollama", "pull", "${LLM_MODELO:-qwen2.5:3b}"]
+    depends_on:
+      ollama:
+        condition: service_healthy
+
+  api:
+    environment:
+      GENERADOR: llm
+      LLM_MODELO: ${LLM_MODELO:-qwen2.5:3b}
+      OLLAMA_URL: http://ollama:11434
+    depends_on:
+      ollama-model:
+        condition: service_completed_successfully
+
+volumes:
+  ollama-models:

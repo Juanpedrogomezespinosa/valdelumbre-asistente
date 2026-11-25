@@ -726,3 +726,53 @@ Con esto quedan cerradas todas las decisiones previas al código (D-001 a D-031)
   - la ficha del castillo en tema claro, con el punto propio en verde y el mapa acercado;
   - sin scroll horizontal a 320 px (el mapa queda pequeño, limitación anotada en D-047).
 - `make check` limpio (270 tests del backend y 91 de la web) y build sin avisos.
+
+### Paso 14 · Generador LLM opcional (H12) — 2026-11-25
+- **Decisión del autor:** usar Claude. Preguntó si es gratis; la IA comprobó los precios en la referencia oficial antes de responder: es de pago por uso, de céntimos por pregunta, y la suscripción de Claude no incluye saldo de API. Decisión D-048, que concreta D-004.
+- Antes de escribir código, la IA leyó la referencia del SDK de Python (inicialización, errores, motivos de parada y salidas estructuradas). Comprobó además en el SDK instalado (2.14) que `messages.create` acepta `output_config` y qué clases de error existen.
+- TDD:
+  - `tests/test_llm_prompt.py`: el mensaje lleva la pregunta y los hechos estructurados, **nunca la descripción** (con la inyección de prueba), en el idioma pedido;
+  - `tests/test_llm_generator.py`: se usa la respuesta válida, y se vuelve a la plantilla con un id no recuperado, sin ids, con JSON inválido, con un campo que falta o si falla la API. Sin lugares recuperados no se llama al modelo;
+  - `tests/test_answer_generator_choice.py`: la plantilla por defecto y el LLM solo con `GENERADOR=llm`.
+- Ficheros:
+  - `app/assistant/llm_prompt.py`: prompt de sistema y mensaje JSON;
+  - `app/assistant/llm_generator.py`: `LlmAnswerGenerator`, `Completion` y `CompletionError`;
+  - `app/assistant/anthropic_completion.py`: el adaptador del SDK;
+  - `app/settings.py`: `GENERADOR` y `LLM_MODELO`;
+  - `routes/dependencies.py`: un cliente por proceso;
+  - `Interpretation.question`: el generador libre necesita la pregunta original;
+  - en `main.py`, el log de arranque dice qué generador está activo.
+- Configuración: en `docker-compose.yml` se pasan `GENERADOR`, `LLM_MODELO` y `ANTHROPIC_API_KEY`, vacía por defecto. Actualizados `.env.example` y la tabla del README (fuera las marcas ⏳; `LLM_API_KEY` pasa a `ANTHROPIC_API_KEY`).
+- Fallo propio corregido: ruff pidió el sufijo `Error` en la excepción (`CompletionFailed` → `CompletionError`).
+- Verificado:
+  - prueba de humo con el SDK real apuntando a un puerto local cerrado (`ANTHROPIC_BASE_URL=http://127.0.0.1:9`, sin salir a internet): el log dice `APIConnectionError` y la respuesta es la de la plantilla, con 200 y los mismos ids;
+  - 284 tests del backend, ruff y mypy limpios;
+  - la evaluación con la plantilla sigue en 6/6.
+- **Pendiente:** la prueba real con la clave del autor. Comparar la evaluación con `GENERADOR=llm` y revisar a mano el tono de las respuestas.
+
+### Paso 14.1 · Del LLM de pago al local (Ollama), y lo que enseñó la prueba real — 2026-11-25
+- **Corrección del autor:** «aún no hemos decidido nada sobre qué API usar ni LLM, quiero uno gratuito, que no haga falta meter tarjeta de crédito». **Para IA.md:** el autor solo había preguntado si Claude era gratis; la IA respondió que no y aun así lo implementó sin que él lo hubiera decidido. Error de la IA, que lo reconoció.
+- La IA comprobó en la web las opciones gratuitas: Gemini (capa gratuita, pero no se pudo confirmar si pide tarjeta), Groq (sin tarjeta según su foro, pero con cuenta y clave) y Ollama (local). El autor preguntó cuál era mejor, teniendo en cuenta que lo levantará el evaluador. La respuesta fue **Ollama dentro de Docker Compose**: sin cuenta, sin clave y sin tarjeta para nadie. **El autor lo aprobó** y pidió quitar Claude. D-048 se reescribió.
+- Cambios:
+  - fuera el SDK `anthropic` y su adaptador;
+  - `app/assistant/ollama_completion.py`: `/api/chat` con esquema JSON y `urllib`, sin dependencias nuevas, con el envío HTTP sustituible en los tests (5 tests);
+  - `docker-compose.llm.yml`: `ollama/ollama:0.40.17`, un paso que descarga el modelo una vez y la API con `GENERADOR=llm`, que espera a tener el modelo;
+  - `make up-llm`; `make down` para también estos servicios;
+  - `.env.example` (`LLM_MODELO`) y el README (nueva subsección de arranque, tabla de configuración y árbol).
+- **Prueba real** (Docker, proyecto aparte en los puertos 18000 y 18080; la descarga del modelo, 1,9 GB, fue rápida). Hubo dos rediseños:
+  1. **El modelo escribía la respuesta entera:**
+     - contestó «El único sitio accesible del pueblo es el Mirador del Alto», falso y justo la trampa de q5;
+     - citó 2 de 12 lugares abiertos;
+     - escribió «Plazas Mayor» y coló «(poi-003)» en el texto;
+     - tardaba de 3 a 18 s.
+
+     Validar los ids no bastaba. **Rediseño:** el LLM escribe solo la introducción, la lista y los ids los pone el código, y si la pregunta da por hecho un único lugar, responde siempre la plantilla.
+  2. **Con la introducción sola, el modelo inventaba el nombre del pueblo** («Valmundo», «Valmuel») y que «el Castillo permanece cerrado los lunes». **Añadido** `introduction_check.py`: todo nombre propio tiene que estar en la pregunta, en los lugares o ser «Valdelumbre» (7 tests). El prompt nombra el pueblo y la temperatura pasa a 0.
+  3. **Resultado:**
+     - introducciones naturales y sin nombres inventados (por ejemplo, «En Valdelumbre puedes hacer senderismo en la Ruta del Río Lumbre o disfrutar del Parque de la Alameda con tu familia.»);
+     - de 2 a 7 s por respuesta;
+     - **`make eval EVAL_URL=http://localhost:18000` da 6/6 oficial y 6/6 estricto con el LLM**;
+     - en la pantalla de Docker se ve bien.
+- **Riesgo que queda**, anotado en D-048: no se detecta una afirmación falsa sobre un lugar que sí está en la lista. Por eso la plantilla sigue siendo el valor por defecto.
+- Verificado: 300 tests del backend, ruff y mypy limpios, y la evaluación con la plantilla en 6/6.
+- Queda en Docker el volumen de la prueba, `valdelumbre-llm_ollama-models` (1,9 GB). Lo puede borrar el autor con `docker volume rm valdelumbre-llm_ollama-models`.

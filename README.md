@@ -90,6 +90,15 @@ curl http://localhost:8000/pois
 open http://localhost:8080      # macOS · en Linux: xdg-open · en Windows: start
 ```
 
+**Opcional: respuestas redactadas por un LLM local.** Sin clave, sin cuenta y sin tarjeta: usa [Ollama](https://ollama.com) dentro de Docker ([D-048](docs/DECISIONES.md#d-048--generador-llm-opcional-y-local-ollama-con-vuelta-a-la-plantilla)).
+
+```bash
+make up-llm
+# equivale a: docker compose -f docker-compose.yml -f docker-compose.llm.yml up --build
+```
+
+La primera vez descarga el modelo (`qwen2.5:3b`, unos 2 GB) y la API espera a tenerlo; las siguientes lo reutiliza. En el log de la API aparece `Answer generator: LLM …`. Si el modelo falla, tarda demasiado o cita algo que no se le dio, responde la plantilla, así que la pantalla funciona igual. Para pararlo: `make down`.
+
 Qué levanta `docker-compose.yml`:
 - **`api`** (`api/Dockerfile`): FastAPI con uvicorn en el puerto 8000, con las dependencias exactas de `uv.lock`. Lee `datos/pois.json`, que se monta **en solo lectura**, lo normaliza y escribe en el log los avisos de calidad de datos encontrados (`docker compose logs api`).
 - **`web`** (`web/Dockerfile`): el build de producción de Angular servido por nginx en el puerto 8080. nginx (`web/nginx/default.conf`) reenvía `/api/*` a la API, como el proxy de desarrollo, así que no hace falta CORS. Arranca cuando la API ya responde (healthcheck).
@@ -210,12 +219,13 @@ Los filtros se combinan y la respuesta es una lista de puntos en el orden del ca
 
 ## 7. Configuración
 
-Todas las variables son opcionales. Con Docker se ponen en un fichero `.env` en la raíz (plantilla: `cp .env.example .env`); sin Docker, como variables de entorno al arrancar la API. Las marcadas con ⏳ llegarán con el generador LLM opcional.
+Todas las variables son opcionales. Con Docker se ponen en un fichero `.env` en la raíz (plantilla: `cp .env.example .env`); sin Docker, como variables de entorno al arrancar la API.
 
 | Variable | Por defecto | Para qué |
 |----------|-------------|----------|
-| ⏳ `GENERADOR` | `plantilla` | `plantilla` (sin red) o `llm` |
-| ⏳ `LLM_API_KEY` | — | Solo si `GENERADOR=llm` |
+| `GENERADOR` | `plantilla` | `plantilla` (sin red) o `llm`: un modelo local redacta la respuesta con los mismos datos y, si falla o cita algo no recuperado, responde la plantilla ([D-048](docs/DECISIONES.md#d-048--generador-llm-opcional-y-local-ollama-con-vuelta-a-la-plantilla)). Con Docker lo pone `make up-llm` |
+| `OLLAMA_URL` | `http://localhost:11434` | Dónde está Ollama; solo con `GENERADOR=llm` |
+| `LLM_MODELO` | `qwen2.5:3b` | Modelo de Ollama; `qwen2.5:1.5b` es más pequeño y rápido |
 | `ZONA_HORARIA` | `Europe/Madrid` | Zona del pueblo para "abierto ahora" y temporadas ([D-011](docs/DECISIONES.md#d-011--temporadas-se-evalúan-con-la-fecha-actual-de-madrid)) |
 | `RUTA_POIS` | `datos/pois.json` | Ruta del catálogo. En Docker es fija: `datos/` se monta en el contenedor en solo lectura |
 
@@ -250,6 +260,7 @@ valdelumbre-asistente/
 │   └── settings.json       Permisos (incluye el bloqueo de edición de datos/)
 ├── Makefile                Comandos del proyecto (`make` los lista)
 ├── docker-compose.yml      Levanta api y web (make up)
+├── docker-compose.llm.yml  Añade el LLM local con Ollama (make up-llm)
 ├── .env.example            Plantilla de configuración opcional
 ├── README.md               Este fichero
 ├── DATOS.md                Problemas en los datos y qué se ha hecho con cada uno

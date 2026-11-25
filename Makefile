@@ -3,7 +3,7 @@ API_DIR := api
 WEB_DIR := web
 API_PORT ?= 8000
 
-.PHONY: help install api web up down test eval lint format check
+.PHONY: help install api web up up-llm down test eval lint format check
 
 help: ## Muestra los comandos disponibles
 	@grep -E '^[a-zA-Z_-]+:.*?## ' $(MAKEFILE_LIST) \
@@ -22,8 +22,11 @@ web: ## Levanta la web en http://localhost:4200 (necesita la API en marcha: make
 up: ## Construye y levanta todo con Docker: web en http://localhost:8080, API en :8000
 	docker compose up --build
 
+up-llm: ## Como `up`, pero el asistente redacta con un LLM local (Ollama; la primera vez descarga ~2 GB)
+	docker compose -f docker-compose.yml -f docker-compose.llm.yml up --build
+
 down: ## Para y elimina los contenedores de Docker
-	docker compose down
+	docker compose -f docker-compose.yml -f docker-compose.llm.yml down
 
 test: ## Ejecuta los tests del backend y del frontend
 	cd $(API_DIR) && uv run pytest

@@ -24,6 +24,8 @@ class Interpretation:
     keywords: frozenset[str]
     """Words left once the vocabulary is interpreted, to match place names."""
     asks_for_only_one: bool
+    question: str = ""
+    """The question as asked, for generators that write free text (D-048)."""
 
     @property
     def has_filters(self) -> bool:
@@ -46,6 +48,7 @@ def interpret(question: str, now: datetime) -> Interpretation:
         topics=topics_in(folded),
         keywords=_keywords(folded),
         asks_for_only_one=asks_for_only_one(folded),
+        question=question,
     )
 
 

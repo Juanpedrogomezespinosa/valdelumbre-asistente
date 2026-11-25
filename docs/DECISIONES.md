@@ -66,6 +66,7 @@ Estados: ✅ aprobada · 🔄 revisada (enlaza a la que la sustituye) · ❌ des
 | [D-045](#d-045--botón-para-elegir-modo-claro-u-oscuro) | Botón para elegir modo claro u oscuro | ✅ |
 | [D-046](#d-046--ilustración-por-categoría-y-ubicación-relativa-en-lugar-de-fotos-y-enlaces-a-mapas) | Ilustración por categoría y ubicación relativa, en lugar de fotos y enlaces a mapas | ✅ |
 | [D-047](#d-047--mapa-interactivo-con-vista-lista--mapa) | Mapa interactivo, con vista Lista / Mapa | ✅ |
+| [D-048](#d-048--generador-llm-opcional-y-local-ollama-con-vuelta-a-la-plantilla) | Generador LLM opcional y local (Ollama), con vuelta a la plantilla | ✅ |
 
 ---
 
@@ -594,3 +595,48 @@ Estados: ✅ aprobada · 🔄 revisada (enlaza a la que la sustituye) · ❌ des
   - El mapa mantiene la proporción 16:10 para no deformar las distancias, así que en un móvil de 320 px queda pequeño (unos 265×166 px). Se puede ampliar con dos dedos o con los botones.
   - La rueda sobre el mapa amplía en lugar de desplazar la página. Es lo esperado en un mapa, pero hay que saberlo.
 
+## D-048 · Generador LLM opcional y local (Ollama), con vuelta a la plantilla
+**Estado:** ✅ aprobada por el autor · 2026-11-25
+
+- **Contexto:**
+  - D-004 dejó el LLM como opcional, detrás de `AnswerGenerator`. Con lo obligatorio terminado, el autor decidió añadirlo.
+  - La IA lo implementó primero con Claude (API de pago) **sin que el autor lo hubiera elegido**: él solo había preguntado si era gratis. El autor lo corrigió: quiere algo **gratuito, sin tarjeta de crédito**, y que **el evaluador pueda levantarlo y entenderlo fácilmente**.
+  - El enunciado admite «un LLM con tu propia clave, uno local o ninguno».
+- **Decisión:**
+  - **Proveedor:** **Ollama en local**, con un modelo pequeño y abierto (por defecto `qwen2.5:3b`, unos 2 GB). Va en un fichero de Compose adicional, `docker-compose.llm.yml` (`make up-llm`):
+    - un servicio `ollama`;
+    - un paso `ollama-model` que descarga el modelo la primera vez;
+    - la API arranca con `GENERADOR=llm` cuando el modelo ya está.
+
+    `docker compose up` sigue igual: con la plantilla, rápido y sin red.
+  - **El LLM escribe solo la introducción** (una o dos frases). La lista de lugares y los ids citados los pone el código, igual que la plantilla: el modelo no puede omitir, cambiar de nombre ni añadir un lugar. Recibe la pregunta, el número de lugares y **los mismos hechos estructurados que la plantilla** (nombre, categoría, accesibilidad, temporadas y etiquetas). Nunca recibe las descripciones (D-043).
+  - **Si la pregunta da por hecho un único lugar y hay varios** (evaluación, q5), no se llama al modelo: la plantilla corrige la premisa de forma determinista.
+  - **La introducción se comprueba** y, si no se puede confiar en ella, responde la plantilla:
+    - salida con esquema JSON (`{introduccion}`), que Ollama impone al generar;
+    - no vacía, de 400 caracteres como máximo, sin saltos de línea ni ids;
+    - **todo nombre propio** (una palabra en mayúscula que no empieza frase) tiene que aparecer en la pregunta, en los nombres de los lugares recuperados o ser «Valdelumbre» (`introduction_check.py`);
+    - además se vuelve a la plantilla si Ollama no responde o tarda más de 90 s.
+  - **Sin lugares recuperados:** no se llama al modelo.
+  - **Diseño:**
+    - el generador recibe una función `Completion` (system, mensaje → JSON), así que los tests le pasan una falsa, sin red;
+    - el adaptador `ollama_completion` usa solo la biblioteca estándar (`urllib`), sin dependencias nuevas, y su envío HTTP también se puede sustituir en los tests;
+    - temperatura 0: reescribir, no adornar.
+- **Por qué:**
+  - **Ni cuentas, ni claves, ni tarjeta, para nadie.** Con una API gratuita (Groq, Gemini), el evaluador tendría que darse de alta y crear su propia clave, porque la del autor nunca puede ir en el repositorio.
+  - Todo queda en la máquina de quien lo ejecuta, y funciona sin red una vez descargado.
+  - El enunciado puntúa «lo que rodea» al modelo. El LLM no decide qué lugares se citan, solo cómo se dicen, y cualquier salida dudosa se descarta. Con la plantilla de respaldo, la respuesta con LLM nunca es peor que sin él.
+- **Alternativas descartadas:**
+  - **Claude (Anthropic):** se llegó a implementar y a probar sin red, pero es de pago. Se quitó por decisión del autor, junto con su SDK.
+  - **Groq:** tiene capa gratuita, pero necesita cuenta y clave, y las fuentes no coinciden sobre la tarjeta y los límites.
+  - **Gemini:** tiene capa gratuita, pero no se pudo confirmar si pide tarjeta, y sus límites solo se ven en AI Studio.
+  - **Dejar varios proveedores a la vez:** el cambio de proveedor ya lo demuestra la interfaz `Completion`, y un camino de pago que nadie usará solo añade ruido.
+- **Consecuencias:**
+  - `make up-llm` descarga unos 2 GB la primera vez.
+  - Docker en un Mac no usa la GPU, así que cada respuesta tarda unos segundos (medido en la bitácora).
+  - **Probado con el modelo real (`qwen2.5:3b`, Docker en un Mac, sin GPU):**
+    - en la primera versión el modelo escribía la respuesta entera: afirmó «El único sitio accesible del pueblo es el Mirador del Alto» (la trampa de q5), citó 2 de 12 lugares, cambió nombres («Plazas Mayor») y coló ids;
+    - con la introducción sola, seguía inventando el nombre del pueblo («Valmundo», «Valmuel»), lo que llevó a la comprobación de nombres propios;
+    - la versión final da 6/6 en la evaluación, con respuestas de 2 a 7 s.
+  - **Riesgo que queda:** la comprobación no detecta una afirmación falsa sobre un lugar que sí está en la lista (por ejemplo, decir que está cerrado). Por eso el LLM es opcional y la plantilla sigue siendo el valor por defecto. Un modelo mayor (`LLM_MODELO=qwen2.5:7b`) reduciría el riesgo, a cambio de más descarga y más tiempo.
+  - Con el LLM, la respuesta deja de ser determinista. La evaluación por defecto (`make eval`) sigue usando la plantilla; para evaluar el LLM se pasa `EVAL_URL` con la API levantada con `make up-llm`.
+  - El log de arranque dice qué generador está activo.

@@ -21,9 +21,14 @@ class TemplateAnswerGenerator:
         corrects_single_answer = interpretation.asks_for_only_one and len(pois) > 1
         lines = [
             texts.introduction(len(pois), corrects_single_answer, language),
-            *(_place_line(poi, language) for poi in pois),
+            *place_lines(pois, language),
         ]
         return Answer(text="\n".join(lines), poi_ids=tuple(poi.id for poi in pois))
+
+
+def place_lines(pois: Sequence[Poi], language: Language) -> list[str]:
+    """One "- name (facts)" line per place, from structured fields only."""
+    return [_place_line(poi, language) for poi in pois]
 
 
 def _place_line(poi: Poi, language: Language) -> str:
