@@ -67,6 +67,7 @@ Estados: ✅ aprobada · 🔄 revisada (enlaza a la que la sustituye) · ❌ des
 | [D-046](#d-046--ilustración-por-categoría-y-ubicación-relativa-en-lugar-de-fotos-y-enlaces-a-mapas) | Ilustración por categoría y ubicación relativa, en lugar de fotos y enlaces a mapas | ✅ |
 | [D-047](#d-047--mapa-interactivo-con-vista-lista--mapa) | Mapa interactivo, con vista Lista / Mapa | ✅ |
 | [D-048](#d-048--generador-llm-opcional-y-local-ollama-con-vuelta-a-la-plantilla) | Generador LLM opcional y local (Ollama), con vuelta a la plantilla | ❌ |
+| [D-049](#d-049--una-respuesta-vacía-dice-por-qué-está-vacía) | Una respuesta vacía dice por qué está vacía | ✅ |
 
 ---
 
@@ -646,3 +647,20 @@ Registro de la decisión tal como se tomó:
   - **Riesgo que queda:** la comprobación no detecta una afirmación falsa sobre un lugar que sí está en la lista (por ejemplo, decir que está cerrado). Por eso el LLM es opcional y la plantilla sigue siendo el valor por defecto. Un modelo mayor (`LLM_MODELO=qwen2.5:7b`) reduciría el riesgo, a cambio de más descarga y más tiempo.
   - Con el LLM, la respuesta deja de ser determinista. La evaluación por defecto (`make eval`) sigue usando la plantilla; para evaluar el LLM se pasa `EVAL_URL` con la API levantada con `make up-llm`.
   - El log de arranque dice qué generador está activo.
+
+## D-049 · Una respuesta vacía dice por qué está vacía
+**Estado:** ✅ aprobada por el autor · 2026-11-25
+
+- **Contexto:** al repasar el enunciado, el autor preguntó si el asistente respondía a cualquier pregunta o solo a las de la evaluación. La IA probó preguntas nuevas y vio que «Quiero ver monumentos que sean accesibles» respondía «No tengo información sobre eso». La búsqueda era correcta, porque en el catálogo no hay ningún monumento accesible, pero el mensaje confundía «ningún lugar cumple lo que pides» con «no entiendo la pregunta». Lo mismo ocurría con «¿Es accesible el castillo?», la limitación ya anotada en D-043.
+- **Decisión:** cuando no se recupera nada, `empty_answer` distingue tres casos, y en ninguno se cita un id:
+  1. **Se entendieron filtros y ningún lugar los cumple:** «Ningún lugar del catálogo cumple todo lo que buscas (monumento · accesible).», con lo entendido entre paréntesis (categorías, accesible, día y hora).
+  2. **La pregunta nombra un lugar que no cumple los filtros:** «En el catálogo no consta que Castillo de Valdelumbre cumpla lo que buscas (accesible).» Se dice «no consta» y no «no es», porque el dato puede ser desconocido (el Puente Romano tiene la accesibilidad a `null`).
+  3. **No se entendió nada:** el «No tengo información sobre eso…» de siempre (q6 no cambia).
+- **Por qué:**
+  - Repetir lo entendido muestra al visitante cómo se interpretó su pregunta, y así puede reformularla.
+  - Distinguir «no hay» de «no sé» es una forma de no inventar: los dos son ciertos, pero dicen cosas distintas.
+- **Alternativas descartadas:**
+  - Responder «no, no es accesible» para un lugar nombrado: con `accesible = null` sería falso.
+  - Citar el lugar nombrado para mostrar su tarjeta: no se recuperó, y el invariante dice que solo se cita lo recuperado.
+- **Consecuencias:** las preguntas fuera del vocabulario cerrado («algo para un día de lluvia») siguen en el caso 3. Interpretarlas mejor queda para «qué haría con más tiempo».
+

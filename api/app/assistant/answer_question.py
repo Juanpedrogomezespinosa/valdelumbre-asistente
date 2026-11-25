@@ -3,8 +3,9 @@ from dataclasses import replace
 from datetime import datetime
 
 from app.assistant.answer import Answer, AnswerGenerator
+from app.assistant.empty_answer import empty_answer
 from app.assistant.interpretation.interpretation import interpret
-from app.assistant.retrieval import retrieve
+from app.assistant.retrieval import named_places, retrieve
 from app.domain.localized_text import Language
 from app.domain.poi import Poi
 
@@ -19,6 +20,8 @@ def answer_question(
     """Interpret, retrieve with the shared filters and generate, in that order (D-005)."""
     interpretation = interpret(question, now)
     retrieved = retrieve(pois, interpretation)
+    if not retrieved:
+        return empty_answer(interpretation, named_places(pois, interpretation), language)
     answer = generator.generate(interpretation, retrieved, language)
     return _citing_only(retrieved, answer)
 

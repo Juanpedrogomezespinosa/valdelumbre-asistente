@@ -29,6 +29,12 @@ def retrieve(pois: Sequence[Poi], interpretation: Interpretation) -> list[Poi]:
     return sorted(relevant, key=lambda poi: scores[poi.id], reverse=True)
 
 
+def named_places(pois: Sequence[Poi], interpretation: Interpretation) -> list[Poi]:
+    """The places the question names, wherever they are in the catalog."""
+    named = _named_places(pois, interpretation.keywords)
+    return [poi for poi in pois if poi.id in named]
+
+
 def _topic_score(poi: Poi, topics: frozenset[str]) -> int:
     themes = {fold(tag) for tag in poi.tags} | {poi.category.value}
     return len(topics & themes)

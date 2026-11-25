@@ -790,3 +790,21 @@ Con esto quedan cerradas todas las decisiones previas al código (D-001 a D-031)
   - la subsección y las variables del README.
 - **Para IA.md:** el experimento entero (Claude sin decidir → Ollama → dos rediseños tras la prueba real → descartado) es un buen ejemplo de qué se corrigió o se descartó y por qué. El código queda en el historial (`bdae57e`).
 - Verificado: 270 tests del backend, ruff y mypy limpios, y la evaluación en 6/6.
+
+### Paso 15 · Respuestas vacías que dicen por qué — 2026-11-25
+- **Contexto:** el autor repasó el enunciado con varias preguntas: si el asistente responde a cualquier pregunta o solo a las de la evaluación, si el mapa es usable con teclado y lector, si hay demasiados tests y si el script de evaluación está hecho.
+  - La IA probó 9 preguntas que no están en la evaluación: 5 bien, 3 mejorables y 1 fuera del vocabulario («algo para un día de lluvia»).
+  - Una de las mejorables parecía un fallo: «Quiero ver monumentos que sean accesibles» devolvía «No tengo información». Al investigarlo resultó que la búsqueda era correcta (el catálogo no tiene monumentos accesibles) y que lo engañoso era el mensaje.
+- **El autor aprobó la mejora.** Decisión D-049.
+- TDD:
+  - `tests/test_empty_answer.py`, 7 casos: filtros sin resultado en es/en, varias categorías con día y hora, lugar nombrado en es/en, y nada entendido;
+  - dos casos nuevos en `test_ask_endpoint.py` con el catálogo real.
+- Código:
+  - `app/assistant/empty_answer.py`, nuevo;
+  - `retrieval.named_places()`: los lugares nombrados, buscados en todo el catálogo;
+  - `answer_question`: si no se recupera nada, responde `empty_answer` en lugar del generador.
+- Error propio corregido: ruff marcó el orden de los imports.
+- Verificado con preguntas reales:
+  - «¿Qué museos abren el lunes?» → «Ningún lugar del catálogo cumple todo lo que buscas (museo · abierto el lunes).» Se contrastó con `GET /pois?categoria=museo&abierto_en=1T12:00`: los tres museos cierran los lunes;
+  - «¿Es accesible el puente romano?» → «no consta», porque su dato es desconocido.
+- 279 tests del backend, ruff y mypy limpios, y la evaluación en 6/6 (q6 sigue diciendo «No tengo información»).
