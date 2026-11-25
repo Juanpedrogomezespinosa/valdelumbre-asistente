@@ -58,6 +58,9 @@ Estados: ✅ aprobada · 🔄 revisada (enlaza a la que la sustituye) · ❌ des
 | [D-037](#d-037--makefile-en-la-raíz-como-punto-de-entrada-de-los-comandos) | Makefile en la raíz como punto de entrada de los comandos | ✅ |
 | [D-038](#d-038--ficheros-pequeños-un-módulo-por-responsabilidad) | Ficheros pequeños: un módulo por responsabilidad | ✅ |
 | [D-039](#d-039--los-errores-422-se-escriben-en-el-idioma-pedido) | Los errores 422 se escriben en el idioma pedido | ✅ |
+| [D-040](#d-040--el-asistente-interpreta-las-preguntas-con-un-vocabulario-cerrado) | El asistente interpreta las preguntas con un vocabulario cerrado | ✅ |
+| [D-041](#d-041--el-filtro-admite-varias-categorías-y-días-completos) | El filtro admite varias categorías y días completos | ✅ |
+| [D-042](#d-042--preguntar-devuelve-solo-respuesta-e-ids) | `/preguntar` devuelve solo `respuesta` e `ids` | ✅ |
 
 ---
 
@@ -420,3 +423,35 @@ Estados: ✅ aprobada · 🔄 revisada (enlaza a la que la sustituye) · ❌ des
   - Validar a mano cada parámetro como texto en la ruta: repite código en cada endpoint y pierde la documentación automática de `/docs`, con los valores enumerados.
 - **Consecuencias:** se pierde el detalle técnico del 422 estándar (ubicación y tipo de cada error), que solo es útil para depurar. Los valores posibles de cada parámetro están en una tabla del manejador, que habrá que ampliar si aparece un parámetro enumerado nuevo. Si no está en la tabla, el mensaje se da sin la lista de valores.
 - **Concreción (2026-11-25):** el formato `{"detail": "…"}` se declara también en la documentación OpenAPI (esquema `ErrorResponse`, para el 422 de todas las rutas de `/pois` y el 404 del detalle). Sin esa declaración, `/docs` seguía anunciando el 422 por defecto de FastAPI, que la API ya no devuelve. Un router nuevo, como el de `/preguntar`, debe declararlo igual.
+
+## D-040 · El asistente interpreta las preguntas con un vocabulario cerrado
+**Estado:** ✅ aprobada por el autor · 2026-11-25
+
+- **Contexto:** sin LLM (D-004), hay que convertir la pregunta en filtros estructurados (D-005) de forma determinista, en español y en inglés.
+- **Decisión:** `api/app/assistant/interpretation/`, un módulo por tipo de señal. Todos trabajan sobre el texto sin tildes ni mayúsculas y reconocen frases completas:
+  - **Accesibilidad** («silla de ruedas», «wheelchair»…) → `accesible = true`. Nunca se lee de etiquetas ni de descripciones.
+  - **Categoría**, solo para palabras que nombran un tipo de lugar («museos», «restaurant»…). «Al aire libre» / «outdoors» equivale a naturaleza, ruta y espacio público. Son filtros estrictos.
+  - **Temas**, que corresponden a las etiquetas del catálogo («niños»/«kids» → `familias`, «vino»/«winery» → `vino`…). Ordenan los resultados, no los excluyen.
+  - **Momento**: día de la semana, hora (`12:00`, `9.30`, `17h`, `5pm`, «a las 5 de la tarde», «mediodía»), «ahora» y «hoy». Sin día se usa hoy; sin hora, «en algún momento de ese día» (D-041). La temporada se evalúa con la fecha de hoy (D-011).
+  - **«Único» / «the only»**: indica que la pregunta da por hecho una sola respuesta, para que la respuesta corrija esa premisa (q5, D-006).
+  - **Palabras clave**: lo que queda tras quitar el vocabulario interpretado, las palabras cortas y el nombre del pueblo. Se usan para reconocer nombres de lugares («castillo»).
+- **Por qué:** es determinista, se puede probar caso a caso (61 tests) y no se puede manipular desde el catálogo. Una palabra desconocida no activa nada, y así q6 («tirolina») acaba en «no lo sé» en lugar de en una respuesta inventada.
+- **Alternativas descartadas:** búsqueda difusa o por similitud (devolvería siempre algo, aunque no tenga relación, y rompería q6); LLM para interpretar (D-004).
+- **Consecuencias:** solo se entiende lo que está en el vocabulario. **Límite conocido:** si la pregunta combina un filtro reconocido con un requisito desconocido («museos con tirolina»), se responde con los museos, porque no hay forma fiable de saber que la palabra desconocida es un requisito. Queda para «qué haría con más tiempo».
+
+## D-041 · El filtro admite varias categorías y días completos
+**Estado:** ✅ aprobada por el autor · 2026-11-25
+
+- **Contexto:** «al aire libre» equivale a varias categorías. Sin esto, en q2 se colaría poi-015, un museo con la etiqueta `naturaleza`. Además, «¿qué abre el domingo?» trae día pero no hora.
+- **Decisión:** `PoiCriteria.categories` es un conjunto (cualquiera de ellas vale) y `OpeningQuery.at` puede ser `None`, que significa «abre en algún momento de ese día» (`Schedule.opens_on`). Un horario desconocido sigue sin contar nunca como abierto (D-009).
+- **Por qué:** `/preguntar` y `GET /pois` siguen usando la misma función de filtrado (D-005). El contrato de `GET /pois` no cambia: pasa un conjunto de una sola categoría y su `abierto_en` siempre trae hora (D-012).
+- **Consecuencias:** se cambió la firma de `PoiCriteria` en el dominio y sus tests; la API no cambia.
+
+## D-042 · `/preguntar` devuelve solo `respuesta` e `ids`
+**Estado:** ✅ aprobada por el autor · 2026-11-25
+
+- **Contexto:** la IA propuso añadir un campo `puntos` con las fichas de los ids citados, para que la pantalla no tuviera que pedirlas una a una. El autor pidió seguir el enunciado al pie de la letra.
+- **Decisión:** `POST /preguntar` devuelve exactamente lo que pide el enunciado: la respuesta en texto (`respuesta`) y los ids en los que se apoya (`ids`). La pantalla pide las fichas con `GET /pois/{id}`.
+- **Por qué:** el contrato lo fija el enunciado, y un campo de más es algo que el evaluador no ha pedido y tendría que entender.
+- **Alternativas descartadas:** incluir `puntos` (amplía el contrato sin que el enunciado lo pida).
+- **Consecuencias:** la pantalla hace una petición por cada punto citado, como mucho una por punto del catálogo.

@@ -417,3 +417,23 @@ Con esto quedan cerradas todas las decisiones previas al código (D-001 a D-031)
 - D-039: añadida la concreción.
 - Verificado: `make check` limpio, 149 tests.
 - **Para `IA.md`:** la IA no detectó la incoherencia al implementar D-039; la encontró después, al revisar la captura de `/docs` que el autor compartió durante la prueba manual. Lección: un cambio en el formato de respuesta se comprueba también en el contrato publicado, no solo en los tests de comportamiento.
+
+---
+
+## Paso 9 · `feat/assistant` — 2026-11-25
+- `feat/api-routes` fusionada en `main` por el autor (`--no-ff`, `e6facb4`), tras probar la API a mano en `/docs` y con una batería de 14 comprobaciones contra su servidor (14/14). Se abre `feat/assistant`.
+- Plan propuesto por la IA. El autor lo aprobó con una pauta general: decidir lo técnico siempre que se siga el enunciado al pie de la letra, anotarlo todo y redactar juntos al final el README y las decisiones. Pasos: 9.1 interpretación de preguntas; 9.2 recuperación, generador y servicio; 9.3 `POST /preguntar`; 9.4 script de evaluación.
+- Trello: H7, H8 y H9 → «En curso».
+
+### Paso 9.1 · Interpretación de preguntas — 2026-11-25
+- Preparación:
+  - `refactor`: `app/data/folding.py` pasa a `app/domain/text_folding.py`, porque el asistente la necesita y no debe depender de la capa de datos (`routes → assistant → domain ← data`). Sin cambios de comportamiento.
+  - Dominio (D-041), con los tests primero: `PoiCriteria.categories` (conjunto), `OpeningQuery.at` opcional y `Schedule.opens_on()` para «abre en algún momento de ese día». `GET /pois` no cambia.
+- TDD de la interpretación (D-040): primero los tests, uno por señal (`test_interpret_accessibility.py`, `_categories.py`, `_topics.py`, `_opening_time.py`) y uno de composición con las seis preguntas de la evaluación (`test_interpretation.py`). Después, `app/assistant/interpretation/`:
+  - `phrases.py`: búsqueda de frases completas;
+  - `accessibility.py`, `categories.py`, `topics.py`, `opening_time.py` y `only_one.py`, uno por señal;
+  - `interpretation.py`: `interpret(pregunta, ahora)` → criterios, temas, palabras clave e indicador de «único».
+- Comprobación con el catálogo real: q1, q3 y q5 ya dan con el filtro los ids esperados; q2 deja cinco candidatos al aire libre, que el tema `familias` reducirá a 007 y 012 en el paso 9.2; q4 se resuelve con el tema `vino`; q6 no tiene ninguna señal (→ «no lo sé»).
+- Decisiones D-040, D-041 y D-042.
+- Verificado: `make check` limpio, 214 tests.
+- **Para `IA.md`:** la IA propuso añadir `puntos` a la respuesta de `/preguntar`. Ante la pauta del autor de seguir el enunciado al pie de la letra, lo descartó ella misma (D-042).

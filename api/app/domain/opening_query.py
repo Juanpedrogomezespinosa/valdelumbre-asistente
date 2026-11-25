@@ -6,10 +6,13 @@ from app.domain.schedule import ISO_WEEKDAYS
 
 @dataclass(frozen=True)
 class OpeningQuery:
-    """A moment to check opening hours at; `reference_date` only decides seasons (D-011)."""
+    """When to check opening hours. Without `at`, any time that day counts.
+
+    `reference_date` only decides seasons (D-011).
+    """
 
     weekday: int
-    at: time
+    at: time | None
     reference_date: date
 
     def __post_init__(self) -> None:

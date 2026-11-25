@@ -38,9 +38,12 @@ class TimeSlot:
         if self.closes <= self.opens:
             raise ValueError(f"A slot must close after it opens: {self.opens}-{self.closes}")
 
-    def covers(self, weekday: int, at: time, reference_date: date) -> bool:
+    def applies_on(self, weekday: int, reference_date: date) -> bool:
         in_season = self.season is None or self.season.includes(reference_date)
-        return in_season and weekday in self.weekdays and self.opens <= at < self.closes
+        return in_season and weekday in self.weekdays
+
+    def covers(self, weekday: int, at: time, reference_date: date) -> bool:
+        return self.applies_on(weekday, reference_date) and self.opens <= at < self.closes
 
 
 @dataclass(frozen=True)
@@ -63,3 +66,11 @@ class Schedule:
         if not self.is_known:
             return None
         return any(slot.covers(weekday, at, reference_date) for slot in self.slots)
+
+    def opens_on(self, weekday: int, reference_date: date) -> bool | None:
+        """Whether it opens at some time that day; None when the hours are unknown (D-009)."""
+        if self.always_open:
+            return True
+        if not self.is_known:
+            return None
+        return any(slot.applies_on(weekday, reference_date) for slot in self.slots)

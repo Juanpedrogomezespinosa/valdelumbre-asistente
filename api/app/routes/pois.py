@@ -35,7 +35,7 @@ def list_pois(
 ) -> list[PoiResponse]:
     now = clock()
     criteria = PoiCriteria(
-        category=categoria,
+        categories=None if categoria is None else {categoria},
         accessible=accesible,
         open_at=None if abierto_en is None else _opening_query(abierto_en, now, idioma),
     )
