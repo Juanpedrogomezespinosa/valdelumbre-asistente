@@ -1,8 +1,8 @@
 from collections.abc import Sequence
 
-from app.data.folding import fold
 from app.data.quality import DataWarning, WarningKind
 from app.domain.poi import Poi
+from app.domain.text_folding import fold
 
 # Four decimals is about 11 m: two records closer than that describe the same place.
 _SAME_PLACE_DECIMALS = 4
