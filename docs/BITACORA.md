@@ -477,3 +477,20 @@ Con esto quedan cerradas todas las decisiones previas al código (D-001 a D-031)
 - Trello: en H7, marcados «`POST /preguntar` devuelve `{respuesta, ids}`» y «pregunta vacía o demasiado larga → 422».
 - **Corrección tras la revisión del autor en `/docs`:** el ejemplo del 422 venía fijado en el esquema `ErrorResponse` («El parámetro «categoria» no es válido…») y se mostraba también en `/preguntar`, que no tiene ese parámetro. Al revisarlo apareció el mismo problema en `GET /pois/{poi_id}`, que lo heredaba del router y solo admite `idioma`. Ahora cada ruta declara su propio ejemplo en `app/routes/error_responses.py`, generado con las mismas funciones de `messages.py` que usa la API, para que no se desincronicen. Test nuevo en `test_openapi_errors.py`. Los casos 2 a 9 de la prueba manual se lanzaron con un script contra el servidor del autor: 8/8. Verificado: `make check` limpio, 260 tests.
 - **Para `IA.md`:** segunda vez que la revisión visual de `/docs` encuentra un error que los tests de comportamiento no veían (la primera fue en el paso 8.4). La IA añadió tests sobre `/openapi.json` en ambos casos.
+
+### Paso 9.4 · Script de evaluación — 2026-11-25
+- TDD: primero `api/tests/test_evaluate_script.py`, que carga `scripts/evaluate.py` por su ruta (el script no forma parte del paquete `app`). Cubre los dos criterios de D-016, los ids que faltan o sobran, el código de salida (0, 1 y 2) y la evaluación completa en proceso (6/6 y 6/6), que así queda como test de regresión dentro de `make test`. El caso de servidor caído se prueba simulando el error de conexión, sin red.
+- `scripts/evaluate.py`: modo en proceso por defecto (el `TestClient` de la propia app) y `--url` para un servidor; `--evaluacion` para otro fichero de preguntas. Concreción de D-016 sobre los códigos de salida y el reloj.
+- Al probarlo a mano aparecieron dos problemas, corregidos:
+  - El informe quedaba enterrado bajo los logs de la API y el aviso de `httpx`. Ahora se silencian solo durante la evaluación en proceso. El aviso de Starlette hereda de `UserWarning` (comprobado), así que se filtra por su mensaje exacto y no por categoría, para no ocultar otros avisos.
+  - Con el servidor apagado salía una traza de Python. Ahora sale un mensaje claro y el código 2.
+- `Makefile`: `make eval` (en proceso) y `make eval EVAL_URL=…`; `lint` y `format` cubren también `scripts/`.
+- Comprobado: `make eval` → Oficial 6/6 · Estricto 6/6; `make eval EVAL_URL=http://localhost:8000` contra el servidor del autor → 6/6 · 6/6; `--url` con un puerto sin servidor → mensaje y código 2.
+- README, sección 5: `make eval`, la salida real (✔/✘, no ✅/❌ como decía antes) y los códigos de salida.
+- Verificado: `make check` limpio, 270 tests.
+- Trello:
+  - T2 completa → «Revisión».
+  - Con la evaluación a 6/6 se marcan los criterios «qN acierta» de H2 (q1), H3 (q3), H5 (q2) y H7 (q1–q4), y el de q6 estricto de H8.
+  - H8 completa → «Revisión».
+  - H9 → «Revisión» con 4/5. El quinto criterio solo aplica si se usa un LLM (no es el caso, D-004); está explicado en un comentario de la tarjeta.
+  - H2, H3, H5 y H7 siguen «En curso»: les falta la pantalla.

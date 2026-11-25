@@ -219,6 +219,7 @@ Estados: ✅ aprobada · 🔄 revisada (enlaza a la que la sustituye) · ❌ des
 - **Decisión:** una pregunta acierta si `incluye ⊆ citados` y `excluye ∩ citados = ∅`. El script añade un **criterio estricto** propio: si ambas listas están vacías y la pregunta no tiene respuesta en el catálogo, no se debe citar nada. Se informa de los dos marcadores por separado.
 - **Por qué:** el criterio oficial se respeta tal cual; el estricto mide justo lo que q6 pretende evaluar, que es no inventar.
 - **Consecuencias:** el script se puede ejecutar contra el servidor por HTTP (`--url`) o en proceso, sin levantar nada.
+- **Concreción (2026-11-25):** el código de salida es 1 si alguna pregunta falla el criterio estricto (que incluye el oficial) y 2 si no se puede conectar con el servidor de `--url`. En proceso se usa la hora real de Madrid, como un turista, y se silencian los logs de la API para que el informe se lea de un vistazo (los avisos de datos ya se ven al arrancar el servidor).
 
 ## D-017 · Stack tecnológico
 **Estado:** ✅ aprobada · 2026-11-24
