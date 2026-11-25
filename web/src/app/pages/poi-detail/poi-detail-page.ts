@@ -8,7 +8,7 @@ import { PageName } from '../../navigation/page-titles';
 import { ServedText, Slot } from '../../pois/poi';
 import { accessibilityText, openNowText } from '../../pois/poi-labels';
 import { PoisService } from '../../pois/pois-service';
-import { isNotFound } from '../../pois/not-found-error';
+import { isNotFound } from '../../http-error';
 import { slotText } from '../../pois/schedule-text';
 
 @Component({

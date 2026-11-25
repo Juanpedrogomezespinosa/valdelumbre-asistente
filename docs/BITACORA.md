@@ -564,3 +564,21 @@ Con esto quedan cerradas todas las decisiones previas al código (D-001 a D-031)
 - Error propio corregido: en la plantilla, la variable del bucle `slot` tapaba el método `slot()`; se renombró a `slotDescription()`.
 - Verificado: `make check` limpio (270 + 39 tests), build sin avisos.
 - Trello: H6 (descripción, horario, precio y accesibilidad; foco y título) y H5 (`lang="es"` en la pantalla; el selector cambia `lang` al momento, que tiene test desde el paso 10.1) completas → «Revisión».
+
+### Paso 10.4 · Pantalla del asistente `/` — 2026-11-25
+- El autor preguntó si el asistente usaría un LLM. La IA le recordó D-004 (sin LLM por defecto, generador detrás de una interfaz) y le planteó las ventajas e inconvenientes de añadirlo. **Decisión del autor:** terminar lo obligatorio y añadir el LLM opcional (H12) al final, si da tiempo.
+- TDD: primero `assistant/answer-text.spec.ts`, `http-error.spec.ts` y `pages/assistant/assistant-page.spec.ts`.
+- Ficheros:
+  - `assistant/assistant-service.ts`: `POST /api/preguntar` con `{pregunta, idioma}` → `{respuesta, ids}` (D-042);
+  - `assistant/answer-text.ts`: separa la introducción de las líneas «- …» para mostrarlas como una lista de verdad, y que el lector anuncie cuántos lugares hay en lugar de leer cada guion;
+  - `http-error.ts`: sustituye a `pois/not-found-error.ts`, porque ahora también hace falta leer el mensaje 422 de la API;
+  - `pages/assistant/`: la página.
+- La página:
+  - Formulario con etiqueta visible, pista con ejemplos (`aria-describedby`), un máximo de 500 caracteres y el botón «Preguntar».
+  - Región `role="status"` con «Buscando en el catálogo…», la respuesta, el mensaje 422 de la API tal cual (ya viene en el idioma pedido, D-039) o un mensaje propio si no hay conexión.
+  - Debajo, la sección «Puntos en los que se apoya la respuesta», con una tarjeta por id citado, pedida con `GET /pois/{id}`. Va fuera de la región anunciada, para no leer dos veces lo mismo.
+  - Preguntar dos veces lo mismo vuelve a preguntar.
+- Fallo de estructura que la IA vio al repasar la plantilla, y que los tests no cubrían: las tarjetas citadas llevaban `<h2>`, al mismo nivel que el encabezado de su sección. `<app-poi-card>` admite ahora `headingLevel` (2 en el listado, 3 en el asistente), con test.
+- En los tests, las peticiones de las tarjetas solo salen tras procesar la respuesta; un ayudante `pending()` espera a que aparezcan.
+- Verificado: `make check` limpio (270 tests del backend y 52 de la web), build sin avisos.
+- Trello: H7 completa (pantalla del asistente) → «Revisión». Solo queda en curso H10, la revisión de accesibilidad.

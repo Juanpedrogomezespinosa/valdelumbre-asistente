@@ -50,3 +50,15 @@ describe('PoiCard', () => {
     expect(fact('Accessibility')).toBe('Accessible');
   });
 });
+
+describe('PoiCard heading level', () => {
+  it('can sit one level deeper, under a section heading', async () => {
+    localStorage.clear();
+    await render(PoiCard, {
+      inputs: { poi: aPoi(), headingLevel: 3 },
+      providers: [provideRouter([])],
+    });
+
+    expect(screen.getByRole('heading', { level: 3, name: 'Museo del Aceite' })).toBeVisible();
+  });
+});

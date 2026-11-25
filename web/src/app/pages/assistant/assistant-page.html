@@ -1,0 +1,53 @@
+@let texts = i18n.texts();
+<app-page-heading>{{ texts.pages.assistant }}</app-page-heading>
+
+<form class="mb-6 rounded-lg border border-control-border bg-surface p-4" (submit)="submit($event)">
+  <label for="question" class="mb-1 block font-semibold">{{ texts.assistant.questionLabel }}</label>
+  <p id="question-hint" class="mb-3 text-sm text-muted">{{ texts.assistant.hint }}</p>
+  <div class="flex flex-wrap gap-3">
+    <input
+      id="question"
+      name="question"
+      type="text"
+      autocomplete="off"
+      aria-describedby="question-hint"
+      class="min-w-0 flex-1 rounded border border-control-border bg-surface px-3 py-2"
+      [attr.maxlength]="maxLength"
+      [value]="question()"
+      (input)="type($event)"
+    />
+    <button type="submit" class="rounded bg-primary px-5 py-2 font-semibold text-on-primary">
+      {{ texts.assistant.submit }}
+    </button>
+  </div>
+</form>
+
+<div role="status" class="mb-8">
+  @if (statusMessage(); as message) {
+    <p>{{ message }}</p>
+  } @else if (answerParts(); as parts) {
+    <div class="rounded-lg border border-control-border bg-surface p-4">
+      @for (paragraph of parts.paragraphs; track $index) {
+        <p class="mb-2">{{ paragraph }}</p>
+      }
+      @if (parts.items.length > 0) {
+        <ul class="list-disc pl-5">
+          @for (item of parts.items; track $index) {
+            <li>{{ item }}</li>
+          }
+        </ul>
+      }
+    </div>
+  }
+</div>
+
+@if (!statusMessage() && cited.hasValue() && cited.value().length > 0) {
+  <section aria-labelledby="cited-heading">
+    <h2 id="cited-heading" class="mb-4 text-xl font-semibold">{{ texts.assistant.cited }}</h2>
+    <ul class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      @for (poi of cited.value(); track poi.id) {
+        <li><app-poi-card [poi]="poi" [headingLevel]="3" /></li>
+      }
+    </ul>
+  </section>
+}

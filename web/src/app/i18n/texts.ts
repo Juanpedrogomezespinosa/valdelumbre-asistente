@@ -78,6 +78,14 @@ const es = {
     season: (from: string, to: string) => `del ${from} al ${to}`,
     hours: (opens: string, closes: string) => `de ${opens} a ${closes}`,
   },
+  assistant: {
+    questionLabel: 'Tu pregunta',
+    hint: 'Por ejemplo: «Voy en silla de ruedas, ¿qué museos puedo visitar?» o «¿Qué está abierto el domingo a las 12:00?»',
+    submit: 'Preguntar',
+    thinking: 'Buscando en el catálogo…',
+    unreachable: 'No se ha podido contactar con el asistente. Inténtalo de nuevo en unos minutos.',
+    cited: 'Puntos en los que se apoya la respuesta',
+  },
   notFound: {
     message: 'La dirección no corresponde a ninguna página.',
     backHome: 'Volver al asistente',
@@ -163,6 +171,14 @@ const en: Texts = {
     dayOfMonth: (day: number, month: string) => `${day} ${month}`,
     season: (from: string, to: string) => `from ${from} to ${to}`,
     hours: (opens: string, closes: string) => `from ${opens} to ${closes}`,
+  },
+  assistant: {
+    questionLabel: 'Your question',
+    hint: 'For example: “I use a wheelchair, which museums can I visit?” or “What is open on Sunday at 12:00?”',
+    submit: 'Ask',
+    thinking: 'Searching the catalogue…',
+    unreachable: 'The assistant could not be reached. Please try again in a few minutes.',
+    cited: 'Points the answer is based on',
   },
   notFound: {
     message: 'This address does not match any page.',
