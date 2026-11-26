@@ -84,7 +84,9 @@
   </div>
 </div>
 
-@if (results.hasValue()) {
+@if (slowLoading()) {
+  <app-skeleton-cards />
+} @else if (results.hasValue()) {
   @if (view() === 'map') {
     <section aria-labelledby="map-heading">
       <h2 id="map-heading" class="sr-only">{{ texts.location.mapLabel }}</h2>

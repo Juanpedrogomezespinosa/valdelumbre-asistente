@@ -1,4 +1,5 @@
 from datetime import date, time
+from decimal import Decimal
 
 import pytest
 
@@ -22,6 +23,7 @@ def poi(
     category: Category = Category.MONUMENT,
     accessible: bool | None = None,
     schedule: Schedule = ALWAYS_OPEN,
+    price: Price | None = None,
 ) -> Poi:
     return Poi(
         id=poi_id,
@@ -31,7 +33,7 @@ def poi(
         coordinates=None,
         accessible=accessible,
         schedule=schedule,
-        price=Price.unknown(),
+        price=price or Price.unknown(),
         tags=(),
     )
 
@@ -107,3 +109,37 @@ def test_open_on_a_whole_day_keeps_pois_that_open_at_some_time_that_day() -> Non
 def test_opening_query_rejects_non_iso_weekdays(weekday: int) -> None:
     with pytest.raises(ValueError, match="ISO weekday"):
         OpeningQuery(weekday=weekday, at=time(12, 0), reference_date=date(2026, 11, 23))
+
+
+def test_closed_keeps_only_pois_known_to_be_closed() -> None:
+    pois = [
+        poi("always"),
+        poi("unknown", schedule=UNKNOWN_HOURS),
+        poi("weekend", schedule=WEEKEND_MORNINGS),
+    ]
+
+    closed = filter_pois(pois, PoiCriteria(open_at=MONDAY_AT_NOON, closed=True))
+
+    # Unknown hours are neither open nor closed (D-009).
+    assert [p.id for p in closed] == ["weekend"]
+
+
+def test_unknown_accessibility_is_a_criterion_of_its_own() -> None:
+    pois = [poi("yes", accessible=True), poi("no", accessible=False), poi("unknown")]
+
+    assert [p.id for p in filter_pois(pois, PoiCriteria(accessibility_unknown=True))] == ["unknown"]
+
+
+def test_free_and_under_a_price_ignore_unknown_prices() -> None:
+    pois = [
+        poi("free", price=Price.free()),
+        poi("cheap", price=Price.fixed(Decimal("4.5"))),
+        poi("range", price=Price.between(Decimal(3), Decimal(8))),
+        poi("unknown"),
+    ]
+
+    assert [p.id for p in filter_pois(pois, PoiCriteria(free=True))] == ["free"]
+    assert [p.id for p in filter_pois(pois, PoiCriteria(price_under=Decimal(5)))] == [
+        "free",
+        "cheap",
+    ]

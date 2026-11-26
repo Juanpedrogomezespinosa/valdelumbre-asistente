@@ -3,6 +3,7 @@ from collections.abc import Sequence
 
 from app.assistant.interpretation.interpretation import Interpretation
 from app.assistant.interpretation.phrases import words_in
+from app.assistant.interpretation.sights import SIGHT_CATEGORIES
 from app.domain.poi import Poi
 from app.domain.poi_filter import filter_pois
 from app.domain.text_folding import fold
@@ -44,12 +45,61 @@ def retrieve(pois: Sequence[Poi], interpretation: Interpretation) -> list[Poi]:
         # not bring in other places.
         mentioned = [poi for poi in candidates if poi.id in named]
         return sorted(mentioned, key=lambda poi: named[poi.id], reverse=True)
-    if not interpretation.topics:
-        return candidates if interpretation.has_filters else []
+    if interpretation.topics:
+        scores = {poi.id: _topic_score(poi, interpretation.topics) for poi in candidates}
+        relevant = [poi for poi in candidates if scores[poi.id] > 0]
+        found = sorted(relevant, key=lambda poi: scores[poi.id], reverse=True)
+    elif not interpretation.has_filters:
+        return []
+    elif interpretation.asks_for_sights and interpretation.criteria.categories is None:
+        found = [poi for poi in candidates if poi.category in SIGHT_CATEGORIES]
+    else:
+        found = candidates
+    return _cheapest(found) if interpretation.asks_for_cheapest else found
 
-    scores = {poi.id: _topic_score(poi, interpretation.topics) for poi in candidates}
-    relevant = [poi for poi in candidates if scores[poi.id] > 0]
-    return sorted(relevant, key=lambda poi: scores[poi.id], reverse=True)
+
+def _cheapest(pois: list[Poi]) -> list[Poi]:
+    """The places with the lowest known price; an unknown price is never the cheapest."""
+    priced = [poi for poi in pois if poi.price.max_eur is not None]
+    if not priced:
+        return []
+    lowest = min(poi.price.max_eur for poi in priced if poi.price.max_eur is not None)
+    return [poi for poi in priced if poi.price.max_eur == lowest]
+
+
+_NEARBY_COUNT = 5
+
+
+def nearby(
+    pois: Sequence[Poi], interpretation: Interpretation
+) -> tuple[Poi, list[tuple[Poi, float]]] | None:
+    """For «¿qué hay cerca de X?»: X and the closest places that pass the filters, nearest
+    first, each with its distance in metres.
+
+    None when the question does not name a place with coordinates to measure from.
+    """
+    if not interpretation.asks_nearby:
+        return None
+    anchor = _place_to_measure_from(pois, interpretation)
+    if anchor is None or anchor.coordinates is None:
+        return None
+    origin = anchor.coordinates
+    distances = [
+        (poi, origin.metres_to(poi.coordinates))
+        for poi in filter_pois(pois, interpretation.criteria)
+        if poi.id != anchor.id and poi.coordinates
+    ]
+    return anchor, sorted(distances, key=lambda measured: measured[1])[:_NEARBY_COUNT]
+
+
+def _place_to_measure_from(pois: Sequence[Poi], interpretation: Interpretation) -> Poi | None:
+    """The place the question names or, failing that, the only place its topic fits
+    ("near the winery": "winery" is the wine topic, and only one place has it)."""
+    named = _named_places(pois, interpretation.keywords)
+    if named:
+        return max((poi for poi in pois if poi.id in named), key=lambda poi: named[poi.id])
+    fitting = [poi for poi in pois if _topic_score(poi, interpretation.topics) > 0]
+    return fitting[0] if len(fitting) == 1 else None
 
 
 def named_places(pois: Sequence[Poi], interpretation: Interpretation) -> list[Poi]:

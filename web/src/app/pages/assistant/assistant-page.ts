@@ -6,6 +6,8 @@ import { AssistantService } from '../../assistant/assistant-service';
 import { apiErrorDetail } from '../../http-error';
 import { I18n } from '../../i18n/i18n';
 import { PageHeading } from '../../layout/page-heading';
+import { delayedLoading } from '../../loading/delayed-loading';
+import { SkeletonCards } from '../../loading/skeleton-cards';
 import { VillageLandscape } from '../../layout/village-landscape';
 import { PoiCard } from '../../pois/poi-card';
 import { PoisService } from '../../pois/pois-service';
@@ -14,7 +16,7 @@ const MAX_QUESTION_LENGTH = 500;
 
 @Component({
   selector: 'app-assistant-page',
-  imports: [PageHeading, PoiCard, VillageLandscape],
+  imports: [PageHeading, PoiCard, SkeletonCards, VillageLandscape],
   templateUrl: './assistant-page.html',
 })
 export class AssistantPage {
@@ -46,6 +48,11 @@ export class AssistantPage {
         ? of([])
         : forkJoin(params.ids.map((id) => this.pois.get(id, params.language))),
   });
+
+  protected readonly slowCards = delayedLoading(() => this.cited.isLoading());
+  protected readonly citedCount = computed(() =>
+    this.answer.hasValue() ? this.answer.value().ids.length : 0,
+  );
 
   /** Loading and error messages take the place of the answer in the announced region. */
   protected readonly statusMessage = computed(() => {

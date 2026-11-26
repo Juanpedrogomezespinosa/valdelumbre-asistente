@@ -7,6 +7,7 @@ import { screen, within } from '@testing-library/angular';
 import userEvent from '@testing-library/user-event';
 import { aPoi } from '../../../testing/poi-fixture';
 import { CLOCK } from '../../clock';
+import { SKELETON_DELAY_MS } from '../../loading/delayed-loading';
 import { PoiListPage } from './poi-list-page';
 
 const A_WEDNESDAY_MORNING = new Date('2026-11-25T09:20:00Z');
@@ -131,5 +132,24 @@ describe('POI list page views', () => {
     await vi.waitFor(() =>
       expect(TestBed.inject(Router).url).toBe('/pois?vista=mapa&categoria=museo'),
     );
+  });
+
+  it('shows placeholder cards while a slow load lasts, hidden from screen readers', async () => {
+    TestBed.configureTestingModule({ providers: [{ provide: SKELETON_DELAY_MS, useValue: 0 }] });
+    const { harness, http } = await openList();
+
+    const skeleton = await vi.waitFor(() => {
+      const element = document.querySelector('[data-skeleton]');
+      expect(element).not.toBeNull();
+      return element;
+    });
+    expect(skeleton).toHaveAttribute('aria-hidden', 'true');
+    expect(screen.getByRole('status')).toHaveTextContent('Cargando puntos…');
+
+    answer(http, 2);
+    await harness.fixture.whenStable();
+
+    expect(document.querySelector('[data-skeleton]')).toBeNull();
+    expect(screen.getAllByRole('listitem')).toHaveLength(2);
   });
 });

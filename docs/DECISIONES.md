@@ -50,7 +50,7 @@ Estados: ✅ aprobada · 🔄 revisada (enlaza a la que la sustituye) · ❌ des
 | [D-029](#d-029--tests-del-frontend-con-el-runner-del-cli-y-testing-library) | Tests del frontend con el runner del CLI y Testing Library | ✅ |
 | [D-030](#d-030--aspecto-sobrio-y-cálido-con-modo-oscuro-según-el-sistema) | Aspecto sobrio y cálido, con modo oscuro según el sistema | ✅ |
 | [D-031](#d-031--fichas-resumidas-con-enlace-al-detalle) | Fichas resumidas con enlace al detalle | ✅ |
-| [D-032](#d-032--sin-respuesta-en-el-catálogo-no-lo-sé-sin-sugerencias-ni-citas) | Sin respuesta en el catálogo: «no lo sé», sin sugerencias ni citas | ✅ |
+| [D-032](#d-032--sin-respuesta-en-el-catálogo-no-lo-sé-sin-sugerencias-ni-citas) | Sin respuesta en el catálogo: «no lo sé», sin sugerencias ni citas | 🔄 |
 | [D-033](#d-033--modelos-crudos-con-pydantic-y-dominio-con-dataclasses-inmutables) | Modelos crudos con pydantic y dominio con dataclasses inmutables | ✅ |
 | [D-034](#d-034--reglas-de-horario-cierre-exclusivo-y-sin-franjas-que-crucen-la-medianoche) | Reglas de horario: cierre exclusivo y sin franjas que crucen la medianoche | ✅ |
 | [D-035](#d-035--una-categoría-desconocida-detiene-la-carga) | Una categoría desconocida detiene la carga | ✅ |
@@ -71,6 +71,9 @@ Estados: ✅ aprobada · 🔄 revisada (enlaza a la que la sustituye) · ❌ des
 | [D-050](#d-050--el-asistente-dice-lo-que-no-consulta-y-da-el-precio) | El asistente dice lo que no consulta y da el precio | ✅ |
 | [D-051](#d-051--un-lugar-nombrado-manda-y-las-palabras-comunes-no-nombran-lugares) | Un lugar nombrado manda, y las palabras comunes no nombran lugares | ✅ |
 | [D-052](#d-052--demo-en-línea-en-vercel-con-services-sin-cambiar-la-app) | Demo en línea en Vercel con Services, sin cambiar la app | ✅ |
+| [D-053](#d-053--cuando-no-puede-responder-remite-a-la-oficina-de-turismo-sin-citarla) | Cuando no puede responder, remite a la Oficina de Turismo sin citarla | ✅ |
+| [D-054](#d-054--el-asistente-responde-a-cada-campo-del-catálogo-incluidas-las-negaciones) | El asistente responde a cada campo del catálogo, incluidas las negaciones | ✅ |
+| [D-055](#d-055--esqueleto-de-carga-solo-si-la-carga-tarda-más-de-300-ms) | Esqueleto de carga solo si la carga tarda más de 300 ms | ✅ |
 
 ---
 
@@ -371,7 +374,7 @@ Estados: ✅ aprobada · 🔄 revisada (enlaza a la que la sustituye) · ❌ des
 - **🔄 Revisión parcial (2026-11-25) → [D-043](#d-043--recuperación-por-filtros-temas-y-nombres-respuesta-solo-con-campos-estructurados):** la última frase de las consecuencias queda sustituida. El asistente **no** incluye las descripciones en su texto, porque son datos no confiables (D-006) y una inyección que esquivara la limpieza podría colarse en la respuesta. Los avisos de la descripción se ven en la ficha `/pois/:id`, a la que enlaza la tarjeta de cada punto citado. El resto de D-031 sigue vigente.
 
 ## D-032 · Sin respuesta en el catálogo: «no lo sé», sin sugerencias ni citas
-**Estado:** ✅ aprobada · 2026-11-24
+**Estado:** 🔄 revisada → [D-053](#d-053--cuando-no-puede-responder-remite-a-la-oficina-de-turismo-sin-citarla) · 2026-11-24
 
 - **Contexto:** cuando la pregunta no tiene respuesta en el catálogo (q6, tirolina), la IA propuso que el asistente sugiriera la Oficina de Turismo (poi-010) sin citarla en los ids. Le pregunté por qué y qué alternativas había.
 - **Decisión:** el asistente responde solo que no tiene esa información en el catálogo, con `ids: []`, y no nombra ni sugiere ningún punto.
@@ -380,6 +383,7 @@ Estados: ✅ aprobada · 🔄 revisada (enlaza a la que la sustituye) · ❌ des
   - Sugerir la Oficina de Turismo **citándola** (`ids: [poi-010]`): coherente y útil, pero rompe el criterio estricto, que habría que redefinir como «no cita puntos *como respuesta*», algo más difícil de comprobar. Queda para «qué haría con más tiempo».
   - Sugerirla **sin citarla** (propuesta inicial de la IA): el texto nombra un punto que no aparece en los ids.
 - **Consecuencias:** la respuesta a una pregunta fuera de catálogo es menos útil para el turista; se compensa con la Oficina de Turismo visible en el listado.
+- **🔄 Revisión (2026-11-26) → [D-053](#d-053--cuando-no-puede-responder-remite-a-la-oficina-de-turismo-sin-citarla):** al revisar la demo, el «no lo sé» a secas me pareció un callejón sin salida. El asistente remite ahora a la Oficina de Turismo, nombrándola sin citarla.
 
 ## D-033 · Modelos crudos con pydantic y dominio con dataclasses inmutables
 **Estado:** ✅ aprobada · 2026-11-24
@@ -722,3 +726,65 @@ Registro de la decisión tal como se tomó:
   - La función se ejecuta en la región por defecto (`iad1`, EE. UU.). No afecta a «abierto ahora», porque la zona horaria es `Europe/Madrid`.
   - La documentación de la API queda en `/api/docs`.
   - El proyecto de Vercel está conectado al repositorio: cada push a `main` despliega producción y cada push a otra rama, una vista previa protegida.
+
+## D-053 · Cuando no puede responder, remite a la Oficina de Turismo sin citarla
+**Estado:** ✅ aprobada · 2026-11-26 · revisa [D-032](#d-032--sin-respuesta-en-el-catálogo-no-lo-sé-sin-sugerencias-ni-citas)
+
+- **Contexto:** al revisar la demo, el «no lo sé» a secas de D-032 me pareció un callejón sin salida para el turista. Volví a valorar las dos formas de sugerir la Oficina de Turismo que ya se habían planteado.
+- **Decisión:**
+  - **Cuándo remite:** cuando no entiende la pregunta o no hay nada en el catálogo (q6, tirolina) y cuando preguntan por algo que el asistente no consulta (wifi, mascotas, reservas…, D-050).
+  - **Cuándo no:** si entiende la pregunta y ningún lugar cumple lo pedido («museos abiertos el lunes»), porque esa respuesta ya es completa (D-049).
+  - **Cómo:** la Oficina se **nombra en el texto, sin citarla en `ids`**, con su horario: «…pregunta en la Oficina de Turismo (todos los días de 9:30 a 14:30)».
+  - El nombre y el horario salen de los campos estructurados, nunca de la descripción (D-005). Si el horario es desconocido o por temporadas, se nombra sin horario.
+  - La Oficina se busca por su nombre («Oficina de Turismo» / «Tourist Office»), no por su id. Si el catálogo no tiene una, la respuesta no la menciona.
+- **Por qué:** los `ids` son los puntos en los que **se apoya** la respuesta, y la Oficina no la respalda: es una derivación. Nombrarla sin citarla mantiene esa regla y el criterio estricto de la evaluación (q6 sigue sin citas), y le da al turista un sitio adonde ir.
+- **Alternativas descartadas:**
+  - Citarla en `ids`: aparecería su ficha, pero q6 dejaría de pasar el criterio estricto, salvo cambiar el criterio para que la Oficina no cuente, y eso sería ajustar la medida al resultado.
+  - Mantener el «no lo sé» a secas (D-032).
+- **Consecuencias:**
+  - El texto nombra un lugar que no está en `ids`. Es la objeción que llevó a D-032, y la acepto porque solo ocurre en esta derivación.
+  - `TemplateAnswerGenerator` recibe la Oficina al construirse; la interfaz `AnswerGenerator` no cambia.
+  - La evaluación sigue en 6/6 oficial y 6/6 estricto.
+
+## D-054 · El asistente responde a cada campo del catálogo, incluidas las negaciones
+**Estado:** ✅ aprobada · 2026-11-26
+
+- **Contexto:** al probar el asistente con preguntas reales encontré un fallo grave y varias preguntas razonables sin respuesta:
+  - **las negaciones daban lo contrario:** «¿qué hay cerrado ahora mismo?» listaba los abiertos, «¿qué sitios no son accesibles?» los accesibles y «¿qué museos están cerrados el lunes?» respondía «ninguno cumple (museo · abierto el lunes)»;
+  - «¿qué cuesta menos de 5 euros?» citaba el Aparcamiento de la Cuesta;
+  - «dame el horario de todos los museos» listaba los museos sin su horario;
+  - «¿qué puedo hacer sin gastar dinero?», «¿qué puedo visitar?», «esta noche», «mañana por la mañana» o «¿dónde aparco?» no se entendían.
+- **Decisión:** cubrir cada campo estructurado del catálogo, en es y en:
+  - **Horario:** cerrado («cerrado», «no está abierto», «closed»; sin momento, ahora) y momentos del día (mañana 10:00, tarde 17:00, noche 21:00; «mañana» sola es el día siguiente). Si se pregunta por el horario, cada lugar lo da en palabras, con su temporada, o «horario sin datos».
+  - **Accesibilidad:** «no accesible» y «sin datos de accesibilidad», además de «accesible».
+  - **Precio:** gratis («gratis», «sin dinero», «sin gastar nada», «free», «without spending money»), «menos de N €» y «lo más barato» (el menor precio conocido).
+  - **Categoría:** «qué ver / qué visitar / things to do» se limita a lo visitable (monumentos, museos, naturaleza, rutas y espacios públicos) si no hay otro tema.
+  - **Nombre:** sinónimos que no están en el nombre («aparcar», «parking», «car park» → Aparcamiento).
+  - **Ubicación:** «¿qué hay cerca del castillo?» da los 5 lugares más cercanos que cumplen los filtros, ordenados y con su distancia en línea recta («a 60 m»), calculada con las coordenadas como en la ficha web. Se mide desde el lugar nombrado o, si la pregunta nombra un tema que solo tiene un lugar («near the winery»), desde ese lugar. Sin lugar de referencia («¿qué hay cerca?») no hay desde dónde medir y se responde como una pregunta sin cercanía.
+- **Por qué:** el asistente tiene que ser útil con todo lo que el catálogo sabe, y una respuesta contraria a la pregunta es peor que un «no lo sé». Todo sale de campos estructurados (D-005), con el filtro compartido (`PoiCriteria`), al que se añaden criterios que solo usa el asistente: `GET /pois` no cambia, porque su contrato lo fija el enunciado.
+- **Alternativas descartadas:**
+  - Un LLM que interprete cualquier redacción: lo descarté por tiempo (D-048) y sigue como mejora futura.
+  - Exponer los filtros nuevos en `GET /pois`: el enunciado define sus parámetros.
+- **Consecuencias:**
+  - Cada momento del día se comprueba a una hora representativa, no en toda la franja.
+  - La respuesta de cercanía tiene su propia plantilla (`nearby_answer.py`), como la respuesta vacía, porque necesita el lugar de referencia y las distancias. Cita ese lugar y los cercanos.
+  - Las distancias son relativas: las coordenadas del catálogo están en Madrid (DATOS.md, D12), pero la distancia entre puntos es coherente.
+  - Lo desconocido sigue sin contar ni como abierto ni como cerrado (D-009), ni como gratis ni como barato.
+  - Sigue siendo un vocabulario cerrado: cubre cada tipo de pregunta que admiten los datos, no cada forma de decirlo. Lo que no entiende remite a la Oficina de Turismo (D-053).
+  - 70 tests nuevos (`test_ask_coverage.py` con el catálogo real, y unitarios del filtro, la interpretación y los textos).
+
+## D-055 · Esqueleto de carga solo si la carga tarda más de 300 ms
+**Estado:** ✅ aprobada · 2026-11-26
+
+- **Contexto:** en la demo de Vercel, la primera petición tras un rato sin uso tarda más, porque Vercel tiene que arrancar la función (arranque en frío, D-052). Mientras, la página se quedaba casi vacía con «Cargando…». En local y en Docker los datos llegan en milisegundos.
+- **Decisión:**
+  - Esqueletos con la forma del contenido en el **listado** (tarjetas), la **ficha** (ilustración, descripción y datos) y las **tarjetas citadas** del asistente (una por lugar citado).
+  - **Solo aparecen si la carga dura más de 300 ms** (`delayedLoading()` y el token `SKELETON_DELAY_MS`). Un solo código para todos los entornos: en local y en Docker no se ven, y en Vercel sí.
+  - Son decorativos (`aria-hidden="true"`): el lector de pantalla sigue oyendo «Cargando…» en la región de estado. La animación se desactiva si el sistema pide reducir el movimiento (`motion-safe:`).
+  - La respuesta del asistente no lleva esqueleto: no se sabe qué forma tendrá, así que sigue «Buscando en el catálogo…».
+- **Por qué:** mejora la espera en la demo sin cambiar la experiencia en local, y sin dos versiones de la web.
+- **Alternativas descartadas:**
+  - Hacerlo solo en la rama de despliegue: el código de la demo no sería el del repositorio entregado.
+  - Mostrarlo siempre: en local parpadearía un instante en cada carga.
+- **Consecuencias:** en los tests de página el retraso se inyecta a 0; el de 300 ms se prueba aparte con reloj falso.
+

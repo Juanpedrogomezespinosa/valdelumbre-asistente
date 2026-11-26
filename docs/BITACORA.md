@@ -345,3 +345,62 @@ Fusioné `feat/assistant`. Al preparar el plan, la IA detectó una contradicció
 - Al ser el primer despliegue del proyecto, la CLI lo lanzó como producción y conectó el repositorio de GitHub; ese intento falló y no publicó nada.
 - Pendiente: comprobar la vista previa que sale del push a `deploy`, fusionar en `main`, verificar la URL de producción y añadirla al README.
 
+---
+
+## Paso 22 · `feat/ultimos-ajustes`: remitir a la Oficina de Turismo — 2026-11-26
+- Fusioné `deploy` en `main` antes de abrir la rama, para que el siguiente push a `main` no desplegara producción sin `vercel.json`. Producción (https://valdelumbre-asistente.vercel.app) verificada: rutas, 404, 422 y `make eval EVAL_URL=https://valdelumbre-asistente.vercel.app/api` en 6/6 · 6/6.
+- Ticket de última hora en Trello: **H13 · Que el asistente remita a la Oficina de Turismo cuando no sabe**.
+- Elegí nombrarla en el texto sin citarla, y los casos en que remite. Decisión D-053, que revisa D-032.
+- TDD: primero `tests/test_tourist_office.py` (buscarla por nombre, sin Oficina en el catálogo, horario en palabras en es/en, rangos de días, varias franjas, siempre abierta, horario desconocido o por temporadas) y casos nuevos en `test_empty_answer.py`, `test_template_generator.py` y `test_ask_endpoint.py`. Comprobé que fallaban (8 tests y el módulo nuevo).
+- Ficheros nuevos: `app/assistant/tourist_office.py` (encontrarla y la frase de remisión) y `app/assistant/opening_hours_text.py` (el horario en palabras). Los nombres de los días y la unión con «y» pasan a `template_texts.py`, que ya comparten la respuesta vacía y el horario.
+- Comprobado con el catálogo real: la tirolina (es/en), el wifi y los perros remiten con el horario; «¿Qué museos abren el lunes?» y «¿Es accesible el puente romano?» no remiten; «¿Dónde está la oficina de turismo?» sigue citando su ficha.
+- Verificado: `make check` limpio (343 tests del backend y 93 de la web) y `make eval` en 6/6 · 6/6.
+
+---
+
+## Paso 23 · Que el asistente responda a todo lo que permiten los datos — 2026-11-26
+- Probé el asistente con preguntas reales y encontré que «¿qué hay cerrado ahora mismo?» listaba los lugares abiertos. Pedí que respondiera a todas las preguntas que permiten los datos.
+- La IA hizo una ronda de 34 preguntas, una o varias por cada campo del catálogo, y encontró **cinco respuestas contrarias a la pregunta** (cerrado, no accesible, «menos de 5 euros» → aparcamiento) y nueve preguntas razonables sin respuesta. La IA estimó 3–4 horas; le pedí hacerlo más rápido y lo terminó en menos de una, con test primero.
+- Ticket de última hora: **H14 · Que el asistente responda a todo lo que permiten los datos**. Decisión D-054.
+- TDD: primero `tests/test_ask_coverage.py` (27 casos con el catálogo real). Antes de fijar los valores esperados, la IA los contrastó con `GET /pois` y con el JSON: había escrito mal los horarios de los museos en el test, y lo corrigió con los datos reales.
+- Ficheros nuevos en `app/assistant/interpretation/`, uno por señal: `closed.py`, `price.py`, `hours.py`, `sights.py` y `name_synonyms.py`. Cambios en `accessibility.py` (negaciones), `opening_time.py` (momentos del día y «mañana»), `poi_filter.py` (cerrado, accesibilidad desconocida, gratis y precio máximo), `retrieval.py` (qué ver y lo más barato), `template_generator.py` y `opening_hours_text.py` (horario en la respuesta, agrupando las franjas de los mismos días).
+- Fallos propios corregidos antes de entregar:
+  - el filtro de cerrado dejaba pasar los horarios desconocidos como abiertos (lo detectaron los tests de `GET /pois`);
+  - «no cuesta nada» convirtió «cuesta» en vocabulario y rompió «Tell me about Cuesta Car Park»;
+  - «Is there free wifi?» se leía como «gratis»;
+  - el castillo repetía los días en sus dos franjas.
+- Verificado: `make check` limpio (387 tests del backend y 93 de la web) y `make eval` en 6/6 · 6/6.
+
+---
+
+## Paso 24 · Cercanía y más formas de decir «gratis» — 2026-11-26
+- Probando la pantalla vi que «¿qué puedo hacer sin dinero?» listaba también lugares de pago: solo se reconocían «sin gastar» y «sin pagar». En lugar de añadir frases sueltas, la IA lo cambió por una regla: «sin»/«without»/«no» seguido de una palabra de dinero («sin dinero», «sin gastar nada», «without spending money»). Con `tests/test_interpret_price.py`.
+- **Cercanía** (D-054): «¿qué hay cerca del castillo?» da los 5 lugares más cercanos, ordenados y con su distancia en línea recta, y se combina con los filtros («restaurantes cerca de la plaza», «museums near the main square»).
+  - TDD con el catálogo real. Antes de fijar las distancias esperadas, la IA las calculó con los datos: había puesto de memoria 1,0 y 1,6 km para dos museos, que en realidad están a 370 y 580 m.
+  - `Coordinates.metres_to()` en el dominio, con la misma aproximación que el mapa de la web; `nearby()` en `retrieval.py` y `nearby_answer.py` para el texto.
+  - «What is near the winery?»: «winery» es el tema «vino», que solo tiene un lugar, así que se mide desde la bodega. «¿Dónde como cerca de la iglesia?»: «dónde como» se entiende ahora como comer.
+- Verificado: `make check` limpio (413 tests del backend y 93 de la web) y `make eval` en 6/6 · 6/6.
+
+---
+
+## Paso 25 · Esqueleto de carga para el arranque en frío de Vercel — 2026-11-26
+- La IA me explicó a favor y en contra. Le propuse hacerlo solo en el despliegue; me recomendó un solo código que solo muestre el esqueleto si la carga tarda más de 300 ms, y lo aprobé. Decisión D-055. Tarjeta **T6**.
+- TDD: primero `loading/delayed-loading.spec.ts` (reloj falso: a los 299 ms no, a los 300 sí, se apaga al terminar y nunca aparece si la carga dura menos) y un test por pantalla (listado, ficha y tarjetas citadas: aparece, está oculto al lector y desaparece al llegar los datos). Fallaban porque el módulo no existía.
+- Ficheros nuevos en `web/src/app/loading/`: `delayed-loading.ts`, `skeleton-cards.ts` y `skeleton-detail.ts`.
+- **Probado en Chrome con una API lenta de verdad:** un proxy temporal que retrasa cada respuesta 1,5 s, en puertos aparte.
+  - El listado y la ficha muestran su esqueleto con «Cargando…» y lo quitan al llegar los datos (17 tarjetas).
+  - En el asistente, el esqueleto aparece 300 ms después de la respuesta, con un hueco por lugar citado, y desaparece al llegar la tarjeta (medido con un `MutationObserver`).
+  - Con la API local normal **no aparece nunca**.
+- Verificado: `make check` limpio (413 tests del backend y 99 de la web).
+
+---
+
+## Paso 26 · Repaso final de la documentación y verificación — 2026-11-26
+- **README:** enlace a la demo en línea, cómo evaluar contra ella (`EVAL_URL=…/api`), las preguntas nuevas en «Qué probar», las mejoras de los pasos 22–25 en «Qué incluye», Vercel en las tecnologías, las decisiones D-053 y D-054, las limitaciones actualizadas («car park» ya funciona) y «qué haría con más tiempo» sin lo ya hecho.
+- **IA.md:** la remisión a la Oficina que rechacé y recuperé, el esqueleto solo en el despliegue que la IA desaconsejó, el bug de las negaciones, los valores de memoria corregidos con los datos, la CLI de Vercel y la estimación de 3–4 horas que se hizo en menos de una.
+- Al comprobar los enlaces aparecieron **tres anclas rotas en el README** (D-029, D-033 y D-037), escritas sin comprobar el título exacto. Corregidas; ahora un script comprueba todas las anclas de los cuatro documentos: 0 rotas.
+- **Verificado antes de fusionar:**
+  - clon limpio de `feat/ultimos-ajustes` desde GitHub y `docker compose build --no-cache`: servicios *healthy*, la web, una ficha y `/docs` responden, la evaluación dentro del contenedor da 6/6 · 6/6, y las preguntas nuevas (cerrado, horario, sin dinero, cercanía, tirolina) responden bien;
+  - la vista previa de Vercel de la rama: rutas, `/api/docs` y las mismas preguntas;
+  - `make check` limpio (413 tests del backend y 99 de la web).
+

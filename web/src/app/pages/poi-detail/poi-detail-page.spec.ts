@@ -5,6 +5,7 @@ import { provideRouter } from '@angular/router';
 import { RouterTestingHarness } from '@angular/router/testing';
 import { screen, within } from '@testing-library/angular';
 import { aPoi } from '../../../testing/poi-fixture';
+import { SKELETON_DELAY_MS } from '../../loading/delayed-loading';
 import { providePageTitles } from '../../navigation/page-titles';
 import { Poi } from '../../pois/poi';
 import { PoiDetailPage } from './poi-detail-page';
@@ -154,5 +155,20 @@ describe('POI detail page location', () => {
     await showWithCatalogue(aPoi({ id: 'poi-001', coordenadas: null }));
 
     expect(screen.getByText('El catálogo no tiene la ubicación de este punto.')).toBeVisible();
+  });
+
+  it('shows the shape of the page while a slow load lasts', async () => {
+    TestBed.configureTestingModule({ providers: [{ provide: SKELETON_DELAY_MS, useValue: 0 }] });
+    const { harness, http } = await openDetail('poi-003');
+
+    await vi.waitFor(() =>
+      expect(document.querySelector('[data-skeleton]')).toHaveAttribute('aria-hidden', 'true'),
+    );
+
+    http.expectOne('/api/pois/poi-003?idioma=es').flush(aPoi({ id: 'poi-003' }));
+    answerCatalogue(http);
+    await harness.fixture.whenStable();
+
+    expect(document.querySelector('[data-skeleton]')).toBeNull();
   });
 });

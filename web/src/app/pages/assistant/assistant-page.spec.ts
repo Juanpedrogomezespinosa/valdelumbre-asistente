@@ -7,6 +7,7 @@ import { screen, within } from '@testing-library/angular';
 import userEvent from '@testing-library/user-event';
 import { aPoi } from '../../../testing/poi-fixture';
 import { I18n } from '../../i18n/i18n';
+import { SKELETON_DELAY_MS } from '../../loading/delayed-loading';
 import { AssistantPage } from './assistant-page';
 
 async function openAssistant() {
@@ -171,5 +172,29 @@ describe('Assistant page headings', () => {
     await harness.fixture.whenStable();
 
     expect(screen.getByRole('heading', { level: 3, name: 'Museo del Aceite' })).toBeVisible();
+  });
+
+  it('shows one placeholder card per cited point while the cards load slowly', async () => {
+    TestBed.configureTestingModule({ providers: [{ provide: SKELETON_DELAY_MS, useValue: 0 }] });
+    const { harness, http } = await openAssistant();
+
+    await ask('museos');
+    http
+      .expectOne('/api/preguntar')
+      .flush({ respuesta: 'Dos museos', ids: ['poi-003', 'poi-015'] });
+
+    const skeleton = await vi.waitFor(() => {
+      const element = document.querySelector('[data-skeleton]');
+      expect(element).not.toBeNull();
+      return element as HTMLElement;
+    });
+    expect(skeleton).toHaveAttribute('aria-hidden', 'true');
+    expect(skeleton.querySelectorAll('li')).toHaveLength(2);
+
+    (await pending(http, '/api/pois/poi-003?idioma=es')).flush(aPoi({ id: 'poi-003' }));
+    (await pending(http, '/api/pois/poi-015?idioma=es')).flush(aPoi({ id: 'poi-015' }));
+    await harness.fixture.whenStable();
+
+    expect(document.querySelector('[data-skeleton]')).toBeNull();
   });
 });

@@ -85,7 +85,11 @@
   }
 </div>
 
-@if (!statusMessage() && cited.hasValue() && cited.value().length > 0) {
+@if (!statusMessage() && slowCards()) {
+  <div class="mt-12">
+    <app-skeleton-cards [count]="citedCount()" />
+  </div>
+} @else if (!statusMessage() && cited.hasValue() && cited.value().length > 0) {
   <section aria-labelledby="cited-heading" class="mt-12">
     <h2 id="cited-heading" class="mb-6 text-2xl font-semibold sm:text-3xl">
       {{ texts.assistant.cited }}

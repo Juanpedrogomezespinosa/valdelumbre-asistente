@@ -21,6 +21,9 @@ CATEGORY_PHRASES: dict[str, frozenset[Category]] = {
             "come",
             "comen",
             "comemos",
+            # "Como" alone is also "like"; only with "dónde" is it "I eat".
+            "donde como",
+            "donde ceno",
             "comida",
             "cenar",
             "cena",

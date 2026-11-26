@@ -25,6 +25,10 @@ _CATEGORY = {
     },
 }
 _AND = {Language.ES: "y", Language.EN: "and"}
+_WEEKDAYS = {
+    Language.ES: ("lunes", "martes", "miércoles", "jueves", "viernes", "sábado", "domingo"),
+    Language.EN: ("Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"),
+}
 _UNRECORDED = {
     Language.ES: {
         "wifi": "wifi",
@@ -85,37 +89,48 @@ _MONTHS = {
 }
 
 
-def not_found(language: Language) -> str:
+def not_found(language: Language, referral: str | None) -> str:
     # Says what can be asked, so a question outside the vocabulary is not a dead end.
     if language is Language.EN:
-        return (
+        text = (
             "I don't have information about that in the Valdelumbre catalogue. You can ask me "
             "about kinds of places (museums, monuments, trails, where to eat), accessibility, "
             "day and time, or themes such as wine, kids or views."
         )
-    return (
+        return f"{text} For anything else, {referral}." if referral else text
+    text = (
         "No tengo información sobre eso en el catálogo de Valdelumbre. Puedes preguntarme por "
         "tipo de lugar (museos, monumentos, rutas, dónde comer), accesibilidad, día y hora, o "
         "temas como vino, niños o vistas."
     )
+    return f"{text} Para todo lo demás, {referral}." if referral else text
 
 
-def cannot_answer(subjects: frozenset[str], language: Language) -> str:
+def cannot_answer(subjects: frozenset[str], language: Language, referral: str | None) -> str:
     """For what the assistant does not look up (D-050): say so instead of implying a yes."""
     order = [subject for subject in _UNRECORDED[language] if subject in subjects]
-    names = [_UNRECORDED[language][subject] for subject in order]
-    joined = (
-        names[0] if len(names) == 1 else f"{', '.join(names[:-1])} {_AND[language]} {names[-1]}"
-    )
+    joined = join([_UNRECORDED[language][subject] for subject in order], language)
     if language is Language.EN:
+        where = f" or {referral}" if referral else ""
         return (
-            f"I can't answer about {joined}: it is not something I look up. Check each place's "
-            "page or ask at the Tourist Office."
+            f"I can't answer about {joined}: it is not something I look up. "
+            f"Check each place's page{where}."
         )
+    where = f" o {referral}" if referral else ""
     return (
-        f"No puedo responder sobre {joined}: no es un dato que yo consulte. Mira la ficha del "
-        "lugar o pregunta en la Oficina de Turismo."
+        f"No puedo responder sobre {joined}: no es un dato que yo consulte. "
+        f"Mira la ficha del lugar{where}."
     )
+
+
+def join(items: list[str], language: Language) -> str:
+    if len(items) == 1:
+        return items[0]
+    return f"{', '.join(items[:-1])} {_AND[language]} {items[-1]}"
+
+
+def weekday(iso_weekday: int, language: Language) -> str:
+    return _WEEKDAYS[language][iso_weekday - 1]
 
 
 def what_i_know(language: Language) -> str:

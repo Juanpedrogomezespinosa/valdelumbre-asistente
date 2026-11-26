@@ -3,6 +3,8 @@ import { rxResource, toSignal } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { map } from 'rxjs';
 import { I18n } from '../../i18n/i18n';
+import { delayedLoading } from '../../loading/delayed-loading';
+import { SkeletonDetail } from '../../loading/skeleton-detail';
 import { PageHeading } from '../../layout/page-heading';
 import { PageName } from '../../navigation/page-titles';
 import { ServedText, Slot } from '../../pois/poi';
@@ -20,7 +22,7 @@ const NEARBY_COUNT = 3;
 
 @Component({
   selector: 'app-poi-detail-page',
-  imports: [PageHeading, RouterLink, CategoryIllustration, VillageMap],
+  imports: [PageHeading, RouterLink, CategoryIllustration, SkeletonDetail, VillageMap],
   templateUrl: './poi-detail-page.html',
 })
 export class PoiDetailPage {
@@ -39,6 +41,8 @@ export class PoiDetailPage {
   });
 
   /** The whole catalogue, for the map and the square the location is measured from. */
+  protected readonly slowLoading = delayedLoading(() => this.poi.isLoading());
+
   protected readonly catalogue = rxResource({
     params: () => ({ language: this.i18n.language() }),
     stream: ({ params }) => this.pois.list(NO_FILTERS, params.language),

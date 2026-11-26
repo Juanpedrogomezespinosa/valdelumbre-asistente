@@ -5,7 +5,9 @@ from datetime import datetime
 from app.assistant.answer import Answer, AnswerGenerator
 from app.assistant.empty_answer import empty_answer
 from app.assistant.interpretation.interpretation import interpret
-from app.assistant.retrieval import named_places, retrieve
+from app.assistant.nearby_answer import nearby_answer
+from app.assistant.retrieval import named_places, nearby, retrieve
+from app.assistant.tourist_office import find_tourist_office
 from app.domain.localized_text import Language
 from app.domain.poi import Poi
 
@@ -19,9 +21,13 @@ def answer_question(
 ) -> Answer:
     """Interpret, retrieve with the shared filters and generate, in that order (D-005)."""
     interpretation = interpret(question, now)
+    # Distances need the place they are measured from, so «cerca de» has its own template.
+    if (around := nearby(pois, interpretation)) and around[1]:
+        return nearby_answer(*around, interpretation.asks_hours, language)
     retrieved = retrieve(pois, interpretation)
     if not retrieved:
-        return empty_answer(interpretation, named_places(pois, interpretation), language)
+        named = named_places(pois, interpretation)
+        return empty_answer(interpretation, named, language, find_tourist_office(pois))
     answer = generator.generate(interpretation, retrieved, language)
     return _citing_only(retrieved, answer)
 
