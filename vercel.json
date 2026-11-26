@@ -1,0 +1,24 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "services": {
+    "web": {
+      "root": "web/",
+      "framework": "angular",
+      "buildCommand": "npm run build",
+      "outputDirectory": "dist/valdelumbre-web/browser",
+      "rewrites": [{ "source": "/(.*)", "destination": "/index.html" }]
+    },
+    "api": {
+      "root": "api/",
+      "entrypoint": "app.main:app",
+      "buildCommand": "mkdir -p datos && cp ../datos/pois.json datos/",
+      "functions": { "app/main.py": { "includeFiles": "datos/**" } },
+      "rewrites": [{ "source": "/api/:path(.*)?", "destination": "/:path" }]
+    }
+  },
+  "rewrites": [
+    { "source": "/api/(.*)", "destination": { "service": "api" } },
+    { "source": "/openapi.json", "destination": { "service": "api" } },
+    { "source": "/(.*)", "destination": { "service": "web" } }
+  ]
+}

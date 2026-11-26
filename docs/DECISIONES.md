@@ -70,6 +70,7 @@ Estados: ✅ aprobada · 🔄 revisada (enlaza a la que la sustituye) · ❌ des
 | [D-049](#d-049--una-respuesta-vacía-dice-por-qué-está-vacía) | Una respuesta vacía dice por qué está vacía | ✅ |
 | [D-050](#d-050--el-asistente-dice-lo-que-no-consulta-y-da-el-precio) | El asistente dice lo que no consulta y da el precio | ✅ |
 | [D-051](#d-051--un-lugar-nombrado-manda-y-las-palabras-comunes-no-nombran-lugares) | Un lugar nombrado manda, y las palabras comunes no nombran lugares | ✅ |
+| [D-052](#d-052--demo-en-línea-en-vercel-con-services-sin-cambiar-la-app) | Demo en línea en Vercel con Services, sin cambiar la app | ✅ |
 
 ---
 
@@ -700,3 +701,24 @@ Registro de la decisión tal como se tomó:
   - «Alto» no es genérica, porque es lo único que identifica el Mirador del Alto («mirador» es un tema).
   - «Is there a car park?» sigue sin encontrar el aparcamiento («car» tiene solo tres letras y «park» es compartida). Queda como limitación anotada.
 
+## D-052 · Demo en línea en Vercel con Services, sin cambiar la app
+**Estado:** ✅ aprobada · 2026-11-26
+
+- **Contexto:** con la entrega terminada y verificada, quise una demo en línea para ver la aplicación sin instalar nada. Ya uso Vercel en otros proyectos. Vercel no ejecuta Docker Compose.
+- **Decisión:**
+  - Un único fichero nuevo, `vercel.json`, en la rama `deploy`, con [Vercel Services](https://vercel.com/docs/services) (en beta): la web Angular como ficheros estáticos en `/` y la API FastAPI como función Python en `/api`, en el mismo dominio.
+  - El prefijo `/api` se quita con una `rewrite` del servicio de la API, igual que hacen nginx en Docker y el proxy de desarrollo: las rutas de la web y de la API son las mismas que en local.
+  - El build **copia** `datos/pois.json` dentro de la API, porque Vercel no deja que una función incluya ficheros de fuera de su carpeta (`..`). La variable del proyecto `RUTA_POIS=datos/pois.json` le dice a la API dónde está.
+  - Las rutas de la web (`/pois/poi-003`) sirven `index.html`, como `try_files` en nginx.
+- **Por qué:** no cambia ni una línea de la app, de los tests ni de Docker. Los datos originales siguen sin modificarse, y la evaluación contra la vista previa cita los mismos ids que en local.
+- **Alternativas descartadas:**
+  - Incluir `../datos` con `includeFiles`: Vercel lo rechaza.
+  - Quitar el prefijo con un `request.path` en `routes` del servicio: no tuvo efecto en la prueba.
+  - Un fichero de entrada propio que quitara el prefijo: innecesario con la `rewrite` del servicio.
+  - Dos proyectos de Vercel separados: harían falta CORS y dos despliegues.
+- **Consecuencias:**
+  - La entrega oficial sigue siendo Docker Compose. Vercel es un extra.
+  - La API carga el catálogo cada vez que Vercel arranca una instancia nueva; la primera petición tras un rato sin uso tarda algo más, y los avisos de datos salen en los logs de Vercel.
+  - La función se ejecuta en la región por defecto (`iad1`, EE. UU.). No afecta a «abierto ahora», porque la zona horaria es `Europe/Madrid`.
+  - La documentación de la API queda en `/api/docs`.
+  - El proyecto de Vercel está conectado al repositorio: cada push a `main` despliega producción y cada push a otra rama, una vista previa protegida.
