@@ -255,14 +255,14 @@ Estados: ✅ aprobada · 🔄 revisada (enlaza a la que la sustituye) · ❌ des
 - **Contexto:** el enunciado ofrece un mapa opcional "sin ninguna librería".
 - **Decisión:** un SVG con proyección lineal sobre el área que ocupan los puntos. Cada punto es un elemento enfocable con nombre accesible que lleva a su ficha. El mapa complementa al listado, no lo sustituye.
 - **Por qué:** a la escala de un pueblo la distorsión de una proyección lineal es despreciable, y un SVG semántico es navegable con teclado.
-- **Concreción (autor, 2026-11-24):** se hace **al final**, solo si da tiempo tras lo obligatorio. Va en `/pois`, junto al listado, y muestra los mismos puntos filtrados. Se marca como complementario: el listado es la vía principal. Los puntos sin coordenadas válidas no aparecen en el mapa, pero sí en el listado.
-- **Concreción (autor, 2026-11-25, al construirlo):**
+- **Concreción (2026-11-24):** se hace **al final**, solo si da tiempo tras lo obligatorio. Va en `/pois`, junto al listado, y muestra los mismos puntos filtrados. Se marca como complementario: el listado es la vía principal. Los puntos sin coordenadas válidas no aparecen en el mapa, pero sí en el listado.
+- **Concreción (2026-11-25, al construirlo):**
   - Se proyecta con una aproximación plana (equirrectangular) y la misma escala en los dos ejes, con el norte arriba, una escala gráfica y una cuadrícula decorativa.
   - Cada punto es un enlace con el nombre del lugar, y el nombre se ve al pasar el ratón o al llegar con el tabulador.
   - El mapa muestra los resultados del filtro. Un texto dice cuántos puntos no tienen ubicación.
   - Casi todo está a menos de 600 m de la Plaza Mayor, y lo demás a 2–3 km, así que hay un botón «Ver el centro del pueblo» (`aria-pressed`). Al pulsarlo, la vista se acerca y se dice cuántos puntos quedan fuera.
   - En la ficha, el mismo mapa marca el punto con `aria-current="location"` y empieza acercado si el punto está en el centro.
-- **🔄 Revisión parcial (autor, 2026-11-25) → [D-047](#d-047--mapa-interactivo-con-vista-lista--mapa):** el autor rechazó esta primera versión por pobre y porque no se podía mover. La sustituye un mapa que se desplaza y se amplía. El resto de D-019 (SVG propio, sin librería, complementario a la lista) sigue vigente.
+- **🔄 Revisión parcial (2026-11-25) → [D-047](#d-047--mapa-interactivo-con-vista-lista--mapa):** rechacé esta primera versión por pobre y porque no se podía mover. La sustituye un mapa que se desplaza y se amplía. El resto de D-019 (SVG propio, sin librería, complementario a la lista) sigue vigente.
 
 ## D-020 · Configuración de Claude Code dentro del repositorio
 **Estado:** ✅ aprobada · 2026-11-24
@@ -277,7 +277,7 @@ Estados: ✅ aprobada · 🔄 revisada (enlaza a la que la sustituye) · ❌ des
 - **Consecuencias:** `IA.md` hará referencia a estos ficheros.
 
 ## D-021 · Código en inglés, documentación en español
-**Estado:** ✅ aprobada por el autor · 2026-11-24
+**Estado:** ✅ aprobada · 2026-11-24
 
 - **Contexto:** los datos y el enunciado están en español (`categoria`, `horario`, `franjas`), y el framework y el ecosistema, en inglés.
 - **Decisión:** clases, funciones, variables, ficheros y carpetas en **inglés** (`Schedule.is_open()`, `api/app/domain/`). Los nombres de los campos del JSON y del contrato de la API se mantienen tal como los fija el enunciado (`categoria`, `accesible`, `abierto_en`, `/preguntar`). Documentación y commits en español.
@@ -286,7 +286,7 @@ Estados: ✅ aprobada · 🔄 revisada (enlaza a la que la sustituye) · ❌ des
 - **Consecuencias:** hace falta un mapeo explícito entre los campos del JSON y el modelo interno (alias de Pydantic). Los nombres que aparecían en español en decisiones anteriores (`GeneradorRespuesta`, `esta_abierto()`, `api/app/datos/`) se han actualizado a su equivalente en inglés.
 
 ## D-022 · Comentarios mínimos: solo el porqué
-**Estado:** ✅ aprobada por el autor · 2026-11-24
+**Estado:** ✅ aprobada · 2026-11-24
 
 - **Contexto:** el código generado por IA tiende a sobrecomentar: comentarios que repiten lo que ya dice el código y docstrings en todo.
 - **Decisión:** el código se explica con nombres expresivos y funciones pequeñas. Un comentario solo justifica un **porqué** que no sea evidente (una regla de negocio, un dato deducido o un workaround). Docstring solo en la interfaz pública no trivial. Comentarios en inglés.
@@ -295,40 +295,40 @@ Estados: ✅ aprobada · 🔄 revisada (enlaza a la que la sustituye) · ❌ des
 - **Consecuencias:** cada revisión incluye limpiar los comentarios sobrantes. Las correcciones que se hagan sobre el código generado por la IA se anotan en `IA.md`.
 
 ## D-023 · Calidad automática: ruff, mypy strict y angular-eslint
-**Estado:** ✅ aprobada por el autor · 2026-11-24
+**Estado:** ✅ aprobada · 2026-11-24
 
 - **Decisión:** backend con `ruff` (lint y formato) y `mypy --strict`; frontend con `angular-eslint` y Prettier. Un comando por proyecto, y en limpio antes de cada merge.
 - **Por qué:** las reglas de estilo y tipos las vigila una máquina, no la memoria; y mypy strict detecta pronto los `None` mal tratados (accesibilidad tri-estado, horario desconocido), que es justo el tipo de defecto que traen estos datos.
-- **Alternativas descartadas:** solo formateadores (sin red de seguridad de tipos); hooks de pre-commit (una pieza más que configurar, con poco beneficio para un único autor).
+- **Alternativas descartadas:** solo formateadores (sin red de seguridad de tipos); hooks de pre-commit (una pieza más que configurar, con poco beneficio en un proyecto de una sola persona).
 
 ## D-024 · TDD en el núcleo
-**Estado:** ✅ aprobada por el autor · 2026-11-24
+**Estado:** ✅ aprobada · 2026-11-24
 
 - **Decisión:** test primero en la normalización de datos, los horarios, la interpretación de preguntas y los filtros. Tests de API con `TestClient` y algunos tests de componentes en Angular. Sin objetivo numérico de cobertura.
 - **Por qué:** ahí está el riesgo real (los defectos de los datos y la lógica de horarios) y lo que mide la evaluación. Un porcentaje de cobertura incentiva tests vacíos.
 - **Alternativas descartadas:** tests a posteriori con objetivo de cobertura; frontend sin tests.
 
 ## D-025 · Git: ramas por bloque y Conventional Commits en español
-**Estado:** ✅ aprobada por el autor · 2026-11-24
+**Estado:** ✅ aprobada · 2026-11-24
 
 - **Decisión:** una rama por bloque de trabajo (`feat/api-data`, `feat/assistant`, `feat/web`…), que se fusiona en `main` cuando sus tests y linters pasan. Commits pequeños con formato Conventional Commits: prefijo estándar y descripción en español (`feat(api): filtro abierto_en con días ISO`).
 - **Por qué:** el historial cuenta cómo se construyó el proyecto, algo que el equipo puede leer sin una sesión posterior. Los prefijos permiten ver de un vistazo qué es funcionalidad, corrección, test o documentación.
 - **Alternativas descartadas:** commits directos en `main` (se pierde la agrupación por bloque); PR en GitHub (exige el repositorio remoto desde el principio, sin revisores reales).
 
 ## D-026 · Estilos con Tailwind v4 y tres reglas
-**Estado:** ✅ aprobada por el autor · 2026-11-24
+**Estado:** ✅ aprobada · 2026-11-24
 
-- **Contexto:** la IA recomendó SCSS propio con tokens; el autor propuso Tailwind.
+- **Contexto:** la IA recomendó SCSS propio con tokens; yo propuse Tailwind.
 - **Decisión:** Tailwind v4 con tres reglas:
   1. **Tokens propios** en `@theme`: colores comprobados con contraste AA en lugar de usar la paleta por defecto tal cual.
   2. **Los patrones repetidos van en componentes Angular** (`<app-poi-card>`, botones), no en `@apply`.
   3. **Un estilo de foco visible** común a toda la app.
-- **Por qué:** el autor domina Tailwind, así que irá más rápido y lo defenderá mejor. Las ventajas de SCSS que alegó la IA (tokens centralizados) también se consiguen con `@theme` en v4, y Tailwind trae de serie utilidades de accesibilidad (`focus-visible:`, `motion-reduce:`, `sr-only`). Las tres reglas cubren sus riesgos: plantillas sobrecargadas y contraste sin comprobar.
+- **Por qué:** domino Tailwind, así que iré más rápido y lo defenderé mejor. Las ventajas de SCSS que alegó la IA (tokens centralizados) también se consiguen con `@theme` en v4, y Tailwind trae de serie utilidades de accesibilidad (`focus-visible:`, `motion-reduce:`, `sr-only`). Las tres reglas cubren sus riesgos: plantillas sobrecargadas y contraste sin comprobar.
 - **Alternativas descartadas:** SCSS propio (recomendación inicial de la IA, que era una preferencia y no un argumento técnico); Angular Material (pesado y con un aspecto muy reconocible); CDK + SCSS.
 - **Consecuencias:** la accesibilidad sigue dependiendo del HTML semántico, que es independiente del framework de estilos.
 
 ## D-027 · Navegación por rutas: inicio, listado y ficha
-**Estado:** ✅ aprobada por el autor · 2026-11-24
+**Estado:** ✅ aprobada · 2026-11-24
 
 - **Decisión:** tres rutas: `/` (asistente), `/pois` (listado con los filtros en la URL: `?categoria=museo&accesible=true`) y `/pois/:id` (ficha).
 - **Por qué:** las URL se pueden compartir, el botón Atrás funciona y los filtros sobreviven a una recarga. Es el comportamiento que un usuario de lector de pantalla espera de la web.
@@ -336,7 +336,7 @@ Estados: ✅ aprobada · 🔄 revisada (enlaza a la que la sustituye) · ❌ des
 - **Consecuencias:** al cambiar de ruta se mueve el foco al `<h1>` y se actualiza el `<title>`, para que el lector de pantalla anuncie la nueva página.
 
 ## D-028 · Idioma de la interfaz con un diccionario propio y signals
-**Estado:** ✅ aprobada por el autor · 2026-11-24
+**Estado:** ✅ aprobada · 2026-11-24
 
 - **Decisión:** un servicio con los textos de la interfaz en es/en, el idioma activo en un signal y un selector que lo cambia al momento y actualiza `<html lang>`. El idioma elegido se envía a la API (`idioma`).
 - **Por qué:** son unas 40 cadenas. Se cambia de idioma sin recargar, sin dependencias y con un solo build, lo que simplifica Docker.
@@ -344,35 +344,35 @@ Estados: ✅ aprobada · 🔄 revisada (enlaza a la que la sustituye) · ❌ des
 - **Consecuencias:** sin pluralización avanzada ni formatos complejos, que aquí no hacen falta.
 
 ## D-029 · Tests del frontend con el runner del CLI y Testing Library
-**Estado:** ✅ aprobada por el autor · 2026-11-24
+**Estado:** ✅ aprobada · 2026-11-24
 
 - **Decisión:** el runner que configure por defecto la versión estable de Angular CLI (Vitest en las versiones recientes), con Angular Testing Library.
 - **Por qué:** no hay que configurar nada aparte del CLI. Testing Library busca los elementos por rol y por etiqueta, igual que un lector de pantalla, así que cada test valida también parte de la accesibilidad.
 - **Alternativas descartadas:** Jest (configuración aparte del CLI); Karma + Jasmine (en desuso).
 
 ## D-030 · Aspecto sobrio y cálido, con modo oscuro según el sistema
-**Estado:** ✅ aprobada por el autor · 2026-11-24
+**Estado:** ✅ aprobada · 2026-11-24
 
 - **Decisión:** fondo claro, un color principal terroso (oliva o terracota, por el aceite y la piedra del pueblo), tipografía del sistema y tarjetas sencillas. El modo oscuro sigue `prefers-color-scheme`, sin interruptor.
 - **Por qué:** la prioridad es la legibilidad. La tipografía del sistema no descarga nada y el lector la conoce. Con los tokens de D-026, el modo oscuro es redefinir variables, no duplicar estilos.
 - **Alternativas descartadas:** estética neutra tipo dashboard (sin identidad); interruptor manual (un control más que hacer accesible, para poco beneficio).
 - **Consecuencias:** el contraste AA se comprueba en **los dos** temas.
-- **🔄 Revisión parcial (autor, 2026-11-25) → [D-044](#d-044--diseño-de-guía-editorial-con-tipografía-propia-alojada-en-la-app):** la tipografía del sistema se sustituye por dos fuentes libres servidas desde la propia app. El resto de D-030 (fondo claro, colores terrosos, modo oscuro según el sistema, contraste AA en los dos temas) sigue vigente.
-- **🔄 Revisión parcial (autor, 2026-11-25) → [D-045](#d-045--botón-para-elegir-modo-claro-u-oscuro):** se añade un botón para elegir el tema; el sistema sigue siendo el valor por defecto.
+- **🔄 Revisión parcial (2026-11-25) → [D-044](#d-044--diseño-de-guía-editorial-con-tipografía-propia-alojada-en-la-app):** la tipografía del sistema se sustituye por dos fuentes libres servidas desde la propia app. El resto de D-030 (fondo claro, colores terrosos, modo oscuro según el sistema, contraste AA en los dos temas) sigue vigente.
+- **🔄 Revisión parcial (2026-11-25) → [D-045](#d-045--botón-para-elegir-modo-claro-u-oscuro):** se añade un botón para elegir el tema; el sistema sigue siendo el valor por defecto.
 
 ## D-031 · Fichas resumidas con enlace al detalle
-**Estado:** ✅ aprobada por el autor · 2026-11-24
+**Estado:** ✅ aprobada · 2026-11-24
 
 - **Decisión:** la tarjeta, tanto en el listado como en la respuesta del asistente, muestra nombre, categoría, accesibilidad (sí / no / sin datos), «abierto ahora» (sí / no / horario no disponible) y precio. La descripción y el horario completos van en `/pois/:id`.
 - **Por qué:** las listas cortas son más fáciles de recorrer con lector de pantalla. Los tres estados de accesibilidad y horario (D-008, D-009) se ven sin entrar en la ficha. Un único componente de tarjeta sirve para el listado y para el asistente (regla 2 de D-026).
 - **Alternativas descartadas:** ficha completa en cada tarjeta (ruido); tarjeta desplegable (más estado y más ARIA para poco beneficio).
 - **Consecuencias:** los avisos que solo están en la descripción (por ejemplo «reserva previa obligatoria») solo se ven en el detalle. El asistente sí los incluye en su texto al citar el punto (D-005).
-- **🔄 Revisión parcial (autor, 2026-11-25) → [D-043](#d-043--recuperación-por-filtros-temas-y-nombres-respuesta-solo-con-campos-estructurados):** la última frase de las consecuencias queda sustituida. El asistente **no** incluye las descripciones en su texto, porque son datos no confiables (D-006) y una inyección que esquivara la limpieza podría colarse en la respuesta. Los avisos de la descripción se ven en la ficha `/pois/:id`, a la que enlaza la tarjeta de cada punto citado. El resto de D-031 sigue vigente.
+- **🔄 Revisión parcial (2026-11-25) → [D-043](#d-043--recuperación-por-filtros-temas-y-nombres-respuesta-solo-con-campos-estructurados):** la última frase de las consecuencias queda sustituida. El asistente **no** incluye las descripciones en su texto, porque son datos no confiables (D-006) y una inyección que esquivara la limpieza podría colarse en la respuesta. Los avisos de la descripción se ven en la ficha `/pois/:id`, a la que enlaza la tarjeta de cada punto citado. El resto de D-031 sigue vigente.
 
 ## D-032 · Sin respuesta en el catálogo: «no lo sé», sin sugerencias ni citas
-**Estado:** ✅ aprobada por el autor · 2026-11-24
+**Estado:** ✅ aprobada · 2026-11-24
 
-- **Contexto:** cuando la pregunta no tiene respuesta en el catálogo (q6, tirolina), la IA propuso que el asistente sugiriera la Oficina de Turismo (poi-010) sin citarla en los ids. El autor preguntó por qué y qué alternativas había.
+- **Contexto:** cuando la pregunta no tiene respuesta en el catálogo (q6, tirolina), la IA propuso que el asistente sugiriera la Oficina de Turismo (poi-010) sin citarla en los ids. Le pregunté por qué y qué alternativas había.
 - **Decisión:** el asistente responde solo que no tiene esa información en el catálogo, con `ids: []`, y no nombra ni sugiere ningún punto.
 - **Por qué:** es la opción más simple y coherente con el enunciado («responde solo con lo que hay en el catálogo» y devuelve «los ids de los puntos en los que se apoya») y con el criterio estricto de D-016. No deja ningún punto nombrado sin cita.
 - **Alternativas descartadas:**
@@ -381,7 +381,7 @@ Estados: ✅ aprobada · 🔄 revisada (enlaza a la que la sustituye) · ❌ des
 - **Consecuencias:** la respuesta a una pregunta fuera de catálogo es menos útil para el turista; se compensa con la Oficina de Turismo visible en el listado.
 
 ## D-033 · Modelos crudos con pydantic y dominio con dataclasses inmutables
-**Estado:** ✅ aprobada por el autor · 2026-11-24
+**Estado:** ✅ aprobada · 2026-11-24
 
 - **Contexto:** el JSON trae tipos mezclados (precio como número o texto, `null`, cadenas vacías) y nombres en español, y el código va en inglés (D-021).
 - **Decisión:** `api/app/data/raw.py` refleja el JSON tal cual con pydantic, admitiendo esos tipos sucios. La normalización lo convierte en un dominio (`api/app/domain/`) de **dataclasses inmutables** con tipos limpios. Los avisos de calidad se devuelven junto al catálogo (`Catalog.warnings`): registrarlos en el log es cosa de la aplicación, no de la capa de datos.
@@ -390,28 +390,28 @@ Estados: ✅ aprobada · 🔄 revisada (enlaza a la que la sustituye) · ❌ des
 - **Consecuencias:** hay un mapeo explícito de lo crudo al dominio, que es justo donde viven y se prueban las reglas.
 
 ## D-034 · Reglas de horario: cierre exclusivo y sin franjas que crucen la medianoche
-**Estado:** ✅ aprobada por el autor · 2026-11-24
+**Estado:** ✅ aprobada · 2026-11-24
 
 - **Decisión:** la hora de cierre es **exclusiva**: una franja de 10:00 a 14:00 está abierta a las 13:59 y cerrada a las 14:00. Una franja cuyo cierre no es posterior a su apertura (cruzaría la medianoche) se **descarta con un aviso**.
 - **Por qué:** el cierre exclusivo es lo que espera un turista y evita solapes entre franjas consecutivas. No hay ninguna franja que cruce la medianoche en los datos; soportarlas complicaría la lógica de días sin beneficio (YAGNI), y descartarlas con aviso hace visible el caso si aparece.
 - **Consecuencias:** si un día llegan horarios nocturnos, habrá que revisar esta decisión.
 
 ## D-035 · Una categoría desconocida detiene la carga
-**Estado:** ✅ aprobada por el autor · 2026-11-24
+**Estado:** ✅ aprobada · 2026-11-24
 
 - **Decisión:** las categorías son un enum cerrado (`monumento`, `museo`, `naturaleza`, `ruta`, `gastronomia`, `servicio`, `espacio_publico`). Si llega una que no existe, la carga falla con un error claro.
 - **Por qué:** el catálogo es pequeño y está curado. Es mejor fallar al arrancar que servir un punto mal clasificado que nunca saldría en los filtros.
 - **Alternativas descartadas:** descartar el punto con un aviso (perdería información en silencio); aceptar cualquier texto (los filtros de categoría dejarían de ser fiables).
 
 ## D-036 · Commits pequeños con push al terminar cada paso que funciona
-**Estado:** ✅ aprobada por el autor · 2026-11-24
+**Estado:** ✅ aprobada · 2026-11-24
 
-- **Decisión:** el trabajo avanza en pasos pequeños. Cuando uno funciona (por ejemplo, un endpoint, con tests y linters en verde), la IA se detiene hasta que el autor lo revisa, hace commit y push y autoriza el siguiente.
-- **Por qué:** cada commit es una unidad que funciona y se puede revisar. El historial cuenta el desarrollo paso a paso, y el autor revisa el código de la IA en porciones pequeñas.
+- **Decisión:** el trabajo avanza en pasos pequeños. Cuando uno funciona (por ejemplo, un endpoint, con tests y linters en verde), la IA se detiene hasta que lo reviso, hago commit y push y autorizo el siguiente.
+- **Por qué:** cada commit es una unidad que funciona y se puede revisar. El historial cuenta el desarrollo paso a paso, y reviso el código de la IA en porciones pequeñas.
 - **Consecuencias:** complementa D-025; dentro de cada rama hay varios commits pequeños.
 
 ## D-037 · Makefile en la raíz como punto de entrada de los comandos
-**Estado:** ✅ aprobada por el autor · 2026-11-24
+**Estado:** ✅ aprobada · 2026-11-24
 
 - **Contexto:** `uv` gestiona dependencias y ejecuta comandos, pero no tiene un equivalente a los `scripts` de `package.json`. El repositorio mezcla dos ecosistemas (Python y Node) más Docker, así que hace falta un punto de entrada común para instalar, probar y levantar.
 - **Decisión:** un `Makefile` en la raíz con objetivos cortos (`make install`, `make check`, `make test`, `make lint`, `make format`) y un `make help` (objetivo por defecto) que los lista. Cada comando se añade **cuando existe y funciona** (servidor, web, evaluación, Docker), nunca antes.
@@ -424,7 +424,7 @@ Estados: ✅ aprobada · 🔄 revisada (enlaza a la que la sustituye) · ❌ des
 - **Consecuencias:** en Windows, make no viene instalado; el README documenta también los comandos directos y Docker sigue siendo la vía de un solo comando. Dentro de `web/` se usarán los npm scripts que genera Angular.
 
 ## D-038 · Ficheros pequeños: un módulo por responsabilidad
-**Estado:** ✅ aprobada por el autor · 2026-11-24
+**Estado:** ✅ aprobada · 2026-11-24
 
 - **Contexto:** `api/app/data/normalization.py` llegó a 218 líneas con cuatro reglas independientes (precio, textos, coordenadas y duplicados), y las constantes de cada regla quedaban lejos de la función que las usa.
 - **Decisión:** como norma del proyecto, ficheros pequeños, legibles y fáciles de localizar: un módulo por responsabilidad, con un nombre que diga qué contiene. Las reglas de normalización pasan a `api/app/data/rules/` (`price.py`, `text.py`, `coordinates.py` y `duplicates.py`). La utilidad que usan dos de ellas, pasar a minúsculas y quitar tildes, va a `api/app/data/folding.py`.
@@ -433,7 +433,7 @@ Estados: ✅ aprobada · 🔄 revisada (enlaza a la que la sustituye) · ❌ des
 - **Consecuencias:** más ficheros, pero todos de entre 6 y 61 líneas. La refactorización no cambia el comportamiento: los 76 tests siguen pasando sin más cambios que los imports.
 
 ## D-039 · Los errores 422 se escriben en el idioma pedido
-**Estado:** ✅ aprobada por el autor · 2026-11-25
+**Estado:** ✅ aprobada · 2026-11-25
 
 - **Contexto:** cuando un parámetro no era válido (`?categoria=playa`, `?idioma=fr`), FastAPI devolvía su 422 por defecto: una lista de errores de pydantic con mensajes en inglés. La regla del proyecto exige que los errores, que ve el usuario final, estén en el idioma pedido. También afectaba ya a `GET /pois/{id}`.
 - **Decisión:** un único manejador global de `RequestValidationError` (`api/app/routes/validation_errors.py`) sustituye esa respuesta por `{"detail": "<mensaje>"}`, una cadena con la misma forma que el 404. El idioma se toma de `?idioma`; si falta o no es válido, se usa el español. El mensaje nombra el parámetro y, cuando son pocos y fijos, sus valores posibles («El parámetro «categoria» no es válido. Valores posibles: monumento, museo, …»). El formato inválido de `abierto_en` (D-012) da un 422 con la misma forma, que explica con ejemplos los dos formatos aceptados.
@@ -446,7 +446,7 @@ Estados: ✅ aprobada · 🔄 revisada (enlaza a la que la sustituye) · ❌ des
 - **Concreción (2026-11-25, `/preguntar`):** si `idioma` no viene en la URL, el idioma del mensaje se toma del cuerpo JSON. Un cuerpo mal formado (ausente, JSON inválido o sin `pregunta`) recibe un mensaje que muestra la forma esperada. Una pregunta vacía o demasiado larga recibe un mensaje propio.
 
 ## D-040 · El asistente interpreta las preguntas con un vocabulario cerrado
-**Estado:** ✅ aprobada por el autor · 2026-11-25
+**Estado:** ✅ aprobada · 2026-11-25
 
 - **Contexto:** sin LLM (D-004), hay que convertir la pregunta en filtros estructurados (D-005) de forma determinista, en español y en inglés.
 - **Decisión:** `api/app/assistant/interpretation/`, un módulo por tipo de señal. Todos trabajan sobre el texto sin tildes ni mayúsculas y reconocen frases completas:
@@ -461,7 +461,7 @@ Estados: ✅ aprobada · 🔄 revisada (enlaza a la que la sustituye) · ❌ des
 - **Consecuencias:** solo se entiende lo que está en el vocabulario. **Límite conocido:** si la pregunta combina un filtro reconocido con un requisito desconocido («museos con tirolina»), se responde con los museos, porque no hay forma fiable de saber que la palabra desconocida es un requisito. Queda para «qué haría con más tiempo».
 
 ## D-041 · El filtro admite varias categorías y días completos
-**Estado:** ✅ aprobada por el autor · 2026-11-25
+**Estado:** ✅ aprobada · 2026-11-25
 
 - **Contexto:** «al aire libre» equivale a varias categorías. Sin esto, en q2 se colaría poi-015, un museo con la etiqueta `naturaleza`. Además, «¿qué abre el domingo?» trae día pero no hora.
 - **Decisión:** `PoiCriteria.categories` es un conjunto (cualquiera de ellas vale) y `OpeningQuery.at` puede ser `None`, que significa «abre en algún momento de ese día» (`Schedule.opens_on`). Un horario desconocido sigue sin contar nunca como abierto (D-009).
@@ -469,9 +469,9 @@ Estados: ✅ aprobada · 🔄 revisada (enlaza a la que la sustituye) · ❌ des
 - **Consecuencias:** se cambió la firma de `PoiCriteria` en el dominio y sus tests; la API no cambia.
 
 ## D-042 · `/preguntar` devuelve solo `respuesta` e `ids`
-**Estado:** ✅ aprobada por el autor · 2026-11-25
+**Estado:** ✅ aprobada · 2026-11-25
 
-- **Contexto:** la IA propuso añadir un campo `puntos` con las fichas de los ids citados, para que la pantalla no tuviera que pedirlas una a una. El autor pidió seguir el enunciado al pie de la letra.
+- **Contexto:** la IA propuso añadir un campo `puntos` con las fichas de los ids citados, para que la pantalla no tuviera que pedirlas una a una. Le pedí seguir el enunciado al pie de la letra.
 - **Decisión:** `POST /preguntar` devuelve exactamente lo que pide el enunciado: la respuesta en texto (`respuesta`) y los ids en los que se apoya (`ids`). La pantalla pide las fichas con `GET /pois/{id}`.
 - **Por qué:** el contrato lo fija el enunciado, y un campo de más es algo que el evaluador no ha pedido y tendría que entender.
 - **Alternativas descartadas:** incluir `puntos` (amplía el contrato sin que el enunciado lo pida).
@@ -479,7 +479,7 @@ Estados: ✅ aprobada · 🔄 revisada (enlaza a la que la sustituye) · ❌ des
 - **Concreción (2026-11-25):** `idioma` es opcional y por defecto `es`, como en `GET /pois`. A `pregunta` se le quitan los espacios de los extremos y debe tener entre 1 y 500 caracteres: el enunciado no fija un límite, y 500 da de sobra para una pregunta turística y acota la entrada del usuario.
 
 ## D-043 · Recuperación por filtros, temas y nombres; respuesta solo con campos estructurados
-**Estado:** ✅ aprobada por el autor · 2026-11-25
+**Estado:** ✅ aprobada · 2026-11-25
 
 - **Contexto:** tras interpretar la pregunta (D-040) hay que decidir qué puntos se citan y cómo se redacta la respuesta sin LLM (D-004), sin inventar (D-032) y sin dejarse manipular por el catálogo (D-006).
 - **Decisión:**
@@ -498,11 +498,11 @@ Estados: ✅ aprobada · 🔄 revisada (enlaza a la que la sustituye) · ❌ des
 - **Consecuencias:** las respuestas son correctas pero esquemáticas. Si se pregunta por un lugar que no cumple el filtro («¿es accesible el castillo?»), la respuesta es «no tengo información» en lugar de «no, no es accesible». Es honesto, pero mejorable (queda para «qué haría con más tiempo»).
 
 ## D-044 · Diseño de «guía editorial» con tipografía propia alojada en la app
-**Estado:** ✅ aprobada por el autor · 2026-11-25
+**Estado:** ✅ aprobada · 2026-11-25
 
-- **Contexto:** con lo obligatorio terminado, el autor revisó la pantalla y la vio correcta pero genérica: cajas con borde, enlaces subrayados y tipografía del sistema. Quería un diseño con identidad. Además, en `/pois` la página se desplazaba unos píxeles a la derecha cuando aparecía la barra de scroll.
+- **Contexto:** con lo obligatorio terminado, revisé la pantalla y la vi correcta pero genérica: cajas con borde, enlaces subrayados y tipografía del sistema. Quería un diseño con identidad. Además, en `/pois` la página se desplazaba unos píxeles a la derecha cuando aparecía la barra de scroll.
 - **Decisión:**
-  - Dirección visual de «guía de viaje editorial», elegida por el autor entre tres propuestas (guía editorial, app de viaje moderna, minimal):
+  - Dirección visual de «guía de viaje editorial», que elegí entre tres propuestas (guía editorial, app de viaje moderna, minimal):
     - títulos con serif;
     - papel cálido, terracota como color principal y oliva como acento;
     - portada con un paisaje del pueblo en SVG decorativo;
@@ -516,17 +516,17 @@ Estados: ✅ aprobada · 🔄 revisada (enlaza a la que la sustituye) · ❌ des
   - Si la fuente no carga, se usa la del sistema (`font-family` con alternativas).
 - **Alternativas descartadas:**
   - Google Fonts por CDN: envía la IP del visitante a un tercero y depende de la red.
-  - Mantener solo la tipografía del sistema: era la opción más ligera, pero el autor priorizó la identidad.
-  - «App de viaje moderna» y «minimal premium»: menos personalidad o menos color, según el autor.
+  - Mantener solo la tipografía del sistema: era la opción más ligera, pero prioricé la identidad.
+  - «App de viaje moderna» y «minimal premium»: menos personalidad o menos color.
 - **Consecuencias:**
   - La primera visita descarga unos pocos KB de fuentes.
   - La paleta nueva añade tres tokens: `sunk` (bloques hundidos), `line` (solo decorativo, nunca lleva información) y `accent` (oliva).
   - El contraste AA se volvió a comprobar en los dos temas, con todos los pares de texto sobre `page`, `surface` y `sunk`: 0 fallos (ratios en la bitácora).
 
 ## D-045 · Botón para elegir modo claro u oscuro
-**Estado:** ✅ aprobada por el autor · 2026-11-25
+**Estado:** ✅ aprobada · 2026-11-25
 
-- **Contexto:** D-030 descartó el interruptor de tema por ser «un control más que hacer accesible, para poco beneficio». Al revisar el rediseño, el autor lo pidió expresamente.
+- **Contexto:** D-030 descartó el interruptor de tema por ser «un control más que hacer accesible, para poco beneficio». Al revisar el rediseño, lo pedí expresamente.
 - **Decisión:**
   - Un botón en la cabecera con nombre fijo («Modo oscuro» / «Dark mode») y `aria-pressed`. El lector anuncia «Modo oscuro, botón de alternancia, activado o desactivado». El icono (sol o luna) es decorativo.
   - Por defecto se sigue al sistema (`prefers-color-scheme`), y también sus cambios en directo. Cuando el visitante pulsa el botón, su elección se guarda en `localStorage` y se escribe como `data-theme` en `<html>`.
@@ -544,12 +544,12 @@ Estados: ✅ aprobada · 🔄 revisada (enlaza a la que la sustituye) · ❌ des
   - El favicon (un castillo en SVG) sigue al tema del sistema, no al botón: el navegador lo pinta fuera de la página.
 
 ## D-046 · Ilustración por categoría y ubicación relativa, en lugar de fotos y enlaces a mapas
-**Estado:** ✅ aprobada por el autor · 2026-11-25
+**Estado:** ✅ aprobada · 2026-11-25
 
-- **Contexto:** el autor propuso una galería de imágenes en la ficha de cada punto y una indicación de cómo llegar. Al revisar los datos se vieron dos problemas:
+- **Contexto:** propuse una galería de imágenes en la ficha de cada punto y una indicación de cómo llegar. Al revisar los datos se vieron dos problemas:
   - el catálogo no tiene imágenes;
   - las coordenadas caen en el **centro de Madrid** (el castillo, en 40,4172 -3,7051, es la Puerta del Sol), porque el pueblo es inventado.
-- **Decisión** (el autor eligió entre opciones con sus riesgos explicados):
+- **Decisión** (elegí entre opciones con sus riesgos explicados):
   - **Imágenes:** una ilustración SVG propia por categoría (monumento, museo, naturaleza, ruta, gastronomía, servicio y espacio público), decorativa (`aria-hidden`) y del mismo estilo que el paisaje de la portada.
   - **Ubicación:** una sección «Ubicación» en la ficha, con todo calculado desde las coordenadas:
     - una frase respecto a la Plaza Mayor («A 120 m al oeste de Plaza Mayor»), o «Junto a…» por debajo de 50 m;
@@ -564,16 +564,16 @@ Estados: ✅ aprobada · 🔄 revisada (enlaza a la que la sustituye) · ❌ des
 - **Alternativas descartadas:**
   - Fotos de stock: contenido inventado.
   - Enlace «Ver en el mapa» con las coordenadas, aunque fuera con aviso: lleva a un sitio que no es el pueblo.
-  - Sin imágenes: válido, pero el autor prefirió la ilustración.
+  - Sin imágenes: válido, pero preferí la ilustración.
 - **Consecuencias:**
   - La Plaza Mayor (`poi-005`) es el punto de referencia, fijado en el código (`LANDMARK_ID`). Si no está en el catálogo, no se escribe la frase, pero sí la lista de cercanos.
   - Las distancias son en línea recta, y se dice así.
   - La ficha pide también el catálogo completo (`GET /pois`) para el mapa y los cercanos.
 
 ## D-047 · Mapa interactivo, con vista Lista / Mapa
-**Estado:** ✅ aprobada por el autor · 2026-11-25
+**Estado:** ✅ aprobada · 2026-11-25
 
-- **Contexto:** el autor vio la primera versión del mapa (D-019) y la rechazó: «queda muy cutre» y «no es accesible, no puede moverse con el ratón». Era una columna estrecha con puntos iguales, y el centro del pueblo quedaba apiñado sin poder ampliarlo.
+- **Contexto:** vi la primera versión del mapa (D-019) y la rechacé: «queda muy cutre» y «no es accesible, no puede moverse con el ratón». Era una columna estrecha con puntos iguales, y el centro del pueblo quedaba apiñado sin poder ampliarlo.
 - **Decisión:**
   - **Interacción:**
     - se desplaza arrastrando con el ratón o con el dedo;
@@ -599,17 +599,17 @@ Estados: ✅ aprobada · 🔄 revisada (enlaza a la que la sustituye) · ❌ des
   - La rueda sobre el mapa amplía en lugar de desplazar la página. Es lo esperado en un mapa, pero hay que saberlo.
 
 ## D-048 · Generador LLM opcional y local (Ollama), con vuelta a la plantilla
-**Estado:** ❌ descartada por el autor · 2026-11-25 (se llegó a implementar, a probar con el modelo real y a subir en el commit `bdae57e`)
+**Estado:** ❌ descartada · 2026-11-25 (se llegó a implementar, a probar con el modelo real y a subir en el commit `bdae57e`)
 
-- **Por qué se descartó:** el autor comprobó que, para no equivocarse en los datos, el LLM había quedado reducido a redactar la primera frase: la lista, los lugares y las tarjetas eran los mismos que con la plantilla. Su conclusión: «si vamos a hacerlo mal, prefiero no meter LLM». El enunciado admite «ninguno», y D-004 ya dejaba la plantilla como generador por defecto. Se quitó todo el código, los tests, `docker-compose.llm.yml` y `make up-llm`.
+- **Por qué se descartó:** al probarlo comprobé que, para no equivocarse en los datos, el LLM había quedado reducido a redactar la primera frase: la lista, los lugares y las tarjetas eran los mismos que con la plantilla. Darle un papel útil (interpretar preguntas fuera del vocabulario cerrado) requería más tiempo del que quedaba para hacerlo bien, y preferí no entregar algo a medias: «si vamos a hacerlo mal, prefiero no meter LLM». El enunciado admite «ninguno», y D-004 ya dejaba la plantilla como generador por defecto. Se quitó todo el código, los tests, `docker-compose.llm.yml` y `make up-llm`.
 - **Lo que se aprendió**, y por eso se conserva el registro de abajo: con un modelo local pequeño, validar solo los ids no basta. En la prueba real afirmó una premisa falsa (q5), omitió lugares e inventó el nombre del pueblo. La forma segura de usarlo, que el LLM solo redacte y el código ponga los datos, le deja muy poco que aportar.
 - **Qué haría con más tiempo:** usar el LLM para **interpretar** preguntas fuera del vocabulario cerrado («algo para un día de lluvia») y traducirlas a los mismos filtros, con un esquema cerrado y validado, sin dejarle escribir la respuesta. Se medirían los resultados con la evaluación antes de activarlo.
 
 Registro de la decisión tal como se tomó:
 
 - **Contexto:**
-  - D-004 dejó el LLM como opcional, detrás de `AnswerGenerator`. Con lo obligatorio terminado, el autor decidió añadirlo.
-  - La IA lo implementó primero con Claude (API de pago) **sin que el autor lo hubiera elegido**: él solo había preguntado si era gratis. El autor lo corrigió: quiere algo **gratuito, sin tarjeta de crédito**, y que **el evaluador pueda levantarlo y entenderlo fácilmente**.
+  - D-004 dejó el LLM como opcional, detrás de `AnswerGenerator`. Con lo obligatorio terminado, decidí añadirlo.
+  - La IA lo implementó primero con Claude (API de pago) **sin que yo lo hubiera elegido**: solo había preguntado si era gratis. La corregí: quería algo **gratuito, sin tarjeta de crédito**, y que **el evaluador pudiera levantarlo y entenderlo fácilmente**.
   - El enunciado admite «un LLM con tu propia clave, uno local o ninguno».
 - **Decisión:**
   - **Proveedor:** **Ollama en local**, con un modelo pequeño y abierto (por defecto `qwen2.5:3b`, unos 2 GB). Va en un fichero de Compose adicional, `docker-compose.llm.yml` (`make up-llm`):
@@ -631,11 +631,11 @@ Registro de la decisión tal como se tomó:
     - el adaptador `ollama_completion` usa solo la biblioteca estándar (`urllib`), sin dependencias nuevas, y su envío HTTP también se puede sustituir en los tests;
     - temperatura 0: reescribir, no adornar.
 - **Por qué:**
-  - **Ni cuentas, ni claves, ni tarjeta, para nadie.** Con una API gratuita (Groq, Gemini), el evaluador tendría que darse de alta y crear su propia clave, porque la del autor nunca puede ir en el repositorio.
+  - **Ni cuentas, ni claves, ni tarjeta, para nadie.** Con una API gratuita (Groq, Gemini), el evaluador tendría que darse de alta y crear su propia clave, porque la mía nunca puede ir en el repositorio.
   - Todo queda en la máquina de quien lo ejecuta, y funciona sin red una vez descargado.
   - El enunciado puntúa «lo que rodea» al modelo. El LLM no decide qué lugares se citan, solo cómo se dicen, y cualquier salida dudosa se descarta. Con la plantilla de respaldo, la respuesta con LLM nunca es peor que sin él.
 - **Alternativas descartadas:**
-  - **Claude (Anthropic):** se llegó a implementar y a probar sin red, pero es de pago. Se quitó por decisión del autor, junto con su SDK.
+  - **Claude (Anthropic):** se llegó a implementar y a probar sin red, pero es de pago. Lo quité, junto con su SDK.
   - **Groq:** tiene capa gratuita, pero necesita cuenta y clave, y las fuentes no coinciden sobre la tarjeta y los límites.
   - **Gemini:** tiene capa gratuita, pero no se pudo confirmar si pide tarjeta, y sus límites solo se ven en AI Studio.
   - **Dejar varios proveedores a la vez:** el cambio de proveedor ya lo demuestra la interfaz `Completion`, y un camino de pago que nadie usará solo añade ruido.
@@ -651,9 +651,9 @@ Registro de la decisión tal como se tomó:
   - El log de arranque dice qué generador está activo.
 
 ## D-049 · Una respuesta vacía dice por qué está vacía
-**Estado:** ✅ aprobada por el autor · 2026-11-25
+**Estado:** ✅ aprobada · 2026-11-25
 
-- **Contexto:** al repasar el enunciado, el autor preguntó si el asistente respondía a cualquier pregunta o solo a las de la evaluación. La IA probó preguntas nuevas y vio que «Quiero ver monumentos que sean accesibles» respondía «No tengo información sobre eso». La búsqueda era correcta, porque en el catálogo no hay ningún monumento accesible, pero el mensaje confundía «ningún lugar cumple lo que pides» con «no entiendo la pregunta». Lo mismo ocurría con «¿Es accesible el castillo?», la limitación ya anotada en D-043.
+- **Contexto:** al repasar el enunciado, pregunté si el asistente respondía a cualquier pregunta o solo a las de la evaluación. La IA probó preguntas nuevas y vio que «Quiero ver monumentos que sean accesibles» respondía «No tengo información sobre eso». La búsqueda era correcta, porque en el catálogo no hay ningún monumento accesible, pero el mensaje confundía «ningún lugar cumple lo que pides» con «no entiendo la pregunta». Lo mismo ocurría con «¿Es accesible el castillo?», la limitación ya anotada en D-043.
 - **Decisión:** cuando no se recupera nada, `empty_answer` distingue tres casos, y en ninguno se cita un id:
   1. **Se entendieron filtros y ningún lugar los cumple:** «Ningún lugar del catálogo cumple todo lo que buscas (monumento · accesible).», con lo entendido entre paréntesis (categorías, accesible, día y hora).
   2. **La pregunta nombra un lugar que no cumple los filtros:** «En el catálogo no consta que Castillo de Valdelumbre cumpla lo que buscas (accesible).» Se dice «no consta» y no «no es», porque el dato puede ser desconocido (el Puente Romano tiene la accesibilidad a `null`).
@@ -667,9 +667,9 @@ Registro de la decisión tal como se tomó:
 - **Consecuencias:** las preguntas fuera del vocabulario cerrado («algo para un día de lluvia») siguen en el caso 3. Interpretarlas mejor queda para «qué haría con más tiempo».
 
 ## D-050 · El asistente dice lo que no consulta y da el precio
-**Estado:** ✅ aprobada por el autor · 2026-11-25
+**Estado:** ✅ aprobada · 2026-11-25
 
-- **Contexto:** el autor preguntó «hay wifi en el parque?» y el asistente respondió con el parque, como si la respuesta fuera sí. Con mascotas, aseos, formas de pago o reservas pasaba lo mismo. Y en «¿Qué monumentos son gratis?» listaba los cuatro monumentos, dos de ellos de pago, sin decir el precio.
+- **Contexto:** pregunté «hay wifi en el parque?» y el asistente respondió con el parque, como si la respuesta fuera sí. Con mascotas, aseos, formas de pago o reservas pasaba lo mismo. Y en «¿Qué monumentos son gratis?» listaba los cuatro monumentos, dos de ellos de pago, sin decir el precio.
 - **Decisión:**
   - **Vocabulario cerrado de lo que el asistente no consulta** (`interpretation/unrecorded.py`): wifi, mascotas, aseos, formas de pago, reservas, visitas guiadas, terrazas, cajeros y menús especiales. Si la pregunta menciona algo de esto, la respuesta empieza así: «No puedo responder sobre wifi: no es un dato que yo consulte. Mira la ficha del lugar o pregunta en la Oficina de Turismo. Esto es lo que sí sé:», y después vienen los lugares. Si no hay ninguno, queda solo esa frase.
   - **Precio en cada línea**, con «gratis», la cantidad o «precio sin datos». `price_text` pasa a `app/domain` para que lo usen tanto las rutas como el asistente.
@@ -684,7 +684,7 @@ Registro de la decisión tal como se tomó:
 - **Consecuencias:** la lista es cerrada. Un dato que no esté en ella («¿hay enchufes?») sigue sin avisarse. Queda anotado en el README.
 
 ## D-051 · Un lugar nombrado manda, y las palabras comunes no nombran lugares
-**Estado:** ✅ aprobada por el autor · 2026-11-25
+**Estado:** ✅ aprobada · 2026-11-25
 
 - **Contexto:** la batería de preguntas (bitácora, paso 16) encontró tres fallos con los nombres:
   - «¿Dónde está el Mirador del Alto?» citaba también el castillo, porque «mirador» es además el tema «vistas»;
