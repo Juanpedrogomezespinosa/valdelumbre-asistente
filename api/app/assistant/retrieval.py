@@ -67,6 +67,41 @@ def _cheapest(pois: list[Poi]) -> list[Poi]:
     return [poi for poi in priced if poi.price.max_eur == lowest]
 
 
+_NEARBY_COUNT = 5
+
+
+def nearby(
+    pois: Sequence[Poi], interpretation: Interpretation
+) -> tuple[Poi, list[tuple[Poi, float]]] | None:
+    """For «¿qué hay cerca de X?»: X and the closest places that pass the filters, nearest
+    first, each with its distance in metres.
+
+    None when the question does not name a place with coordinates to measure from.
+    """
+    if not interpretation.asks_nearby:
+        return None
+    anchor = _place_to_measure_from(pois, interpretation)
+    if anchor is None or anchor.coordinates is None:
+        return None
+    origin = anchor.coordinates
+    distances = [
+        (poi, origin.metres_to(poi.coordinates))
+        for poi in filter_pois(pois, interpretation.criteria)
+        if poi.id != anchor.id and poi.coordinates
+    ]
+    return anchor, sorted(distances, key=lambda measured: measured[1])[:_NEARBY_COUNT]
+
+
+def _place_to_measure_from(pois: Sequence[Poi], interpretation: Interpretation) -> Poi | None:
+    """The place the question names or, failing that, the only place its topic fits
+    ("near the winery": "winery" is the wine topic, and only one place has it)."""
+    named = _named_places(pois, interpretation.keywords)
+    if named:
+        return max((poi for poi in pois if poi.id in named), key=lambda poi: named[poi.id])
+    fitting = [poi for poi in pois if _topic_score(poi, interpretation.topics) > 0]
+    return fitting[0] if len(fitting) == 1 else None
+
+
 def named_places(pois: Sequence[Poi], interpretation: Interpretation) -> list[Poi]:
     """The places the question names, wherever they are in the catalog."""
     named = _named_places(pois, interpretation.keywords)

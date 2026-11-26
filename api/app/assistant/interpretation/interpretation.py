@@ -10,6 +10,7 @@ from app.assistant.interpretation.categories import CATEGORY_PHRASES, categories
 from app.assistant.interpretation.closed import CLOSED_PHRASES, asks_closed
 from app.assistant.interpretation.hours import HOURS_PHRASES, asks_hours
 from app.assistant.interpretation.name_synonyms import NAME_SYNONYM_PHRASES, name_words_in
+from app.assistant.interpretation.nearby import NEARBY_PHRASES, asks_nearby
 from app.assistant.interpretation.only_one import ONLY_ONE_PHRASES, asks_for_only_one
 from app.assistant.interpretation.opening_time import TIME_WORDS, now_query, opening_query_in
 from app.assistant.interpretation.phrases import contains_any, words_in, words_of
@@ -43,6 +44,14 @@ _PRICE_WORDS = (
     "under",
     "dinero",
     "money",
+    "gastar",
+    "pagar",
+    "coste",
+    "costo",
+    "spending",
+    "paying",
+    "nothing",
+    "nada",
 )
 _VILLAGE_WORDS = frozenset({"valdelumbre", "pueblo", "village", "town"})
 _INTERPRETED_WORDS = words_of(
@@ -61,6 +70,7 @@ _INTERPRETED_WORDS = words_of(
         *CHEAPEST_PHRASES,
         *SIGHTS_PHRASES,
         *NAME_SYNONYM_PHRASES,
+        *NEARBY_PHRASES,
     )
     # "Cuesta" is also the car park's name; _keywords decides when it is a price word.
 ) - {"cuesta", "cuestan"}
@@ -80,6 +90,8 @@ class Interpretation:
     asks_for_sights: bool = False
     """«Qué ver»: without another subject, only places worth visiting."""
     asks_for_cheapest: bool = False
+    asks_nearby: bool = False
+    """«Cerca de…»: the place it names is where distances are measured from."""
 
     @property
     def has_filters(self) -> bool:
@@ -120,6 +132,7 @@ def interpret(question: str, now: datetime) -> Interpretation:
         asks_hours=asks_hours(folded),
         asks_for_sights=asks_for_sights(folded),
         asks_for_cheapest=wants_cheapest(folded),
+        asks_nearby=asks_nearby(folded),
     )
 
 

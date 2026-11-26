@@ -370,5 +370,14 @@ Fusioné `feat/assistant`. Al preparar el plan, la IA detectó una contradicció
   - «Is there free wifi?» se leía como «gratis»;
   - el castillo repetía los días en sus dos franjas.
 - Verificado: `make check` limpio (387 tests del backend y 93 de la web) y `make eval` en 6/6 · 6/6.
-- Pendiente: «¿qué hay cerca del castillo?» (cercanía por coordenadas).
+
+---
+
+## Paso 24 · Cercanía y más formas de decir «gratis» — 2026-11-26
+- Probando la pantalla vi que «¿qué puedo hacer sin dinero?» listaba también lugares de pago: solo se reconocían «sin gastar» y «sin pagar». En lugar de añadir frases sueltas, la IA lo cambió por una regla: «sin»/«without»/«no» seguido de una palabra de dinero («sin dinero», «sin gastar nada», «without spending money»). Con `tests/test_interpret_price.py`.
+- **Cercanía** (D-054): «¿qué hay cerca del castillo?» da los 5 lugares más cercanos, ordenados y con su distancia en línea recta, y se combina con los filtros («restaurantes cerca de la plaza», «museums near the main square»).
+  - TDD con el catálogo real. Antes de fijar las distancias esperadas, la IA las calculó con los datos: había puesto de memoria 1,0 y 1,6 km para dos museos, que en realidad están a 370 y 580 m.
+  - `Coordinates.metres_to()` en el dominio, con la misma aproximación que el mapa de la web; `nearby()` en `retrieval.py` y `nearby_answer.py` para el texto.
+  - «What is near the winery?»: «winery» es el tema «vino», que solo tiene un lugar, así que se mide desde la bodega. «¿Dónde como cerca de la iglesia?»: «dónde como» se entiende ahora como comer.
+- Verificado: `make check` limpio (413 tests del backend y 93 de la web) y `make eval` en 6/6 · 6/6.
 

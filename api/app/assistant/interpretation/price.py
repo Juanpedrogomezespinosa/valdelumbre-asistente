@@ -9,13 +9,16 @@ FREE_PHRASES = (
     "gratuitos",
     "gratuita",
     "gratuitas",
-    "sin gastar",
-    "sin pagar",
     "no cuesta nada",
     "no cuestan nada",
     "free",
-    "for free",
-    "no cost",
+    "costs nothing",
+    "cost nothing",
+)
+# "sin dinero", "sin gastar nada", "without spending money", "no money": a lack of money.
+_WITHOUT_MONEY = re.compile(
+    r"\b(sin|without|no)\s+(\w+\s+)?"
+    r"(dinero|gastar|pagar|coste|costo|money|spending|paying|cost)\b"
 )
 CHEAPEST_PHRASES = ("mas barato", "mas barata", "mas baratos", "mas baratas", "cheapest")
 _UNDER = re.compile(
@@ -29,7 +32,9 @@ _PRICE_CONTEXT = ("cuesta", "cuestan", "precio", "pagar", "euro", "euros", "€"
 
 
 def wants_free(folded: str) -> bool:
-    return contains_any(folded, FREE_PHRASES) and not contains_any(folded, _NOT_A_PRICE)
+    if contains_any(folded, _NOT_A_PRICE):
+        return False
+    return contains_any(folded, FREE_PHRASES) or _WITHOUT_MONEY.search(folded) is not None
 
 
 def price_under(folded: str) -> Decimal | None:

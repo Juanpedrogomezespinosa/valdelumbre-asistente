@@ -189,3 +189,50 @@ def test_free_wifi_is_about_wifi_not_about_price(
     client: TestClient, question: str, language: str
 ) -> None:
     assert cited(client, question, language) == set()
+
+
+def test_what_is_near_a_place_lists_the_closest_in_order_with_distances(
+    client: TestClient,
+) -> None:
+    answer = ask(client, "¿Qué hay cerca del castillo?")
+
+    assert str(answer["respuesta"]).splitlines() == [
+        "Lo más cercano a Castillo de Valdelumbre, en línea recta:",
+        "- Iglesia de San Bartolomé (monumento · no accesible · 2 €) · a 60 m",
+        "- Oficina de Turismo (servicio · accesible · gratis) · a 100 m",
+        "- Aparcamiento de la Cuesta (servicio · accesible · gratis) · a 100 m",
+        "- Restaurante El Lagar (gastronomía · accesible · 25\u201335 €) · a 110 m",
+        "- Plaza Mayor (espacio público · accesible · gratis) · a 120 m",
+    ]
+    assert answer["ids"] == ["poi-001", "poi-006", "poi-010", "poi-017", "poi-009", "poi-005"]
+
+
+def test_nearby_combines_with_the_filters(client: TestClient) -> None:
+    answer = ask(client, "Museums near the main square", "en")
+
+    assert str(answer["respuesta"]).splitlines() == [
+        "Closest to Main Square, in a straight line:",
+        "- Tapestry House (museum · not accessible · €3) · 150 m away",
+        "- Olive Oil Museum (museum · accessible · free) · 370 m away",
+        "- Valley Interpretation Centre (museum · accessible · free) · 580 m away",
+    ]
+
+
+def test_near_without_a_place_to_measure_from_is_not_a_nearby_question(
+    client: TestClient,
+) -> None:
+    assert "cercano" not in str(ask(client, "¿Qué museos hay cerca?")["respuesta"])
+
+
+def test_a_topic_that_names_a_single_place_is_where_distances_start(client: TestClient) -> None:
+    answer = ask(client, "What is near the winery?", "en")
+
+    assert str(answer["respuesta"]).startswith("Closest to La Encina Winery, in a straight line:")
+
+
+def test_where_to_eat_near_a_place(client: TestClient) -> None:
+    assert ask(client, "¿Dónde como cerca de la iglesia?")["ids"] == [
+        "poi-006",
+        "poi-009",
+        "poi-008",
+    ]

@@ -27,7 +27,7 @@ class TemplateAnswerGenerator:
             return Answer(text=texts.not_found(language, office_referral), poi_ids=())
         lines = [
             _introduction(interpretation, len(pois), language, office_referral),
-            *(_place_line(poi, language, interpretation.asks_hours) for poi in pois),
+            *(place_line(poi, language, interpretation.asks_hours) for poi in pois),
         ]
         return Answer(text="\n".join(lines), poi_ids=tuple(poi.id for poi in pois))
 
@@ -42,7 +42,7 @@ def _introduction(
     return texts.introduction(count, corrects_single_answer, language)
 
 
-def _place_line(poi: Poi, language: Language, with_hours: bool) -> str:
+def place_line(poi: Poi, language: Language, with_hours: bool = False) -> str:
     seasons = dict.fromkeys(slot.season for slot in poi.schedule.slots if slot.season)
     facts = [
         texts.category(poi.category, language),

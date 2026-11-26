@@ -756,16 +756,19 @@ Registro de la decisión tal como se tomó:
 - **Decisión:** cubrir cada campo estructurado del catálogo, en es y en:
   - **Horario:** cerrado («cerrado», «no está abierto», «closed»; sin momento, ahora) y momentos del día (mañana 10:00, tarde 17:00, noche 21:00; «mañana» sola es el día siguiente). Si se pregunta por el horario, cada lugar lo da en palabras, con su temporada, o «horario sin datos».
   - **Accesibilidad:** «no accesible» y «sin datos de accesibilidad», además de «accesible».
-  - **Precio:** gratis («gratis», «sin gastar», «free»), «menos de N €» y «lo más barato» (el menor precio conocido).
+  - **Precio:** gratis («gratis», «sin dinero», «sin gastar nada», «free», «without spending money»), «menos de N €» y «lo más barato» (el menor precio conocido).
   - **Categoría:** «qué ver / qué visitar / things to do» se limita a lo visitable (monumentos, museos, naturaleza, rutas y espacios públicos) si no hay otro tema.
   - **Nombre:** sinónimos que no están en el nombre («aparcar», «parking», «car park» → Aparcamiento).
+  - **Ubicación:** «¿qué hay cerca del castillo?» da los 5 lugares más cercanos que cumplen los filtros, ordenados y con su distancia en línea recta («a 60 m»), calculada con las coordenadas como en la ficha web. Se mide desde el lugar nombrado o, si la pregunta nombra un tema que solo tiene un lugar («near the winery»), desde ese lugar. Sin lugar de referencia («¿qué hay cerca?») no hay desde dónde medir y se responde como una pregunta sin cercanía.
 - **Por qué:** el asistente tiene que ser útil con todo lo que el catálogo sabe, y una respuesta contraria a la pregunta es peor que un «no lo sé». Todo sale de campos estructurados (D-005), con el filtro compartido (`PoiCriteria`), al que se añaden criterios que solo usa el asistente: `GET /pois` no cambia, porque su contrato lo fija el enunciado.
 - **Alternativas descartadas:**
   - Un LLM que interprete cualquier redacción: lo descarté por tiempo (D-048) y sigue como mejora futura.
   - Exponer los filtros nuevos en `GET /pois`: el enunciado define sus parámetros.
 - **Consecuencias:**
   - Cada momento del día se comprueba a una hora representativa, no en toda la franja.
+  - La respuesta de cercanía tiene su propia plantilla (`nearby_answer.py`), como la respuesta vacía, porque necesita el lugar de referencia y las distancias. Cita ese lugar y los cercanos.
+  - Las distancias son relativas: las coordenadas del catálogo están en Madrid (DATOS.md, D12), pero la distancia entre puntos es coherente.
   - Lo desconocido sigue sin contar ni como abierto ni como cerrado (D-009), ni como gratis ni como barato.
   - Sigue siendo un vocabulario cerrado: cubre cada tipo de pregunta que admiten los datos, no cada forma de decirlo. Lo que no entiende remite a la Oficina de Turismo (D-053).
-  - 44 tests nuevos (`test_ask_coverage.py` con el catálogo real, y unitarios del filtro, la interpretación y los textos).
+  - 70 tests nuevos (`test_ask_coverage.py` con el catálogo real, y unitarios del filtro, la interpretación y los textos).
 
