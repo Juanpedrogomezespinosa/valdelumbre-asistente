@@ -321,5 +321,12 @@ Fusioné `feat/assistant`. Al preparar el plan, la IA detectó una contradicció
 ## Paso 20 · Documentos de entrega — 2026-11-26 (rama `docs/entrega`)
 - `DATOS.md`: los 12 defectos (D1–D12) con su riesgo, su tratamiento y el test que lo cubre.
 - Depuré esta bitácora: quité las notas de trabajo y los detalles que ya están en git, la pasé a primera persona y corregí una incoherencia sobre quién eligió Claude en el paso 14. Los hechos no cambian.
-- Siguen `IA.md` y el README final.
+- `IA.md`: qué pedí, qué acepté y qué corregí o descarté, con cada caso enlazado a su paso o a su decisión.
+- `README.md` final: arranque en 3 pasos con Docker (con Git o con ZIP), qué probar, tecnologías y por qué, decisiones, proceso con Trello, limitaciones, qué haría con más tiempo y desarrollo sin Docker.
+- Al verificar el README encontré dos fallos en la instalación, que corregí:
+  - `web/.nvmrc` decía solo `22`, y `nvm use` podía elegir un Node 22 anterior al mínimo de Angular (22.22.3). Ahora fija la versión exacta, `22.23.5`, y el README dice `nvm install`.
+  - El comando para evaluar con Docker no funcionaba, porque el contenedor de la API no incluía `scripts/`. `docker-compose.yml` lo monta ahora en solo lectura.
+- **Verificado desde un clon limpio:**
+  - sin Docker: `nvm install`, `make install`, `make check` (327 tests del backend y 93 de la web) y `make eval` (6/6 · 6/6);
+  - con Docker: build sin caché, servicios *healthy*, la evaluación dentro del contenedor en 6/6 · 6/6, todas las URLs y los `curl` del README, y las cuatro preguntas de ejemplo con los ids esperados.
 - Trello: T4 → «En curso».

@@ -9,6 +9,8 @@ services:
     volumes:
       # Read-only: the catalogue is never modified, only normalised in memory.
       - ./datos:/datos:ro
+      # Lets the evaluation run inside the container: docker compose exec api python /scripts/evaluate.py
+      - ./scripts:/scripts:ro
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/pois')"]
       interval: 5s
