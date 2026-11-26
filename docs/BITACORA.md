@@ -381,3 +381,15 @@ Fusioné `feat/assistant`. Al preparar el plan, la IA detectó una contradicció
   - «What is near the winery?»: «winery» es el tema «vino», que solo tiene un lugar, así que se mide desde la bodega. «¿Dónde como cerca de la iglesia?»: «dónde como» se entiende ahora como comer.
 - Verificado: `make check` limpio (413 tests del backend y 93 de la web) y `make eval` en 6/6 · 6/6.
 
+---
+
+## Paso 25 · Esqueleto de carga para el arranque en frío de Vercel — 2026-11-26
+- La IA me explicó a favor y en contra. Le propuse hacerlo solo en el despliegue; me recomendó un solo código que solo muestre el esqueleto si la carga tarda más de 300 ms, y lo aprobé. Decisión D-055. Tarjeta **T6**.
+- TDD: primero `loading/delayed-loading.spec.ts` (reloj falso: a los 299 ms no, a los 300 sí, se apaga al terminar y nunca aparece si la carga dura menos) y un test por pantalla (listado, ficha y tarjetas citadas: aparece, está oculto al lector y desaparece al llegar los datos). Fallaban porque el módulo no existía.
+- Ficheros nuevos en `web/src/app/loading/`: `delayed-loading.ts`, `skeleton-cards.ts` y `skeleton-detail.ts`.
+- **Probado en Chrome con una API lenta de verdad:** un proxy temporal que retrasa cada respuesta 1,5 s, en puertos aparte.
+  - El listado y la ficha muestran su esqueleto con «Cargando…» y lo quitan al llegar los datos (17 tarjetas).
+  - En el asistente, el esqueleto aparece 300 ms después de la respuesta, con un hueco por lugar citado, y desaparece al llegar la tarjeta (medido con un `MutationObserver`).
+  - Con la API local normal **no aparece nunca**.
+- Verificado: `make check` limpio (413 tests del backend y 99 de la web).
+

@@ -73,6 +73,7 @@ Estados: ✅ aprobada · 🔄 revisada (enlaza a la que la sustituye) · ❌ des
 | [D-052](#d-052--demo-en-línea-en-vercel-con-services-sin-cambiar-la-app) | Demo en línea en Vercel con Services, sin cambiar la app | ✅ |
 | [D-053](#d-053--cuando-no-puede-responder-remite-a-la-oficina-de-turismo-sin-citarla) | Cuando no puede responder, remite a la Oficina de Turismo sin citarla | ✅ |
 | [D-054](#d-054--el-asistente-responde-a-cada-campo-del-catálogo-incluidas-las-negaciones) | El asistente responde a cada campo del catálogo, incluidas las negaciones | ✅ |
+| [D-055](#d-055--esqueleto-de-carga-solo-si-la-carga-tarda-más-de-300-ms) | Esqueleto de carga solo si la carga tarda más de 300 ms | ✅ |
 
 ---
 
@@ -771,4 +772,19 @@ Registro de la decisión tal como se tomó:
   - Lo desconocido sigue sin contar ni como abierto ni como cerrado (D-009), ni como gratis ni como barato.
   - Sigue siendo un vocabulario cerrado: cubre cada tipo de pregunta que admiten los datos, no cada forma de decirlo. Lo que no entiende remite a la Oficina de Turismo (D-053).
   - 70 tests nuevos (`test_ask_coverage.py` con el catálogo real, y unitarios del filtro, la interpretación y los textos).
+
+## D-055 · Esqueleto de carga solo si la carga tarda más de 300 ms
+**Estado:** ✅ aprobada · 2026-11-26
+
+- **Contexto:** en la demo de Vercel, la primera petición tras un rato sin uso tarda más, porque Vercel tiene que arrancar la función (arranque en frío, D-052). Mientras, la página se quedaba casi vacía con «Cargando…». En local y en Docker los datos llegan en milisegundos.
+- **Decisión:**
+  - Esqueletos con la forma del contenido en el **listado** (tarjetas), la **ficha** (ilustración, descripción y datos) y las **tarjetas citadas** del asistente (una por lugar citado).
+  - **Solo aparecen si la carga dura más de 300 ms** (`delayedLoading()` y el token `SKELETON_DELAY_MS`). Un solo código para todos los entornos: en local y en Docker no se ven, y en Vercel sí.
+  - Son decorativos (`aria-hidden="true"`): el lector de pantalla sigue oyendo «Cargando…» en la región de estado. La animación se desactiva si el sistema pide reducir el movimiento (`motion-safe:`).
+  - La respuesta del asistente no lleva esqueleto: no se sabe qué forma tendrá, así que sigue «Buscando en el catálogo…».
+- **Por qué:** mejora la espera en la demo sin cambiar la experiencia en local, y sin dos versiones de la web.
+- **Alternativas descartadas:**
+  - Hacerlo solo en la rama de despliegue: el código de la demo no sería el del repositorio entregado.
+  - Mostrarlo siempre: en local parpadearía un instante en cada carga.
+- **Consecuencias:** en los tests de página el retraso se inyecta a 0; el de 300 ms se prueba aparte con reloj falso.
 

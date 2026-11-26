@@ -3,6 +3,8 @@ import { rxResource, toSignal } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router } from '@angular/router';
 import { map } from 'rxjs';
 import { I18n } from '../../i18n/i18n';
+import { delayedLoading } from '../../loading/delayed-loading';
+import { SkeletonCards } from '../../loading/skeleton-cards';
 import { PageHeading } from '../../layout/page-heading';
 import { CATEGORIES, isCategory } from '../../pois/poi';
 import { PoiCard } from '../../pois/poi-card';
@@ -15,7 +17,7 @@ const MAP_VIEW = 'mapa';
 
 @Component({
   selector: 'app-poi-list-page',
-  imports: [PageHeading, PoiCard, VillageMap],
+  imports: [PageHeading, PoiCard, SkeletonCards, VillageMap],
   templateUrl: './poi-list-page.html',
 })
 export class PoiListPage {
@@ -41,6 +43,8 @@ export class PoiListPage {
     params: () => ({ filters: this.filters(), language: this.i18n.language() }),
     stream: ({ params }) => this.pois.list(params.filters, params.language),
   });
+
+  protected readonly slowLoading = delayedLoading(() => this.results.isLoading());
 
   /** Announced politely after every change, so the result count is heard (role="status"). */
   protected readonly status = computed(() => {

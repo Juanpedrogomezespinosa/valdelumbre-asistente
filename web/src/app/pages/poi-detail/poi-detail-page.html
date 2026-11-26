@@ -18,7 +18,9 @@
 
 <p role="status" class="mb-6 text-muted">{{ status() }}</p>
 
-@if (poi.hasValue()) {
+@if (slowLoading()) {
+  <app-skeleton-detail />
+} @else if (poi.hasValue()) {
   @let place = poi.value();
   <div class="mb-5 overflow-hidden rounded-3xl bg-sunk">
     <app-category-illustration [category]="place.categoria" />
