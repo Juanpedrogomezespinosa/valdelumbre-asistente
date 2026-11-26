@@ -44,7 +44,8 @@ def test_a_question_outside_the_catalog_cites_nothing(client: TestClient) -> Non
     assert body == {
         "respuesta": "No tengo información sobre eso en el catálogo de Valdelumbre. Puedes "
         "preguntarme por tipo de lugar (museos, monumentos, rutas, dónde comer), accesibilidad, "
-        "día y hora, o temas como vino, niños o vistas.",
+        "día y hora, o temas como vino, niños o vistas. Para todo lo demás, pregunta en la "
+        "Oficina de Turismo (todos los días de 9:30 a 14:30).",
         "ids": [],
     }
 
@@ -121,7 +122,8 @@ def test_says_it_cannot_answer_about_what_it_does_not_look_up(client: TestClient
 
     assert body["respuesta"].splitlines() == [
         "No puedo responder sobre wifi: no es un dato que yo consulte. Mira la ficha del lugar "
-        "o pregunta en la Oficina de Turismo. Esto es lo que sí sé:",
+        "o pregunta en la Oficina de Turismo (todos los días de 9:30 a 14:30). "
+        "Esto es lo que sí sé:",
         "- Parque de la Alameda (naturaleza · accesible · gratis)",
     ]
     assert body["ids"] == ["poi-012"]
@@ -134,7 +136,7 @@ def test_with_nothing_else_to_say_it_only_explains_what_it_cannot_answer(
 
     assert body == {
         "respuesta": "I can't answer about pets: it is not something I look up. Check each "
-        "place's page or ask at the Tourist Office.",
+        "place's page or ask at the Tourist Office (every day, 9:30 to 14:30).",
         "ids": [],
     }
 

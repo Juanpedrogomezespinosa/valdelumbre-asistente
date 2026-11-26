@@ -128,3 +128,21 @@ def test_each_place_says_its_price_or_that_it_is_unknown() -> None:
         "- Castillo (monumento · sin datos de accesibilidad · 4,50 €)",
         "- Farmacia (monumento · sin datos de accesibilidad · precio sin datos)",
     ]
+
+
+def test_what_it_does_not_look_up_is_referred_to_the_tourist_office_before_what_it_knows() -> None:
+    office = make_poi(
+        "poi-010",
+        name=LocalizedText(es="Oficina de Turismo", en="Tourist Office"),
+        schedule=Schedule(
+            always_open=False, slots=(TimeSlot(frozenset({1, 2, 3, 4, 5}), time(9), time(14)),)
+        ),
+    )
+    with_office = TemplateAnswerGenerator(tourist_office=office)
+
+    answer = with_office.generate(question("¿Hay wifi en el castillo?"), [CASTLE], Language.EN)
+
+    assert answer.text.splitlines()[0] == (
+        "I can't answer about wifi: it is not something I look up. Check each place's page or "
+        "ask at the Tourist Office (Monday to Friday, 9:00 to 14:00). This is what I do know:"
+    )

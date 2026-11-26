@@ -6,6 +6,7 @@ from app.assistant.answer import Answer, AnswerGenerator
 from app.assistant.empty_answer import empty_answer
 from app.assistant.interpretation.interpretation import interpret
 from app.assistant.retrieval import named_places, retrieve
+from app.assistant.tourist_office import find_tourist_office
 from app.domain.localized_text import Language
 from app.domain.poi import Poi
 
@@ -21,7 +22,8 @@ def answer_question(
     interpretation = interpret(question, now)
     retrieved = retrieve(pois, interpretation)
     if not retrieved:
-        return empty_answer(interpretation, named_places(pois, interpretation), language)
+        named = named_places(pois, interpretation)
+        return empty_answer(interpretation, named, language, find_tourist_office(pois))
     answer = generator.generate(interpretation, retrieved, language)
     return _citing_only(retrieved, answer)
 

@@ -1,6 +1,6 @@
 import pytest
 
-from app.assistant.interpretation.accessibility import wants_accessible
+from app.assistant.interpretation.accessibility import accessibility_in
 from app.domain.text_folding import fold
 
 
@@ -17,7 +17,7 @@ from app.domain.text_folding import fold
     ],
 )
 def test_detects_accessibility_needs(question: str) -> None:
-    assert wants_accessible(fold(question)) is True
+    assert accessibility_in(fold(question)) == (True, False)
 
 
 @pytest.mark.parametrize(
@@ -25,4 +25,26 @@ def test_detects_accessibility_needs(question: str) -> None:
     ["¿Qué museos hay?", "Something to do with kids outdoors?", "¿Dónde puedo comer?"],
 )
 def test_ignores_questions_without_accessibility_needs(question: str) -> None:
-    assert wants_accessible(fold(question)) is False
+    assert accessibility_in(fold(question)) == (None, False)
+
+
+@pytest.mark.parametrize(
+    "question",
+    [
+        "¿Qué sitios no son accesibles?",
+        "Lugares no accesibles",
+        "Which places are not accessible?",
+        "Which places aren't wheelchair accessible?",
+        "Inaccessible places",
+    ],
+)
+def test_a_negation_asks_for_places_that_are_not_accessible(question: str) -> None:
+    assert accessibility_in(fold(question)) == (False, False)
+
+
+@pytest.mark.parametrize(
+    "question",
+    ["¿Qué lugares no tienen datos de accesibilidad?", "Places with no accessibility data"],
+)
+def test_asks_for_places_with_unknown_accessibility(question: str) -> None:
+    assert accessibility_in(fold(question)) == (None, True)
