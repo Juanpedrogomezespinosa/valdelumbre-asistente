@@ -393,3 +393,14 @@ Fusioné `feat/assistant`. Al preparar el plan, la IA detectó una contradicció
   - Con la API local normal **no aparece nunca**.
 - Verificado: `make check` limpio (413 tests del backend y 99 de la web).
 
+---
+
+## Paso 26 · Repaso final de la documentación y verificación — 2026-11-26
+- **README:** enlace a la demo en línea, cómo evaluar contra ella (`EVAL_URL=…/api`), las preguntas nuevas en «Qué probar», las mejoras de los pasos 22–25 en «Qué incluye», Vercel en las tecnologías, las decisiones D-053 y D-054, las limitaciones actualizadas («car park» ya funciona) y «qué haría con más tiempo» sin lo ya hecho.
+- **IA.md:** la remisión a la Oficina que rechacé y recuperé, el esqueleto solo en el despliegue que la IA desaconsejó, el bug de las negaciones, los valores de memoria corregidos con los datos, la CLI de Vercel y la estimación de 3–4 horas que se hizo en menos de una.
+- Al comprobar los enlaces aparecieron **tres anclas rotas en el README** (D-029, D-033 y D-037), escritas sin comprobar el título exacto. Corregidas; ahora un script comprueba todas las anclas de los cuatro documentos: 0 rotas.
+- **Verificado antes de fusionar:**
+  - clon limpio de `feat/ultimos-ajustes` desde GitHub y `docker compose build --no-cache`: servicios *healthy*, la web, una ficha y `/docs` responden, la evaluación dentro del contenedor da 6/6 · 6/6, y las preguntas nuevas (cerrado, horario, sin dinero, cercanía, tirolina) responden bien;
+  - la vista previa de Vercel de la rama: rutas, `/api/docs` y las mismas preguntas;
+  - `make check` limpio (413 tests del backend y 99 de la web).
+

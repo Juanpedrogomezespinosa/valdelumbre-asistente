@@ -42,7 +42,7 @@ Cada caso sigue el mismo esquema: lo que propuso o hizo la IA, por qué no lo ac
 |-------------------|--------------------|------------|
 | Creó las reglas y las skills del proyecto **sin preguntarme** (paso 2). | Las reglas condicionan todo el desarrollo: tienen que salir de mis criterios, no de suposiciones. | Regla «preguntar antes de decidir». Revisé cada regla y cada skill; las carpetas pasaron al inglés y se añadió la sección de código limpio. |
 | Propuso hacer ella el commit inicial (paso 4). | Quiero controlar el historial y revisar cada cambio antes de que entre. | Git lo gestiono yo; la IA solo lee. |
-| Añadió por su cuenta un criterio en Trello: sugerir la Oficina de Turismo cuando no sabe (paso 6). | Le pedí las alternativas y su porqué. Sugerir algo no recuperado rompe la regla de citar solo lo que respalda la respuesta. | «No lo sé» a secas ([D-032](docs/DECISIONES.md#d-032--sin-respuesta-en-el-catálogo-no-lo-sé-sin-sugerencias-ni-citas)). |
+| Añadió por su cuenta un criterio en Trello: sugerir la Oficina de Turismo cuando no sabe (paso 6). | Le pedí las alternativas y su porqué. Sugerir algo no recuperado rompe la regla de citar solo lo que respalda la respuesta. | «No lo sé» a secas ([D-032](docs/DECISIONES.md#d-032--sin-respuesta-en-el-catálogo-no-lo-sé-sin-sugerencias-ni-citas)). Al revisar la demo cambié de opinión: el «no lo sé» a secas dejaba al turista sin salida. Recuperé la remisión sin citar, ahora con el horario de la Oficina y solo cuando no puede responder ([D-053](docs/DECISIONES.md#d-053--cuando-no-puede-responder-remite-a-la-oficina-de-turismo-sin-citarla)). |
 | Implementó un generador con Claude, **de pago**, cuando yo solo había preguntado si era gratis (paso 14). | No había elegido proveedor. Quería algo gratuito, sin tarjeta y que el evaluador pudiera levantar sin darse de alta en nada. | Se quitó. Comparamos opciones gratuitas y elegí Ollama, local (ver más abajo). |
 
 ### Recomendaciones rebatidas o descartadas
@@ -50,6 +50,7 @@ Cada caso sigue el mismo esquema: lo que propuso o hizo la IA, por qué no lo ac
 - **SCSS frente a Tailwind** (paso 3, [D-026](docs/DECISIONES.md#d-026--estilos-con-tailwind-v4-y-tres-reglas)). La IA recomendó SCSS con tokens. Propuse Tailwind, que domino, y le pedí que justificara SCSS. Reconoció que era una preferencia y no un argumento técnico: los tokens se consiguen igual con `@theme` en Tailwind v4. Lo adopté con tres reglas: contraste AA en los tokens, componentes en lugar de `@apply` y un foco común.
 - **El LLM** (paso 14, [D-048](docs/DECISIONES.md#d-048--generador-llm-opcional-y-local-ollama-con-vuelta-a-la-plantilla)). Decidí añadir un LLM como mejora opcional. Lo implementamos con un modelo local (Ollama) y lo probé con el modelo real. Escribiendo la respuesta entera, afirmó la premisa falsa de q5 («el único sitio accesible») y omitió lugares; redactando solo la introducción, inventó el nombre del pueblo. Para que no se equivocara con los datos tuvo que quedarse en una primera frase vigilada, y así aportaba muy poco: al probarlo vi que era «lo mismo que antes». Darle un papel útil, que es interpretar preguntas fuera del vocabulario cerrado, requería más tiempo del que tenía antes de la entrega para hacerlo bien. **Preferí no entregar algo a medias**: lo descarté y dejé el asistente basado en reglas, que es predecible y pasa la evaluación. El código queda en el historial (`bdae57e`).
 - **Un campo `puntos` en `/preguntar`** (paso 9.1, [D-042](docs/DECISIONES.md#d-042--preguntar-devuelve-solo-respuesta-e-ids)). La IA lo propuso para ahorrar peticiones a la pantalla. Con mi pauta de seguir el enunciado al pie de la letra, lo descartó ella misma: el contrato es `{respuesta, ids}`.
+- **Esqueleto de carga solo en el despliegue** (paso 25, [D-055](docs/DECISIONES.md#d-055--esqueleto-de-carga-solo-si-la-carga-tarda-más-de-300-ms)). Propuse hacerlo solo para la demo de Vercel, que es donde se nota el arranque en frío. La IA me advirtió de que tendríamos dos versiones de la web y me propuso un solo código que solo muestra el esqueleto si la carga tarda más de 300 ms. Lo acepté: el efecto es el mismo y el repositorio entregado es el que corre en la demo.
 - **Fotos de stock y enlaces a mapas reales** (paso 13, [D-046](docs/DECISIONES.md#d-046--ilustración-por-categoría-y-ubicación-relativa-en-lugar-de-fotos-y-enlaces-a-mapas)). Quería imágenes en la ficha y cómo llegar a cada punto. Al revisar los datos vimos que no hay imágenes y que las coordenadas caen en el centro de Madrid. Una foto de stock o un enlace a Google Maps habrían engañado al turista, así que elegí una ilustración por categoría y una ubicación relativa («a 120 m al oeste de la Plaza Mayor»).
 
 ### Fallos que encontré yo al revisar
@@ -64,8 +65,10 @@ Los tests de la IA estaban en verde en todos estos casos. Los encontré probando
 | En móvil, el paisaje cortaba el castillo y dejaba fuera el sol. | 12.1 | Composición propia para móvil. |
 | El primer mapa: «queda muy cutre» y «no puede moverse con el ratón». | 13.1 | Mapa nuevo con arrastre, zoom, teclado y vista Lista / Mapa ([D-047](docs/DECISIONES.md#d-047--mapa-interactivo-con-vista-lista--mapa)). |
 | «¿Hay wifi en el parque?» respondía con el parque, como si fuera un sí. | 16 | El asistente dice lo que no consulta y da el precio de cada lugar. |
+| **«¿Qué hay cerrado ahora mismo?» listaba los lugares abiertos.** Al pedir una ronda por cada campo del catálogo salieron cuatro más: «no accesibles» daba los accesibles, «museos cerrados el lunes» decía que ninguno estaba abierto y «menos de 5 euros» citaba el Aparcamiento de la Cuesta. | 23 | El asistente entiende las negaciones, y además el horario, el precio, «qué ver», los momentos del día y la cercanía ([D-054](docs/DECISIONES.md#d-054--el-asistente-responde-a-cada-campo-del-catálogo-incluidas-las-negaciones)). |
+| «¿Qué puedo hacer sin dinero?» listaba también lugares de pago. | 24 | Una regla para cualquier «sin dinero / sin gastar / without spending», en lugar de frases sueltas. |
 
-**Lección:** los tests de comportamiento no ven el contrato publicado ni la pantalla. En los dos fallos de `/docs`, la corrección incluyó tests sobre `/openapi.json` para que no volvieran a pasar.
+**Lección:** los tests de comportamiento no ven el contrato publicado ni la pantalla, y una batería solo comprueba lo que se le ocurrió a quien la escribió: la de las 166 combinaciones de filtros nunca preguntó por algo «cerrado». En los dos fallos de `/docs`, la corrección incluyó tests sobre `/openapi.json`; en el de las negaciones, una batería nueva con cada tipo de pregunta que admiten los datos (`api/tests/test_ask_coverage.py`).
 
 ## 4. Qué le pedí
 
@@ -76,6 +79,7 @@ Los tests de la IA estaban en verde en todos estos casos. Los encontré probando
 | Asistente | Interpretación por reglas, citas solo de lo recuperado y un script de evaluación con un criterio estricto propio. |
 | Pantalla | Accesible de verdad: teclado, lector de pantalla y contraste comprobado, no solo «etiquetas puestas». |
 | Antes de entregar | Que contrastara el proyecto con cada línea del enunciado, que comprobara «todas las preguntas posibles» y que buscara «todos los bugs posibles». |
+| Últimos ajustes | Que el asistente remitiera a la Oficina de Turismo, que respondiera a todo lo que permiten los datos y una demo en línea en Vercel. |
 
 ## 5. Qué acepté, y con qué control
 
@@ -92,7 +96,9 @@ Formaba parte del método: revisar su propio trabajo antes de pararse.
 - Un mensaje de error habría mostrado «Valores posibles: .» vacío (paso 8.3).
 - Eliminó un test de relleno que no comprobaba nada (paso 9.2).
 - «Is there any zipline adventure park?» citaba el aparcamiento («Cuesta Car Park»). Ahora una palabra solo nombra un lugar si aparece en un único nombre ([D-051](docs/DECISIONES.md#d-051--un-lugar-nombrado-manda-y-las-palabras-comunes-no-nombran-lugares)).
-- Detectó que su arreglo de «cuesta» había roto «Tell me about Cuesta Car Park» porque repetía la batería entera tras cada cambio (paso 16).
+- Detectó que su arreglo de «cuesta» había roto «Tell me about Cuesta Car Park» porque repetía la batería entera tras cada cambio (paso 16). Volvió a pasar en el paso 23 («no cuesta nada») y los tests lo cazaron igual.
+- **Dos veces escribió en un test valores de memoria** (los horarios de los museos y las distancias de dos museos a la plaza). Antes de darlos por buenos los contrastó con `GET /pois` y con el JSON, y los corrigió con los datos reales (pasos 23 y 24).
+- El filtro nuevo de «cerrado» dejaba pasar los horarios desconocidos como abiertos; lo cazaron los tests de `GET /pois` antes de entregar (paso 23).
 
 ## 7. Cómo se buscaron los fallos
 
@@ -109,11 +115,13 @@ Formaba parte del método: revisar su propio trabajo antes de pararse.
 - **El clasificador de seguridad de Claude Code** no dejó que la IA creara su propio fichero de permisos hasta que lo autoricé de forma explícita. Me parece razonable.
 - **El bloqueo de Git** que pedí funcionó también contra ella: intentó un `git rm` y se le impidió.
 - **El conector de Trello** no permite poner nombre a las etiquetas (las nombré a mano) y guardaba `<` y `>` como entidades HTML.
+- **La CLI de Vercel**, en el primer despliegue del proyecto, lo lanzó como producción y conectó el repositorio de GitHub sin preguntar. Ese intento falló y no publicó nada; a partir de ahí, todo fueron vistas previas hasta que yo promoví la buena (paso 21).
 - **Lo que no puede hacer:** escuchar un lector de pantalla. El recorrido con VoiceOver lo hice yo.
 
 ## 9. Conclusiones
 
 - **Las reglas escritas no evitan todos los errores, pero los hacen fáciles de corregir.** Aun con la regla de preguntar antes de decidir, la IA implementó Claude sin que yo lo hubiera elegido. Como la regla estaba escrita, la corrección fue inmediata y no hubo nada que discutir.
-- **Revisar a mano sigue siendo imprescindible.** Los seis fallos de la tabla del apartado 3 convivían con todos los tests en verde; los encontré mirando la pantalla y `/docs`.
+- **Revisar a mano sigue siendo imprescindible.** Los ocho fallos de la tabla del apartado 3 convivían con todos los tests en verde; los encontré mirando la pantalla y `/docs`.
+- **Exigir también cambia el ritmo.** Para que el asistente respondiera a todo lo que permiten los datos, la IA estimó 3–4 horas; le dije que podía hacerlo en menos de una, y lo hizo, sin saltarse los tests (paso 23). Su estimación incluía margen que no hacía falta.
 - **Pedir el porqué cambia la respuesta.** La recomendación de SCSS y el criterio de la Oficina de Turismo no resistieron la pregunta «¿por qué?».
 - **Descartar también es decidir.** El LLM funcionaba, pero no aportaba lo suficiente para justificar su riesgo. Preferí un asistente predecible y bien probado.
