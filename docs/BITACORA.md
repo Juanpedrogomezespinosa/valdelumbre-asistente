@@ -330,3 +330,18 @@ Fusioné `feat/assistant`. Al preparar el plan, la IA detectó una contradicció
   - sin Docker: `nvm install`, `make install`, `make check` (327 tests del backend y 93 de la web) y `make eval` (6/6 · 6/6);
   - con Docker: build sin caché, servicios *healthy*, la evaluación dentro del contenedor en 6/6 · 6/6, todas las URLs y los `curl` del README, y las cuatro preguntas de ejemplo con los ids esperados.
 - Trello: T4 → «En curso».
+
+---
+
+## Paso 21 · Demo en línea en Vercel — 2026-11-26 (rama `deploy`)
+- Con la entrega terminada, decidí añadir una demo en línea en Vercel, en una rama aparte para no tocar `main` hasta que funcionara. La IA estudió antes la documentación de Vercel y me propuso el `vercel.json`; elegí probarlo con la CLI de Vercel, con despliegues de vista previa.
+- Tres intentos:
+  1. Incluir `../datos` en la función: Vercel lo rechaza (no admite rutas con `..`).
+  2. Copiar `datos/pois.json` dentro de la API al construir: el catálogo carga con sus 7 avisos, pero el prefijo `/api` no se quitaba con `routes`.
+  3. Quitar el prefijo con una `rewrite` del servicio: funciona.
+- Decisión D-052: Demo en línea en Vercel con Services, sin cambiar la app.
+- Variable `RUTA_POIS=datos/pois.json` añadida al proyecto de Vercel (producción y vista previa). La CLI añadió `.vercel` al `.gitignore`.
+- **Verificado en la vista previa:** la portada, el listado y la ficha al recargar; `/api/pois`, `/api/pois/poi-003`, `/api/docs` y `/openapi.json` (200); el duplicado poi-004 (404); un 422 en inglés, y las 6 preguntas de la evaluación con los mismos ids que en local.
+- Al ser el primer despliegue del proyecto, la CLI lo lanzó como producción y conectó el repositorio de GitHub; ese intento falló y no publicó nada.
+- Pendiente: comprobar la vista previa que sale del push a `deploy`, fusionar en `main`, verificar la URL de producción y añadirla al README.
+
